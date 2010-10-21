@@ -4,7 +4,7 @@
   <groupId>com.samskivert</groupId>
   <artifactId>jmustache</artifactId>
   <packaging>jar</packaging>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.0-SNAPSHOT</version>
   <name>jmustache</name>
   <description>A Java implementation of the Mustache templating language.</description>
   <url>http://code.google.com/p/jmustache/</url>
