@@ -15,50 +15,46 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Represents a compiled template.
+ * Represents a compiled template. Templates are executed with a <em>context</em> to generate
+ * output. The context can be any tree of objects. Variables are resolved against the context.
+ * Given a name {@code foo}, the following mechanisms are supported for resolving its value
+ * (and are sought in this order):
+ * <ul>
+ * <li>If the object is a {@link Map}, {@link Map#get} will be called with the string {@code foo}
+ * as the key.
+ * <li>A method named {@code foo} in the supplied object (with non-void return value).
+ * <li>A method named {@code getFoo} in the supplied object (with non-void return value).
+ * <li>A field named {@code foo} in the supplied object.
+ * </ul>
+ * <p> The field type, method return type, or map value type should correspond to the desired
+ * behavior if the resolved name corresponds to a section. {@link Boolean} is used for showing or
+ * hiding sections without binding a sub-context. Arrays, {@link Iterator} and {@link Iterable}
+ * implementations are used for sections that repeat, with the context bound to the elements of the
+ * array, iterator or iterable. Lambdas are current unsupported, though they would be easy enough
+ * to add if desire exists. See the <a href="http://mustache.github.com/mustache.5.html">Mustache
+ * documentation</a> for more details on section behavior. </p>
  */
 public class Template
 {
     /**
-     * Executes this template with the supplied data, writing the results to the supplied writer.
-     *
-     * <p>The data can be any tree of objects. Given a name <code>foo</code>, the following
-     * mechanisms are supported for resolving its value (and are sought in this order):
-     * <ul>
-     * <li>If the object is a {@link Map}, {@link Map#get} will be called with the string
-     * <code>foo</code> as the key.
-     * <li>A method named <code>foo</code> in the supplied object (with non-void return value).
-     * <li>A method named <code>getFoo</code> in the supplied object (with non-void return value).
-     * <li>A field named <code>foo</code> in the supplied object.
-     * </ul>
-     * </p><p> The field type, method return type, or map value type should correspond to the
-     * desired behavior if the resolved name corresponds to a section. {@link Boolean} is used for
-     * showing or hiding sections without binding a sub-context. Arrays, {@link Iterator} and
-     * {@link Iterable} implementations are used for sections that repeat, with the context bound
-     * to the elements of the array, iterator or iterable. Lambdas are current unsupported, though
-     * they would be easy enough to add if desire exists. See the <a
-     * href="http://mustache.github.com/mustache.5.html">Mustache documentation</a> for more
-     * details on section behavior. </p>
-     *
-     * @throws MustacheException if an error occurs while writing the template.
+     * Executes this template with the given context, writing the results to the supplied writer.
+     * @throws MustacheException if an error occurs while executing or writing the template.
      */
-    public void execute (Object data, Writer out) throws MustacheException
+    public void execute (Object context, Writer out) throws MustacheException
     {
         for (Segment seg : _segs) {
-            seg.execute(this, data, out);
+            seg.execute(this, context, out);
         }
     }
 
     /**
-     * Executes this template with the supplied data, returning the results as a string. See {@link
-     * #execute(Object, Writer).
-     *
-     * @throws MustacheException if an error occurs while writing the template.
+     * Executes this template with the given context, returning the results as a string.
+     * @throws MustacheException if an error occurs while executing or writing the template.
      */
-    public String execute (Object data) throws MustacheException
+    public String execute (Object context) throws MustacheException
     {
         StringWriter out = new StringWriter();
-        execute(data, out);
+        execute(context, out);
         return out.toString();
     }
 
@@ -136,20 +132,24 @@ public class Template
         Method m;
         try {
             m = clazz.getDeclaredMethod(name);
-            if (!m.isAccessible()) {
-                m.setAccessible(true);
+            if (!m.getReturnType().equals(void.class)) {
+                if (!m.isAccessible()) {
+                    m.setAccessible(true);
+                }
+                return m;
             }
-            return m;
         } catch (Exception e) {
             // fall through
         }
         try {
             m = clazz.getDeclaredMethod(
                 "get" + Character.toUpperCase(name.charAt(0)) + name.substring(1));
-            if (!m.isAccessible()) {
-                m.setAccessible(true);
+            if (!m.getReturnType().equals(void.class)) {
+                if (!m.isAccessible()) {
+                    m.setAccessible(true);
+                }
+                return m;
             }
-            return m;
         } catch (Exception e) {
             // fall through
         }

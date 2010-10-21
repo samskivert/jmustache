@@ -38,6 +38,13 @@ public class MustacheTest
         });
     }
 
+    @Test public void testSkipVoidReturn () {
+        test("bar", "{{foo}}", new Object() {
+            void foo () {}
+            String getFoo () { return "bar"; }
+        });
+    }
+
     @Test public void testCallSiteReuse () {
         Template tmpl = Mustache.compile("{{foo}}");
         Object ctx = new Object() {
