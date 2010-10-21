@@ -147,6 +147,25 @@ public class MustacheTest
         });
     }
 
+    @Test public void testNewlineSkipping () {
+        String tmpl = "list:\n" +
+            "{{#items}}\n" +
+            "{{this}}\n" +
+            "{{/items}}\n" +
+            "{{^items}}\n" +
+            "no items\n" +
+            "{{/items}}\n" +
+            "endlist";
+        test("list:\n" +
+             "one\n" +
+             "two\n" +
+             "three\n" +
+             "endlist", tmpl, context("items", Arrays.asList("one", "two", "three")));
+        test("list:\n" +
+             "no items\n" +
+             "endlist", tmpl, context("items", Collections.emptyList()));
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
         assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));

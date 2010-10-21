@@ -75,6 +75,7 @@ public class Mustache
         int state = TEXT, startPos = 0, endPos = 0;
         StringBuilder text = new StringBuilder();
         int line = 0;
+        boolean skipNewline = false;
 
         while (true) {
             char c;
@@ -90,6 +91,13 @@ public class Mustache
 
             if (c == '\n') {
                 line++;
+                // if we just parsed an open section or close section task, we'll skip the first
+                // newline character following it, if desired; TODO: handle CR, sigh
+                if (skipNewline) {
+                    continue;
+                }
+            } else {
+                skipNewline = false;
             }
 
             switch (state) {
@@ -126,6 +134,7 @@ public class Mustache
                             // TODO: change delimiters
                         } else {
                             accum = accum.addTagSegment(text, line);
+                            skipNewline = accum.skipNewline();
                         }
                         state = TEXT;
                     } else {
@@ -142,6 +151,7 @@ public class Mustache
                         // TODO: change delimiters
                     } else {
                         accum = accum.addTagSegment(text, line);
+                        skipNewline = accum.skipNewline();
                     }
                     state = TEXT;
                 } else {
@@ -195,6 +205,12 @@ public class Mustache
             _compiler = compiler;
         }
 
+        public boolean skipNewline () {
+            // return true if we just added a compound segment which means we're immediately
+            // following the close section tag
+            return (_segs.size() > 0 && _segs.get(_segs.size()-1) instanceof CompoundSegment);
+        }
+
         public void addTextSegment (StringBuilder text) {
             if (text.length() > 0) {
                 _segs.add(new StringSegment(text.toString()));
@@ -212,11 +228,15 @@ public class Mustache
             case '#':
                 requireNoNewlines(tag, line);
                 return new Accumulator(_compiler) {
-                    public Template.Segment[] finish () {
+                    @Override public boolean skipNewline () {
+                        // if we just opened this section, we want to skip a newline
+                        return (_segs.size() == 0) || super.skipNewline();
+                    }
+                    @Override public Template.Segment[] finish () {
                         throw new MustacheException("Section missing close tag " +
                                                     "[line=" + line + ", name=" + tag1 + "]");
                     }
-                    protected Accumulator addCloseSectionSegment (String itag, int line) {
+                    @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
                         outer._segs.add(new SectionSegment(itag, super.finish()));
                         return outer;
@@ -226,11 +246,15 @@ public class Mustache
             case '^':
                 requireNoNewlines(tag, line);
                 return new Accumulator(_compiler) {
-                    public Template.Segment[] finish () {
+                    @Override public boolean skipNewline () {
+                        // if we just opened this section, we want to skip a newline
+                        return (_segs.size() == 0) || super.skipNewline();
+                    }
+                    @Override public Template.Segment[] finish () {
                         throw new MustacheException("Inverted section missing close tag " +
                                                     "[line=" + line + ", name=" + tag1 + "]");
                     }
-                    protected Accumulator addCloseSectionSegment (String itag, int line) {
+                    @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
                         outer._segs.add(new InvertedSectionSegment(itag, super.finish()));
                         return outer;
