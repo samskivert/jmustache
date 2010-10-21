@@ -126,6 +126,15 @@ public class MustacheTest
                          context("bob}bob", "bar")));
     }
 
+    @Test public void testTopLevelThis () {
+        assertEquals("bar", Mustache.compiler().compile("{{this}}").execute("bar"));
+    }
+
+    @Test public void testNestedThis () {
+        assertEquals("barbazbif", Mustache.compiler().compile("{{#things}}{{this}}{{/things}}").
+                     execute(context("things", Arrays.asList("bar", "baz", "bif"))));
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
         assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));

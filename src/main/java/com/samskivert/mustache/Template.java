@@ -20,6 +20,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * Given a name {@code foo}, the following mechanisms are supported for resolving its value
  * (and are sought in this order):
  * <ul>
+ * <li>If the variable has the special name {@code this} the context object itself will be
+ * returned. This is useful when iterating over lists.
  * <li>If the object is a {@link Map}, {@link Map#get} will be called with the string {@code foo}
  * as the key.
  * <li>A method named {@code foo} in the supplied object (with non-void return value).
@@ -101,6 +103,10 @@ public class Template
 
     protected static VariableFetcher createFetcher (Key key)
     {
+        if (key.name == THIS_NAME) {
+            return THIS_FETCHER;
+        }
+
         if (Map.class.isAssignableFrom(key.cclass)) {
             return MAP_FETCHER;
         }
@@ -225,4 +231,12 @@ public class Template
             return ((Map<?,?>)ctx).get(name);
         }
     };
+
+    protected static final VariableFetcher THIS_FETCHER = new VariableFetcher() {
+        public Object get (Object ctx, String name) throws Exception {
+            return ctx;
+        }
+    };
+
+    protected static final String THIS_NAME = "this".intern();
 }
