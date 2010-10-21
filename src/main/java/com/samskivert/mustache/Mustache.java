@@ -15,6 +15,12 @@ import java.util.Map;
 
 /**
  * Provides <a href="http://mustache.github.com/">Mustache</a> templating services.
+ * <p> Basic usage: <pre>{@code
+ * String source = "Hello {{arg}}!";
+ * Template tmpl = Mustache.compiler().compile(source);
+ * Map<String, Object> context = new HashMap<String, Context>();
+ * context.put("arg", "world");
+ * tmpl.execute(context); // returns "Hello world!" }</pre>
  * <p> Limitations:
  * <ul><li> Only one or two character delimiters are supported when using {{=ab cd=}} to change
  * delimiters.
@@ -23,7 +29,7 @@ import java.util.Map;
  */
 public class Mustache
 {
-    /** An interface to the Mustache compilation process. */
+    /** An interface to the Mustache compilation process. See {@link Mustache}. */
     public static class Compiler {
         /** Whether or not HTML entities are escaped by default. */
         public final boolean escapeHTML;
