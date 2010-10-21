@@ -6,10 +6,13 @@ package com.samskivert.mustache;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a compiled template.
@@ -42,7 +45,7 @@ public class Template
     public void execute (Object data, Writer out) throws MustacheException
     {
         for (Segment seg : _segs) {
-            seg.execute(data, out);
+            seg.execute(this, data, out);
         }
     }
 
@@ -64,15 +67,124 @@ public class Template
         _segs = segs;
     }
 
+    /**
+     * Called by executing segments to obtain the value of the specified variable in the supplied
+     * context.
+     */
+    protected Object getValue (Object ctx, String name)
+    {
+        if (ctx == null) {
+            throw new NullPointerException("Null context for variable '" + name + "'");
+        }
+
+        Key key = new Key(ctx.getClass(), name);
+        VariableFetcher fetcher = _fcache.get(key);
+        if (fetcher != null) {
+            try {
+                return fetcher.get(ctx, name);
+            } catch (Exception e) {
+                // zoiks! non-monomorphic call site, update the cache and try again
+                _fcache.put(key, fetcher = createFetcher(key));
+            }
+        } else {
+            fetcher = createFetcher(key);
+        }
+
+        try {
+            Object value = fetcher.get(ctx, name);
+            _fcache.put(key, fetcher);
+            return value;
+        } catch (Exception e) {
+            throw new MustacheException("Failure fetching variable '" + name + "'", e);
+        }
+    }
+
+    protected final Segment[] _segs;
+    protected final Map<Key, VariableFetcher> _fcache =
+        new ConcurrentHashMap<Key, VariableFetcher>();
+
+    protected static VariableFetcher createFetcher (Key key)
+    {
+        if (Map.class.isAssignableFrom(key.cclass)) {
+            return MAP_FETCHER;
+        }
+
+        final Method m = getMethod(key.cclass, key.name);
+        if (m != null) {
+            return new VariableFetcher() {
+                public Object get (Object ctx, String name) throws Exception {
+                    return m.invoke(ctx);
+                }
+            };
+        }
+
+        final Field f = getField(key.cclass, key.name);
+        if (f != null) {
+            return new VariableFetcher() {
+                public Object get (Object ctx, String name) throws Exception {
+                    return f.get(ctx);
+                }
+            };
+        }
+
+        throw new MustacheException("No method or field with appropriate name and not Map " +
+                                    "[var=" + key.name + ", ctx=" + key.cclass.getName() + "]");
+    }
+
+    protected static Method getMethod (Class<?> clazz, String name)
+    {
+        Method m;
+        try {
+            m = clazz.getDeclaredMethod(name);
+            if (!m.isAccessible()) {
+                m.setAccessible(true);
+            }
+            return m;
+        } catch (Exception e) {
+            // fall through
+        }
+        try {
+            m = clazz.getDeclaredMethod(
+                "get" + Character.toUpperCase(name.charAt(0)) + name.substring(1));
+            if (!m.isAccessible()) {
+                m.setAccessible(true);
+            }
+            return m;
+        } catch (Exception e) {
+            // fall through
+        }
+
+        Class<?> sclass = clazz.getSuperclass();
+        if (sclass != Object.class && sclass != null) {
+            return getMethod(clazz.getSuperclass(), name);
+        }
+        return null;
+    }
+
+    protected static Field getField (Class<?> clazz, String name)
+    {
+        Field f;
+        try {
+            f = clazz.getDeclaredField(name);
+            if (!f.isAccessible()) {
+                f.setAccessible(true);
+            }
+            return f;
+        } catch (Exception e) {
+            // fall through
+        }
+
+        Class<?> sclass = clazz.getSuperclass();
+        if (sclass != Object.class && sclass != null) {
+            return getField(clazz.getSuperclass(), name);
+        }
+        return null;
+    }
+
     /** A template is broken into segments. */
     protected static abstract class Segment
     {
-        abstract void execute (Object ctx, Writer out);
-
-        protected Object getValue (Object ctx, String name) {
-            // TODO: support things other than values
-            return ((Map<?,?>)ctx).get(name);
-        }
+        abstract void execute (Template tmpl, Object ctx, Writer out);
 
         protected static void write (Writer out, String data) {
             try {
@@ -83,5 +195,34 @@ public class Template
         }
     }
 
-    protected final Segment[] _segs;
+    /** Used to cache variable fetchers for a given context class, name combination. */
+    protected static class Key
+    {
+        public final Class<?> cclass;
+        public final String name;
+
+        public Key (Class<?> cclass, String name) {
+            this.cclass = cclass;
+            this.name = name.intern();
+        }
+
+        @Override public int hashCode () {
+            return cclass.hashCode() * 31 + name.hashCode();
+        }
+
+        @Override public boolean equals (Object other) {
+            Key okey = (Key)other;
+            return okey.cclass == cclass && okey.name == name;
+        }
+    }
+
+    protected static abstract class VariableFetcher {
+        abstract Object get (Object ctx, String name) throws Exception;
+    }
+
+    protected static final VariableFetcher MAP_FETCHER = new VariableFetcher() {
+        public Object get (Object ctx, String name) throws Exception {
+            return ((Map<?,?>)ctx).get(name);
+        }
+    };
 }
