@@ -57,11 +57,11 @@ public class Mustache
     }
 
     /**
-     * Returns a compiler that <em>does not</em> escape HTML by default.
+     * Returns a compiler that escapes HTML by default.
      */
     public static Compiler compiler ()
     {
-        return new Compiler(false);
+        return new Compiler(true);
     }
 
     /**

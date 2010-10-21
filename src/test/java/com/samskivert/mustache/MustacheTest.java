@@ -114,9 +114,10 @@ public class MustacheTest
     }
 
     @Test public void testEscapeHTML () {
-        assertEquals("<b>", Mustache.compiler().compile("{{a}}").execute(context("a", "<b>")));
-        assertEquals("&lt;b&gt;", Mustache.compiler().escapeHTML(true).
-                     compile("{{a}}").execute(context("a", "<b>")));
+        assertEquals("&lt;b&gt;", Mustache.compiler().compile("{{a}}").
+                     execute(context("a", "<b>")));
+        assertEquals("<b>", Mustache.compiler().escapeHTML(false).compile("{{a}}").
+                     execute(context("a", "<b>")));
     }
 
     protected void test (String expected, String template, Object ctx)
