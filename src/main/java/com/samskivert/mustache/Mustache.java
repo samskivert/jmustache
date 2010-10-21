@@ -113,6 +113,7 @@ public class Mustache
                 } else {
                     text.append(start1);
                     if (c != start1) {
+                        text.append(c);
                         state = TEXT;
                     }
                 }
@@ -146,6 +147,7 @@ public class Mustache
                 } else {
                     text.append(end1);
                     if (c != end1) {
+                        text.append(c);
                         state = TAG;
                     }
                 }

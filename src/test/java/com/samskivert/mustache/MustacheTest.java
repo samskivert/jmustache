@@ -120,6 +120,12 @@ public class MustacheTest
                      execute(context("a", "<b>")));
     }
 
+    @Test public void testPartialDelimiterMatch () {
+        assertEquals("{bob}", Mustache.compiler().compile("{bob}").execute(context()));
+        assertEquals("bar", Mustache.compiler().compile("{{bob}bob}}").execute(
+                         context("bob}bob", "bar")));
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
         assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));
