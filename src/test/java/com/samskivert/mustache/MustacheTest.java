@@ -46,7 +46,7 @@ public class MustacheTest
     }
 
     @Test public void testCallSiteReuse () {
-        Template tmpl = Mustache.compile("{{foo}}");
+        Template tmpl = Mustache.compiler().compile("{{foo}}");
         Object ctx = new Object() {
             String getFoo () { return "bar"; }
         };
@@ -56,7 +56,7 @@ public class MustacheTest
     }
 
     @Test public void testCallSiteChange () {
-        Template tmpl = Mustache.compile("{{foo}}");
+        Template tmpl = Mustache.compiler().compile("{{foo}}");
         assertEquals("bar", tmpl.execute(new Object() {
             String getFoo () { return "bar"; }
         }));
@@ -113,9 +113,15 @@ public class MustacheTest
         test("foobar", "foo{{! nothing to see here}}bar", new Object());
     }
 
+    @Test public void testEscapeHTML () {
+        assertEquals("<b>", Mustache.compiler().compile("{{a}}").execute(context("a", "<b>")));
+        assertEquals("&lt;b&gt;", Mustache.compiler().escapeHTML(true).
+                     compile("{{a}}").execute(context("a", "<b>")));
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
-        assertEquals(expected, Mustache.compile(template).execute(ctx));
+        assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));
     }
 
     protected static Object context (Object... data)

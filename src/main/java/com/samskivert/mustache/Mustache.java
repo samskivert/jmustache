@@ -23,21 +23,48 @@ import java.util.Map;
  */
 public class Mustache
 {
+    /** An interface to the Mustache compilation process. */
+    public static class Compiler {
+        /** Whether or not HTML entities are escaped by default. */
+        public final boolean escapeHTML;
+
+        /** Compiles the supplied template into a repeatedly executable intermediate form. */
+        public Template compile (String template)
+        {
+            return compile(new StringReader(template));
+        }
+
+        /** Compiles the supplied template into a repeatedly executable intermediate form. */
+        public Template compile (Reader source)
+        {
+            return Mustache.compile(source, this);
+        }
+
+        /** Returns a compiler that either does or does not escape HTML by default. */
+        public Compiler escapeHTML (boolean escapeHTML) {
+            return new Compiler(escapeHTML);
+        }
+
+        protected Compiler (boolean escapeHTML) {
+            this.escapeHTML = escapeHTML;
+        }
+    }
+
     /**
-     * Compiles the supplied template into a repeatedly executable intermediate form.
+     * Returns a compiler that <em>does not</em> escape HTML by default.
      */
-    public static Template compile (String template)
+    public static Compiler compiler ()
     {
-        return compile(new StringReader(template));
+        return new Compiler(false);
     }
 
     /**
      * Compiles the supplied template into a repeatedly executable intermediate form.
      */
-    public static Template compile (Reader source)
+    protected static Template compile (Reader source, Compiler compiler)
     {
         // a hand-rolled parser; whee!
-        Accumulator accum = new Accumulator();
+        Accumulator accum = new Accumulator(compiler);
         char start1 = '{', start2 = '{', end1 = '}', end2 = '}';
         int state = TEXT, startPos = 0, endPos = 0;
         StringBuilder text = new StringBuilder();
@@ -156,6 +183,10 @@ public class Mustache
     protected static final int TAG = 3;
 
     protected static class Accumulator {
+        public Accumulator (Compiler compiler) {
+            _compiler = compiler;
+        }
+
         public void addTextSegment (StringBuilder text) {
             if (text.length() > 0) {
                 _segs.add(new StringSegment(text.toString()));
@@ -172,7 +203,7 @@ public class Mustache
             switch (tag.charAt(0)) {
             case '#':
                 requireNoNewlines(tag, line);
-                return new Accumulator() {
+                return new Accumulator(_compiler) {
                     public Template.Segment[] finish () {
                         throw new MustacheException("Section missing close tag " +
                                                     "[line=" + line + ", name=" + tag1 + "]");
@@ -186,7 +217,7 @@ public class Mustache
 
             case '^':
                 requireNoNewlines(tag, line);
-                return new Accumulator() {
+                return new Accumulator(_compiler) {
                     public Template.Segment[] finish () {
                         throw new MustacheException("Inverted section missing close tag " +
                                                     "[line=" + line + ", name=" + tag1 + "]");
@@ -213,7 +244,7 @@ public class Mustache
 
             default:
                 requireNoNewlines(tag, line);
-                _segs.add(new VariableSegment(tag, true));
+                _segs.add(new VariableSegment(tag, _compiler.escapeHTML));
                 return this;
             }
         }
@@ -243,6 +274,7 @@ public class Mustache
             }
         }
 
+        protected Compiler _compiler;
         protected final List<Template.Segment> _segs = new ArrayList<Template.Segment>();
     }
 
