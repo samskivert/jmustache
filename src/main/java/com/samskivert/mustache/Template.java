@@ -75,6 +75,15 @@ public class Template
             throw new NullPointerException("Null context for variable '" + name + "'");
         }
 
+        // if we're dealing with a composite key, resolve each component and use the result to
+        // resolve the subsequent component and so forth
+        if (name.indexOf(".") != -1) {
+            for (String comp : name.split("\\.")) {
+                ctx = getValue(ctx, comp);
+            }
+            return ctx;
+        }
+
         Key key = new Key(ctx.getClass(), name);
         VariableFetcher fetcher = _fcache.get(key);
         if (fetcher != null) {

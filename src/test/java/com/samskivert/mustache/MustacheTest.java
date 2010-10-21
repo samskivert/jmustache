@@ -135,6 +135,18 @@ public class MustacheTest
                      execute(context("things", Arrays.asList("bar", "baz", "bif"))));
     }
 
+    @Test public void testStructuredVariable () {
+        test("hello", "{{foo.bar.baz}}", new Object() {
+            Object foo () {
+                return new Object() {
+                    Object bar = new Object() {
+                        String baz = "hello";
+                    };
+                };
+            }
+        });
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
         assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));
