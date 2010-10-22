@@ -4,7 +4,7 @@
   <groupId>com.samskivert</groupId>
   <artifactId>jmustache</artifactId>
   <packaging>jar</packaging>
-  <version>1.0</version>
+  <version>1.1-SNAPSHOT</version>
   <name>jmustache</name>
   <description>A Java implementation of the Mustache templating language.</description>
   <url>http://code.google.com/p/jmustache/</url>
@@ -35,9 +35,9 @@
   </developers>
 
   <scm>
-    <connection>scm:svn:http://jmustache.googlecode.com/svn/tags/jmustache-1.0</connection>
-    <developerConnection>scm:svn:https://jmustache.googlecode.com/svn/tags/jmustache-1.0</developerConnection>
-    <url>http://jmustache.googlecode.com/svn/tags/jmustache-1.0</url>
+    <connection>scm:svn:http://jmustache.googlecode.com/svn/trunk/</connection>
+    <developerConnection>scm:svn:https://jmustache.googlecode.com/svn/trunk/</developerConnection>
+    <url>http://jmustache.googlecode.com/svn/trunk/</url>
   </scm>
 
   <dependencies>
