@@ -387,12 +387,16 @@ public class Mustache
                 return; // TODO: configurable behavior on missing values
             }
             if (value instanceof Iterable<?>) {
+                value = ((Iterable<?>)value).iterator();
+            }
+            if (value instanceof Iterator<?>) {
                 Template.Mode mode = null;
-                for (Iterator<?> iter = ((Iterable<?>)value).iterator(); iter.hasNext(); ) {
+                int index = 0;
+                for (Iterator<?> iter = (Iterator<?>)value; iter.hasNext(); ) {
                     Object elem = iter.next();
                     mode = (mode == null) ? Template.Mode.FIRST :
                         (iter.hasNext() ? Template.Mode.OTHER : Template.Mode.LAST);
-                    executeSegs(tmpl, ctx.nest(elem, mode), out);
+                    executeSegs(tmpl, ctx.nest(elem, ++index, mode), out);
                 }
             } else if (value instanceof Boolean) {
                 if ((Boolean)value) {
@@ -402,18 +406,10 @@ public class Mustache
                 for (int ii = 0, ll = Array.getLength(value); ii < ll; ii++) {
                     Template.Mode mode = (ii == 0) ? Template.Mode.FIRST :
                         ((ii == ll-1) ? Template.Mode.LAST : Template.Mode.OTHER);
-                    executeSegs(tmpl, ctx.nest(Array.get(value, ii), mode), out);
-                }
-            } else if (value instanceof Iterator<?>) {
-                Template.Mode mode = null;
-                for (Iterator<?> iter = (Iterator<?>)value; iter.hasNext(); ) {
-                    Object elem = iter.next();
-                    mode = (mode == null) ? Template.Mode.FIRST :
-                        (iter.hasNext() ? Template.Mode.OTHER : Template.Mode.LAST);
-                    executeSegs(tmpl, ctx.nest(elem, mode), out);
+                    executeSegs(tmpl, ctx.nest(Array.get(value, ii), ii+1, mode), out);
                 }
             } else {
-                executeSegs(tmpl, ctx.nest(value, Template.Mode.OTHER), out);
+                executeSegs(tmpl, ctx.nest(value, 0, Template.Mode.OTHER), out);
             }
         }
     }

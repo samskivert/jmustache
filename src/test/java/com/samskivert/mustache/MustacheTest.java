@@ -188,6 +188,11 @@ public class MustacheTest
              context("things", Arrays.asList("foo", "bar", "baz")));
     }
 
+    @Test public void testIndex () {
+        test("123", "{{#things}}{{-index}}{{/things}}",
+             context("things", Arrays.asList("foo", "bar", "baz")));
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
         assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));

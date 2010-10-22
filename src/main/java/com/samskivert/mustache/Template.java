@@ -42,7 +42,7 @@ public class Template
      */
     public void execute (Object context, Writer out) throws MustacheException
     {
-        Context ctx = new Context(context, null, Mode.OTHER);
+        Context ctx = new Context(context, null, 0, Mode.OTHER);
         for (Segment seg : _segs) {
             seg.execute(this, ctx, out);
         }
@@ -100,6 +100,8 @@ public class Template
             return ctx.mode == Mode.FIRST;
         } else if (name == LAST_NAME) {
             return ctx.mode == Mode.LAST;
+        } else if (name == INDEX_NAME) {
+            return ctx.index;
         }
 
         while (ctx != null) {
@@ -242,16 +244,18 @@ public class Template
     {
         public final Object data;
         public final Context parent;
+        public final int index;
         public final Mode mode;
 
-        public Context (Object data, Context parent, Mode mode) {
+        public Context (Object data, Context parent, int index, Mode mode) {
             this.data = data;
             this.parent = parent;
+            this.index = index;
             this.mode = mode;
         }
 
-        public Context nest (Object data, Mode mode) {
-            return new Context(data, this, mode);
+        public Context nest (Object data, int index, Mode mode) {
+            return new Context(data, this, index, mode);
         }
     }
 
@@ -309,4 +313,5 @@ public class Template
     protected static final String THIS_NAME = "this".intern();
     protected static final String FIRST_NAME = "-first".intern();
     protected static final String LAST_NAME = "-last".intern();
+    protected static final String INDEX_NAME = "-index".intern();
 }
