@@ -42,7 +42,7 @@ public class Template
      */
     public void execute (Object context, Writer out) throws MustacheException
     {
-        Context ctx = new Context(context, null);
+        Context ctx = new Context(context, null, Mode.OTHER);
         for (Segment seg : _segs) {
             seg.execute(this, ctx, out);
         }
@@ -67,9 +67,41 @@ public class Template
     /**
      * Called by executing segments to obtain the value of the specified variable in the supplied
      * context.
+     *
+     * @param ctx the context in which to look up the variable.
+     * @param name the name of the variable to be resolved, which must be an interned string.
      */
     protected Object getValue (Context ctx, String name)
     {
+        // if we're dealing with a compound key, resolve each component and use the result to
+        // resolve the subsequent component and so forth
+        if (name.indexOf(".") != -1) {
+            String[] comps = name.split("\\.");
+            // we want to allow the first component of a compound key to be located in a parent
+            // context, but once we're selecting sub-components, they must only be resolved in the
+            // object that represents that component
+            Object data = getValue(ctx, comps[0].intern());
+            for (int ii = 1; ii < comps.length; ii++) {
+                // generate more helpful error message
+                if (data == null) {
+                    throw new NullPointerException(
+                        "Null context for compound variable '" + name + "'. " +
+                        "The component previous to '" + comps[ii] + "' resolved to null.");
+                }
+                // once we step into a composite key, we drop the ability to query our parent
+                // contexts; that would be weird and confusing
+                data = getValueIn(data, comps[ii].intern());
+            }
+            return data;
+        }
+
+        // handle our special variables
+        if (name == FIRST_NAME) {
+            return ctx.mode == Mode.FIRST;
+        } else if (name == LAST_NAME) {
+            return ctx.mode == Mode.LAST;
+        }
+
         while (ctx != null) {
             Object value = getValueIn(ctx.data, name);
             if (value != null) {
@@ -85,17 +117,6 @@ public class Template
     {
         if (data == null) {
             throw new NullPointerException("Null context for variable '" + name + "'");
-        }
-
-        // if we're dealing with a composite key, resolve each component and use the result to
-        // resolve the subsequent component and so forth
-        if (name.indexOf(".") != -1) {
-            for (String comp : name.split("\\.")) {
-                // once we step into a composite key, we drop the ability to query our parent
-                // contexts; that would be weird and confusing
-                data = getValueIn(data, comp);
-            }
-            return data;
         }
 
         Key key = new Key(data.getClass(), name);
@@ -215,18 +236,22 @@ public class Template
         return null;
     }
 
+    protected static enum Mode { FIRST, OTHER, LAST };
+
     protected static class Context
     {
         public final Object data;
         public final Context parent;
+        public final Mode mode;
 
-        public Context (Object data, Context parent) {
+        public Context (Object data, Context parent, Mode mode) {
             this.data = data;
             this.parent = parent;
+            this.mode = mode;
         }
 
-        public Context nest (Object data) {
-            return new Context(data, this);
+        public Context nest (Object data, Mode mode) {
+            return new Context(data, this, mode);
         }
     }
 
@@ -252,7 +277,7 @@ public class Template
 
         public Key (Class<?> cclass, String name) {
             this.cclass = cclass;
-            this.name = name.intern();
+            this.name = name;
         }
 
         @Override public int hashCode () {
@@ -282,4 +307,6 @@ public class Template
     };
 
     protected static final String THIS_NAME = "this".intern();
+    protected static final String FIRST_NAME = "-first".intern();
+    protected static final String LAST_NAME = "-last".intern();
 }

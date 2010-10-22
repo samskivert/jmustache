@@ -178,6 +178,16 @@ public class MustacheTest
                      "things", Arrays.asList(context("name", "bar"), context("name", "baz"))));
     }
 
+    @Test public void testFirst () {
+        test("foo|bar|baz", "{{#things}}{{^-first}}|{{/-first}}{{this}}{{/things}}",
+             context("things", Arrays.asList("foo", "bar", "baz")));
+    }
+
+    @Test public void testLast () {
+        test("foo|bar|baz", "{{#things}}{{this}}{{^-last}}|{{/-last}}{{/things}}",
+             context("things", Arrays.asList("foo", "bar", "baz")));
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
         assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));

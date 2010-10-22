@@ -94,6 +94,7 @@ public class Mustache
                 // if we just parsed an open section or close section task, we'll skip the first
                 // newline character following it, if desired; TODO: handle CR, sigh
                 if (skipNewline) {
+                    skipNewline = false;
                     continue;
                 }
             } else {
@@ -133,6 +134,7 @@ public class Mustache
                         if (text.charAt(0) == '=') {
                             // TODO: change delimiters
                         } else {
+                            sanityCheckTag(text, line, start1, start2);
                             accum = accum.addTagSegment(text, line);
                             skipNewline = accum.skipNewline();
                         }
@@ -150,6 +152,7 @@ public class Mustache
                     if (text.charAt(0) == '=') {
                         // TODO: change delimiters
                     } else {
+                        sanityCheckTag(text, line, start1, start2);
                         accum = accum.addTagSegment(text, line);
                         skipNewline = accum.skipNewline();
                     }
@@ -186,6 +189,19 @@ public class Mustache
     }
 
     private Mustache () {} // no instantiateski
+
+    protected static void sanityCheckTag (StringBuilder accum, int line, char start1, char start2)
+    {
+        for (int ii = 0, ll = accum.length(); ii < ll; ii++) {
+            if (accum.charAt(ii) == start1) {
+                if (start2 == -1 || (ii < ll-1 && accum.charAt(ii+1) == start2)) {
+                    throw new MustacheException(
+                        "Tag contains start tag delimiter, probably missing close delimiter " +
+                        "[line=" + line + ", tag=" + accum + "]");
+                }
+            }
+        }
+    }
 
     protected static String escapeHTML (String text)
     {
@@ -234,7 +250,7 @@ public class Mustache
                     }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheException("Section missing close tag " +
-                                                    "[line=" + line + ", name=" + tag1 + "]");
+                                                    "[line=" + line + ", tag=" + tag1 + "]");
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
@@ -252,7 +268,7 @@ public class Mustache
                     }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheException("Inverted section missing close tag " +
-                                                    "[line=" + line + ", name=" + tag1 + "]");
+                                                    "[line=" + line + ", tag=" + tag1 + "]");
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
@@ -287,13 +303,13 @@ public class Mustache
 
         protected Accumulator addCloseSectionSegment (String tag, int line) {
             throw new MustacheException("Section close tag with no open tag " +
-                                        "[line=" + line + ", name=" + tag + "]");
+                                        "[line=" + line + ", tag=" + tag + "]");
         }
 
         protected static void requireNoNewlines (String tag, int line) {
             if (tag.indexOf("\n") != -1 || tag.indexOf("\r") != -1) {
                 throw new MustacheException("Invalid tag name: contains newlne " +
-                                            "[line=" + line + ", name=" + tag + "]");
+                                            "[line=" + line + ", tag=" + tag + "]");
             }
         }
 
@@ -324,7 +340,7 @@ public class Mustache
     /** A helper class for named segments. */
     protected static abstract class NamedSegment extends Template.Segment {
         protected NamedSegment (String name) {
-            _name = name;
+            _name = name.intern();
         }
         protected final String _name;
     }
@@ -371,9 +387,12 @@ public class Mustache
                 return; // TODO: configurable behavior on missing values
             }
             if (value instanceof Iterable<?>) {
-                Iterable<?> iable = (Iterable<?>)value;
-                for (Object elem : iable) {
-                    executeSegs(tmpl, ctx.nest(elem), out);
+                Template.Mode mode = null;
+                for (Iterator<?> iter = ((Iterable<?>)value).iterator(); iter.hasNext(); ) {
+                    Object elem = iter.next();
+                    mode = (mode == null) ? Template.Mode.FIRST :
+                        (iter.hasNext() ? Template.Mode.OTHER : Template.Mode.LAST);
+                    executeSegs(tmpl, ctx.nest(elem, mode), out);
                 }
             } else if (value instanceof Boolean) {
                 if ((Boolean)value) {
@@ -381,15 +400,20 @@ public class Mustache
                 }
             } else if (value.getClass().isArray()) {
                 for (int ii = 0, ll = Array.getLength(value); ii < ll; ii++) {
-                    executeSegs(tmpl, ctx.nest(Array.get(value, ii)), out);
+                    Template.Mode mode = (ii == 0) ? Template.Mode.FIRST :
+                        ((ii == ll-1) ? Template.Mode.LAST : Template.Mode.OTHER);
+                    executeSegs(tmpl, ctx.nest(Array.get(value, ii), mode), out);
                 }
             } else if (value instanceof Iterator<?>) {
-                Iterator<?> iter = (Iterator<?>)value;
-                while (iter.hasNext()) {
-                    executeSegs(tmpl, ctx.nest(iter.next()), out);
+                Template.Mode mode = null;
+                for (Iterator<?> iter = (Iterator<?>)value; iter.hasNext(); ) {
+                    Object elem = iter.next();
+                    mode = (mode == null) ? Template.Mode.FIRST :
+                        (iter.hasNext() ? Template.Mode.OTHER : Template.Mode.LAST);
+                    executeSegs(tmpl, ctx.nest(elem, mode), out);
                 }
             } else {
-                executeSegs(tmpl, ctx.nest(value), out);
+                executeSegs(tmpl, ctx.nest(value, Template.Mode.OTHER), out);
             }
         }
     }
