@@ -8,9 +8,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.Deque;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -44,8 +42,9 @@ public class Template
      */
     public void execute (Object context, Writer out) throws MustacheException
     {
+        Context ctx = new Context(context, null);
         for (Segment seg : _segs) {
-            seg.execute(this, context, out);
+            seg.execute(this, ctx, out);
         }
     }
 
@@ -69,9 +68,22 @@ public class Template
      * Called by executing segments to obtain the value of the specified variable in the supplied
      * context.
      */
-    protected Object getValue (Object ctx, String name)
+    protected Object getValue (Context ctx, String name)
     {
-        if (ctx == null) {
+        while (ctx != null) {
+            Object value = getValueIn(ctx.data, name);
+            if (value != null) {
+                return value;
+            }
+            ctx = ctx.parent;
+        }
+        // we've popped all the way off the top of our stack of contexts, so fail
+        throw new MustacheException("No key, method or field with name '" + name + "'");
+    }
+
+    protected Object getValueIn (Object data, String name)
+    {
+        if (data == null) {
             throw new NullPointerException("Null context for variable '" + name + "'");
         }
 
@@ -79,26 +91,34 @@ public class Template
         // resolve the subsequent component and so forth
         if (name.indexOf(".") != -1) {
             for (String comp : name.split("\\.")) {
-                ctx = getValue(ctx, comp);
+                // once we step into a composite key, we drop the ability to query our parent
+                // contexts; that would be weird and confusing
+                data = getValueIn(data, comp);
             }
-            return ctx;
+            return data;
         }
 
-        Key key = new Key(ctx.getClass(), name);
+        Key key = new Key(data.getClass(), name);
         VariableFetcher fetcher = _fcache.get(key);
         if (fetcher != null) {
             try {
-                return fetcher.get(ctx, name);
+                return fetcher.get(data, name);
             } catch (Exception e) {
                 // zoiks! non-monomorphic call site, update the cache and try again
-                _fcache.put(key, fetcher = createFetcher(key));
+                fetcher = createFetcher(key);
             }
         } else {
             fetcher = createFetcher(key);
         }
 
+        // if we were unable to create a fetcher, just return null and our caller can either try
+        // the parent context, or do le freak out
+        if (fetcher == null) {
+            return null;
+        }
+
         try {
-            Object value = fetcher.get(ctx, name);
+            Object value = fetcher.get(data, name);
             _fcache.put(key, fetcher);
             return value;
         } catch (Exception e) {
@@ -138,8 +158,7 @@ public class Template
             };
         }
 
-        throw new MustacheException("No method or field with appropriate name and not Map " +
-                                    "[var=" + key.name + ", ctx=" + key.cclass.getName() + "]");
+        return null;
     }
 
     protected static Method getMethod (Class<?> clazz, String name)
@@ -196,10 +215,25 @@ public class Template
         return null;
     }
 
+    protected static class Context
+    {
+        public final Object data;
+        public final Context parent;
+
+        public Context (Object data, Context parent) {
+            this.data = data;
+            this.parent = parent;
+        }
+
+        public Context nest (Object data) {
+            return new Context(data, this);
+        }
+    }
+
     /** A template is broken into segments. */
     protected static abstract class Segment
     {
-        abstract void execute (Template tmpl, Object ctx, Writer out);
+        abstract void execute (Template tmpl, Context ctx, Writer out);
 
         protected static void write (Writer out, String data) {
             try {

@@ -104,9 +104,8 @@ public class MustacheTest
 
     @Test public void testNestedListSection () {
         test("1234", "{{#a}}{{#b}}{{c}}{{/b}}{{#d}}{{e}}{{/d}}{{/a}}",
-             context("a", new Object[] {
-                     context("b", new Object[] { context("c", "1"), context("c", "2") }),
-                     context("d", new Object[] { context("e", "3"), context("e", "4") }) }));
+             context("a", context("b", new Object[] { context("c", "1"), context("c", "2") },
+                                  "d", new Object[] { context("e", "3"), context("e", "4") })));
     }
 
     @Test public void testComment () {
@@ -164,6 +163,19 @@ public class MustacheTest
         test("list:\n" +
              "no items\n" +
              "endlist", tmpl, context("items", Collections.emptyList()));
+    }
+
+    @Test public void testNestedContexts () {
+        test("foo((foobar)(foobaz))", "{{name}}({{#things}}({{name}}{{thing_name}}){{/things}})",
+             context("name", "foo",
+                     "things", Arrays.asList(context("thing_name", "bar"),
+                                             context("thing_name", "baz"))));
+    }
+
+    @Test public void testShadowedContext () {
+        test("foo((bar)(baz))", "{{name}}({{#things}}({{name}}){{/things}})",
+             context("name", "foo",
+                     "things", Arrays.asList(context("name", "bar"), context("name", "baz"))));
     }
 
     protected void test (String expected, String template, Object ctx)

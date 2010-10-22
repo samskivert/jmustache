@@ -18,7 +18,7 @@ import java.util.Map;
  * <p> Basic usage: <pre>{@code
  * String source = "Hello {{arg}}!";
  * Template tmpl = Mustache.compiler().compile(source);
- * Map<String, Object> context = new HashMap<String, Context>();
+ * Map<String, Object> context = new HashMap<String, Object>();
  * context.put("arg", "world");
  * tmpl.execute(context); // returns "Hello world!" }</pre>
  * <p> Limitations:
@@ -315,7 +315,7 @@ public class Mustache
         public StringSegment (String text) {
             _text = text;
         }
-        @Override public void execute (Template tmpl, Object ctx, Writer out) {
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             write(out, _text);
         }
         protected final String _text;
@@ -335,7 +335,7 @@ public class Mustache
             super(name);
             _escapeHTML = escapeHTML;
         }
-        @Override public void execute (Template tmpl, Object ctx, Writer out)  {
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getValue(ctx, _name);
             // TODO: configurable behavior on missing values
             if (value != null) {
@@ -352,7 +352,7 @@ public class Mustache
             super(name);
             _segs = segs;
         }
-        protected void executeSegs (Template tmpl, Object ctx, Writer out)  {
+        protected void executeSegs (Template tmpl, Template.Context ctx, Writer out)  {
             for (Template.Segment seg : _segs) {
                 seg.execute(tmpl, ctx, out);
             }
@@ -365,7 +365,7 @@ public class Mustache
         public SectionSegment (String name, Template.Segment[] segs) {
             super(name, segs);
         }
-        @Override public void execute (Template tmpl, Object ctx, Writer out)  {
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getValue(ctx, _name);
             if (value == null) {
                 return; // TODO: configurable behavior on missing values
@@ -373,7 +373,7 @@ public class Mustache
             if (value instanceof Iterable<?>) {
                 Iterable<?> iable = (Iterable<?>)value;
                 for (Object elem : iable) {
-                    executeSegs(tmpl, elem, out);
+                    executeSegs(tmpl, ctx.nest(elem), out);
                 }
             } else if (value instanceof Boolean) {
                 if ((Boolean)value) {
@@ -381,15 +381,15 @@ public class Mustache
                 }
             } else if (value.getClass().isArray()) {
                 for (int ii = 0, ll = Array.getLength(value); ii < ll; ii++) {
-                    executeSegs(tmpl, Array.get(value, ii), out);
+                    executeSegs(tmpl, ctx.nest(Array.get(value, ii)), out);
                 }
             } else if (value instanceof Iterator<?>) {
                 Iterator<?> iter = (Iterator<?>)value;
                 while (iter.hasNext()) {
-                    executeSegs(tmpl, iter.next(), out);
+                    executeSegs(tmpl, ctx.nest(iter.next()), out);
                 }
             } else {
-                executeSegs(tmpl, value, out);
+                executeSegs(tmpl, ctx.nest(value), out);
             }
         }
     }
@@ -399,7 +399,7 @@ public class Mustache
         public InvertedSectionSegment (String name, Template.Segment[] segs) {
             super(name, segs);
         }
-        @Override public void execute (Template tmpl, Object ctx, Writer out)  {
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getValue(ctx, _name);
             if (value == null) {
                 executeSegs(tmpl, ctx, out); // TODO: configurable behavior on missing values
