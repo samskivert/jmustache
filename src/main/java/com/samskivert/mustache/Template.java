@@ -71,7 +71,7 @@ public class Template
      * @param ctx the context in which to look up the variable.
      * @param name the name of the variable to be resolved, which must be an interned string.
      */
-    protected Object getValue (Context ctx, String name)
+    protected Object getValue (Context ctx, String name, int line)
     {
         // if we're dealing with a compound key, resolve each component and use the result to
         // resolve the subsequent component and so forth
@@ -80,17 +80,17 @@ public class Template
             // we want to allow the first component of a compound key to be located in a parent
             // context, but once we're selecting sub-components, they must only be resolved in the
             // object that represents that component
-            Object data = getValue(ctx, comps[0].intern());
+            Object data = getValue(ctx, comps[0].intern(), line);
             for (int ii = 1; ii < comps.length; ii++) {
                 // generate more helpful error message
                 if (data == null) {
                     throw new NullPointerException(
-                        "Null context for compound variable '" + name + "'. " +
-                        "The component previous to '" + comps[ii] + "' resolved to null.");
+                        "Null context for compound variable '" + name + "' on line " + line +
+                        ". '" + comps[ii - 1] + "' resolved to null.");
                 }
                 // once we step into a composite key, we drop the ability to query our parent
                 // contexts; that would be weird and confusing
-                data = getValueIn(data, comps[ii].intern());
+                data = getValueIn(data, comps[ii].intern(), line);
             }
             return data;
         }
@@ -105,20 +105,22 @@ public class Template
         }
 
         while (ctx != null) {
-            Object value = getValueIn(ctx.data, name);
+            Object value = getValueIn(ctx.data, name, line);
             if (value != null) {
                 return value;
             }
             ctx = ctx.parent;
         }
         // we've popped all the way off the top of our stack of contexts, so fail
-        throw new MustacheException("No key, method or field with name '" + name + "'");
+        throw new MustacheException(
+            "No key, method or field with name '" + name + "' on line " + line);
     }
 
-    protected Object getValueIn (Object data, String name)
+    protected Object getValueIn (Object data, String name, int line)
     {
         if (data == null) {
-            throw new NullPointerException("Null context for variable '" + name + "'");
+            throw new NullPointerException(
+                "Null context for variable '" + name + "' on line " + line);
         }
 
         Key key = new Key(data.getClass(), name);
@@ -145,7 +147,8 @@ public class Template
             _fcache.put(key, fetcher);
             return value;
         } catch (Exception e) {
-            throw new MustacheException("Failure fetching variable '" + name + "'", e);
+            throw new MustacheException(
+                "Failure fetching variable '" + name + "' on line " + line, e);
         }
     }
 

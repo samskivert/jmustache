@@ -193,6 +193,16 @@ public class MustacheTest
              context("things", Arrays.asList("foo", "bar", "baz")));
     }
 
+    @Test public void testLineReporting () {
+        String tmpl = "first line\n{{nonexistent}}\nsecond line";
+        try {
+            Mustache.compiler().compile(tmpl).execute(new Object());
+            fail("Referencing a nonexistent variable should throw MustacheException");
+        } catch (MustacheException e) {
+            assertTrue(e.getMessage().contains("line 2"));
+        }
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
         assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));

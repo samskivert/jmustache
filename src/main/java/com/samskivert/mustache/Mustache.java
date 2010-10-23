@@ -11,7 +11,6 @@ import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Provides <a href="http://mustache.github.com/">Mustache</a> templating services.
@@ -72,9 +71,9 @@ public class Mustache
         // a hand-rolled parser; whee!
         Accumulator accum = new Accumulator(compiler);
         char start1 = '{', start2 = '{', end1 = '}', end2 = '}';
-        int state = TEXT, startPos = 0, endPos = 0;
+        int state = TEXT;
         StringBuilder text = new StringBuilder();
-        int line = 0;
+        int line = 1;
         boolean skipNewline = false;
 
         while (true) {
@@ -205,8 +204,8 @@ public class Mustache
 
     protected static String escapeHTML (String text)
     {
-        for (int ii = 0; ii < ATTR_ESCAPES.length; ii++) {
-            text = text.replace(ATTR_ESCAPES[ii][0], ATTR_ESCAPES[ii][1]);
+        for (String[] escape : ATTR_ESCAPES) {
+            text = text.replace(escape[0], escape[1]);
         }
         return text;
     }
@@ -234,7 +233,7 @@ public class Mustache
             }
         }
 
-        public Accumulator addTagSegment (StringBuilder accum, final int line) {
+        public Accumulator addTagSegment (StringBuilder accum, final int tagLine) {
             final Accumulator outer = this;
             String tag = accum.toString().trim();
             final String tag1 = tag.substring(1).trim();
@@ -242,7 +241,7 @@ public class Mustache
 
             switch (tag.charAt(0)) {
             case '#':
-                requireNoNewlines(tag, line);
+                requireNoNewlines(tag, tagLine);
                 return new Accumulator(_compiler) {
                     @Override public boolean skipNewline () {
                         // if we just opened this section, we want to skip a newline
@@ -250,17 +249,17 @@ public class Mustache
                     }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheException("Section missing close tag " +
-                                                    "[line=" + line + ", tag=" + tag1 + "]");
+                                                    "[line=" + tagLine + ", tag=" + tag1 + "]");
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
-                        outer._segs.add(new SectionSegment(itag, super.finish()));
+                        outer._segs.add(new SectionSegment(itag, super.finish(), tagLine));
                         return outer;
                     }
                 };
 
             case '^':
-                requireNoNewlines(tag, line);
+                requireNoNewlines(tag, tagLine);
                 return new Accumulator(_compiler) {
                     @Override public boolean skipNewline () {
                         // if we just opened this section, we want to skip a newline
@@ -268,31 +267,31 @@ public class Mustache
                     }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheException("Inverted section missing close tag " +
-                                                    "[line=" + line + ", tag=" + tag1 + "]");
+                                                    "[line=" + tagLine + ", tag=" + tag1 + "]");
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
-                        outer._segs.add(new InvertedSectionSegment(itag, super.finish()));
+                        outer._segs.add(new InvertedSectionSegment(itag, super.finish(), tagLine));
                         return outer;
                     }
                 };
 
             case '/':
-                requireNoNewlines(tag, line);
-                return addCloseSectionSegment(tag1, line);
+                requireNoNewlines(tag, tagLine);
+                return addCloseSectionSegment(tag1, tagLine);
 
             case '!':
                 // comment!, ignore
                 return this;
 
             case '&':
-                requireNoNewlines(tag, line);
-                _segs.add(new VariableSegment(tag1, false));
+                requireNoNewlines(tag, tagLine);
+                _segs.add(new VariableSegment(tag1, false, tagLine));
                 return this;
 
             default:
-                requireNoNewlines(tag, line);
-                _segs.add(new VariableSegment(tag, _compiler.escapeHTML));
+                requireNoNewlines(tag, tagLine);
+                _segs.add(new VariableSegment(tag, _compiler.escapeHTML, tagLine));
                 return this;
             }
         }
@@ -308,7 +307,7 @@ public class Mustache
 
         protected static void requireNoNewlines (String tag, int line) {
             if (tag.indexOf("\n") != -1 || tag.indexOf("\r") != -1) {
-                throw new MustacheException("Invalid tag name: contains newlne " +
+                throw new MustacheException("Invalid tag name: contains newline " +
                                             "[line=" + line + ", tag=" + tag + "]");
             }
         }
@@ -339,20 +338,22 @@ public class Mustache
 
     /** A helper class for named segments. */
     protected static abstract class NamedSegment extends Template.Segment {
-        protected NamedSegment (String name) {
+        protected NamedSegment (String name, int line) {
             _name = name.intern();
+            _line = line;
         }
         protected final String _name;
+        protected final int _line;
     }
 
     /** A segment that substitutes the contents of a variable. */
     protected static class VariableSegment extends NamedSegment {
-        public VariableSegment (String name, boolean escapeHTML) {
-            super(name);
+        public VariableSegment (String name, boolean escapeHTML, int line) {
+            super(name, line);
             _escapeHTML = escapeHTML;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
-            Object value = tmpl.getValue(ctx, _name);
+            Object value = tmpl.getValue(ctx, _name, _line);
             // TODO: configurable behavior on missing values
             if (value != null) {
                 String text = String.valueOf(value);
@@ -364,8 +365,8 @@ public class Mustache
 
     /** A helper class for compound segments. */
     protected static abstract class CompoundSegment extends NamedSegment {
-        protected CompoundSegment (String name, Template.Segment[] segs) {
-            super(name);
+        protected CompoundSegment (String name, Template.Segment[] segs, int line) {
+            super(name, line);
             _segs = segs;
         }
         protected void executeSegs (Template tmpl, Template.Context ctx, Writer out)  {
@@ -378,11 +379,11 @@ public class Mustache
 
     /** A segment that represents a section. */
     protected static class SectionSegment extends CompoundSegment {
-        public SectionSegment (String name, Template.Segment[] segs) {
-            super(name, segs);
+        public SectionSegment (String name, Template.Segment[] segs, int line) {
+            super(name, segs, line);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
-            Object value = tmpl.getValue(ctx, _name);
+            Object value = tmpl.getValue(ctx, _name, _line);
             if (value == null) {
                 return; // TODO: configurable behavior on missing values
             }
@@ -416,11 +417,11 @@ public class Mustache
 
     /** A segment that represents an inverted section. */
     protected static class InvertedSectionSegment extends CompoundSegment {
-        public InvertedSectionSegment (String name, Template.Segment[] segs) {
-            super(name, segs);
+        public InvertedSectionSegment (String name, Template.Segment[] segs, int line) {
+            super(name, segs, line);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
-            Object value = tmpl.getValue(ctx, _name);
+            Object value = tmpl.getValue(ctx, _name, _line);
             if (value == null) {
                 executeSegs(tmpl, ctx, out); // TODO: configurable behavior on missing values
             }
