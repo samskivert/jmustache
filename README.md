@@ -223,7 +223,8 @@ which would be produced without the newline trimming. Note: the current
 implementation does not handle Windows-style CRLF data. If you're a Windows
 user, how about sending me a patch?
 
-=== Nested Contexts ===
+Nested Contexts
+---------------
 
 If a variable is not found in a nested context, it is resolved in the next
 outer context. This allows usage like the following:
