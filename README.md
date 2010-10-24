@@ -102,7 +102,7 @@ Sections behave as you would expect:
  * Any other object results in a single execution of the section with that object as a context.
 
 See the code in
-[MustacheTest.java](http://code.google.com/p/jmustache/source/browse/trunk/src/test/java/com/samskivert/mustache/MustacheTest.java)
+[MustacheTest.java](http://github.com/samskivert/jmustache/blob/master/src/test/java/com/samskivert/mustache/MustacheTest.java)
 for concrete examples. See also the [Mustache
 documentation](http://mustache.github.com/mustache.5.html) for details on the
 template syntax.
