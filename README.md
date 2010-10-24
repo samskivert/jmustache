@@ -127,7 +127,7 @@ You can change the default HTML escaping behavior when obtaining a compiler:
 Special variables
 -----------------
 
-### `this`
+### this
 You can use the special variable `this` to refer to the context object itself
 instead of one of its members. This is particularly useful when iterating over
 lists.
@@ -138,7 +138,7 @@ lists.
     });
     // result: TomDickHarry
 
-### `-first` and `-last`
+### -first and -last
 You can use the special variables `-first` and `-last` to perform special
 processing for list elements. `-first` resolves to `true` when inside a section
 that is processing the first of a list of elements. It resolves to `false` at
@@ -159,7 +159,7 @@ enclosing section. If you are processing a section within a section, there is
 no way to find out whether you are in the first or last iteration of an outer
 section.
 
-### `-index`
+### -index
 The `-index` special variable contains 1 for the first iteration through a
 section, 2 for the second, 3 for the third and so forth. It contains 0 at all
 other times. Note that it also contains 0 for a section that is populated by a
