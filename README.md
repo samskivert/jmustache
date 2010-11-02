@@ -32,8 +32,8 @@ strives to provide additional benefits:
 
   * It is available via Maven Central and can thus be easily added to your
     Maven, Ivy, etc. projects by simply adding a dependency on
-    `com.samskivert:jmustache:1.0`. Or download the pre-built jar via the link
-    on the right.
+    `com.samskivert:jmustache:1.0`. Or download the [pre-built jar
+    file](http://repo1.maven.org/maven2/com/samskivert/jmustache/1.0/jmustache-1.0.jar).
   * It is reasonably performant. Templates are parsed separately from
     execution. A template will specialize its variables on (class of context,
     name) pairs so that if a variable is first resolved to be (for example) a
