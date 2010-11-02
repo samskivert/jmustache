@@ -1,7 +1,6 @@
 //
 // JMustache - A Java implementation of the Mustache templating language
 // http://github.com/samskivert/jmustache/blob/master/LICENSE
-// Copyright (c) 2010 - Michael Bayne
 
 package com.samskivert.mustache;
 
