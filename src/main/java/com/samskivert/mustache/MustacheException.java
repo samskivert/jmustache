@@ -1,6 +1,3 @@
-//
-// $Id$
-
 package com.samskivert.mustache;
 
 /**
