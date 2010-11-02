@@ -30,16 +30,21 @@ Motivations
 Its existence justified by the above motivations, this implementation then
 strives to provide additional benefits:
 
-  * It is available via Maven Central and can thus be easily added to your
-    Maven, Ivy, etc. projects by simply adding a dependency on
-    `com.samskivert:jmustache:1.0`. Or download the [pre-built jar
-    file](http://repo1.maven.org/maven2/com/samskivert/jmustache/1.0/jmustache-1.0.jar).
+  * It is available via Maven Central, see below for details.
   * It is reasonably performant. Templates are parsed separately from
     execution. A template will specialize its variables on (class of context,
     name) pairs so that if a variable is first resolved to be (for example) a
     field of the context object, that will be attempted directly on subsequent
     template invocations, and the slower full resolution will only be tried if
     accessing the variable as a field fails.
+
+Get It
+======
+
+JMustache is available via Maven Central and can thus be easily added to your
+Maven, Ivy, etc. projects by simply adding a dependency on
+`com.samskivert:jmustache:1.0`. Or download the [pre-built jar
+file](http://repo1.maven.org/maven2/com/samskivert/jmustache/1.0/jmustache-1.0.jar).
 
 Usage
 =====
