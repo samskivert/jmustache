@@ -35,8 +35,8 @@
   </developers>
 
   <scm>
-    <connection>scm:git://github.com/mrdon/jmustache.git</connection>
-    <developerConnection>scm:git@github.com:mrdon/jmustache.git</developerConnection>
+    <connection>scm:git:git://github.com/mrdon/jmustache.git</connection>
+    <developerConnection>scm:git:git@github.com:mrdon/jmustache.git</developerConnection>
     <url>http://github.com/mrdon/jmustache</url>
   </scm>
 
