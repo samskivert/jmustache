@@ -33,6 +33,7 @@ public class Mustache
     public static class Compiler {
         /** Whether or not HTML entities are escaped by default. */
         public final boolean escapeHTML;
+        private Options options;
 
         /** Compiles the supplied template into a repeatedly executable intermediate form. */
         public Template compile (String template)
@@ -48,11 +49,21 @@ public class Mustache
 
         /** Returns a compiler that either does or does not escape HTML by default. */
         public Compiler escapeHTML (boolean escapeHTML) {
-            return new Compiler(escapeHTML);
+            return new Compiler(Options.builder().setEscapeHTML(escapeHTML).build());
         }
 
         protected Compiler (boolean escapeHTML) {
-            this.escapeHTML = escapeHTML;
+            this(Options.builder().setEscapeHTML(escapeHTML).build());
+        }
+
+        protected Compiler (Options options) {
+            this.escapeHTML = options.isEscapeHTML();
+            this.options = options;
+        }
+
+        /** @since 1.1 */
+        public Options getOptions () {
+            return options;
         }
     }
 
@@ -61,7 +72,17 @@ public class Mustache
      */
     public static Compiler compiler ()
     {
-        return new Compiler(true);
+        return compiler(Options.builder().build());
+    }
+
+    /**
+     * Returns a compiler that escapes HTML by default.
+     *
+     * @since 1.1
+     */
+    public static Compiler compiler (Options options)
+    {
+        return new Compiler(options);
     }
 
     /**
@@ -185,7 +206,7 @@ public class Mustache
             throw new MustacheException("Template ended while parsing a tag TODO");
         }
 
-        return new Template(accum.finish());
+        return new Template(accum.finish(), compiler.getOptions());
     }
 
     private Mustache () {} // no instantiateski
@@ -292,7 +313,7 @@ public class Mustache
 
             default:
                 requireNoNewlines(tag, tagLine);
-                _segs.add(new VariableSegment(tag, _compiler.escapeHTML, tagLine));
+                _segs.add(new VariableSegment(tag, _compiler.getOptions().isEscapeHTML(), tagLine));
                 return this;
             }
         }
@@ -359,6 +380,9 @@ public class Mustache
             if (value != null) {
                 String text = String.valueOf(value);
                 write(out, _escapeHTML ? escapeHTML(text) : text);
+            } else {
+                throw new MustacheException(
+                "No key, method or field with name '" + _name + "' on line " + _line);
             }
         }
         protected boolean _escapeHTML;

@@ -60,9 +60,10 @@ public class Template
         return out.toString();
     }
 
-    protected Template (Segment[] segs)
+    protected Template (Segment[] segs, Options options)
     {
         _segs = segs;
+        this._options = options;
     }
 
     /**
@@ -74,27 +75,30 @@ public class Template
      */
     protected Object getValue (Context ctx, String name, int line)
     {
-        // if we're dealing with a compound key, resolve each component and use the result to
-        // resolve the subsequent component and so forth
-        if (name.indexOf(".") != -1) {
-            String[] comps = name.split("\\.");
-            // we want to allow the first component of a compound key to be located in a parent
-            // context, but once we're selecting sub-components, they must only be resolved in the
-            // object that represents that component
-            Object data = getValue(ctx, comps[0].intern(), line);
-            for (int ii = 1; ii < comps.length; ii++) {
-                // generate more helpful error message
-                if (data == null) {
-                    throw new NullPointerException(
-                        "Null context for compound variable '" + name + "' on line " + line +
-                        ". '" + comps[ii - 1] + "' resolved to null.");
+        if (!_options.isStandardsMode()) {
+            // if we're dealing with a compound key, resolve each component and use the result to
+            // resolve the subsequent component and so forth
+            if (name.indexOf(".") != -1) {
+                String[] comps = name.split("\\.");
+                // we want to allow the first component of a compound key to be located in a parent
+                // context, but once we're selecting sub-components, they must only be resolved in the
+                // object that represents that component
+                Object data = getValue(ctx, comps[0].intern(), line);
+                for (int ii = 1; ii < comps.length; ii++) {
+                    // generate more helpful error message
+                    if (data == null) {
+                        throw new NullPointerException(
+                            "Null context for compound variable '" + name + "' on line " + line +
+                            ". '" + comps[ii - 1] + "' resolved to null.");
+                    }
+                    // once we step into a composite key, we drop the ability to query our parent
+                    // contexts; that would be weird and confusing
+                    data = getValueIn(data, comps[ii].intern(), line);
                 }
-                // once we step into a composite key, we drop the ability to query our parent
-                // contexts; that would be weird and confusing
-                data = getValueIn(data, comps[ii].intern(), line);
+                return data;
             }
-            return data;
         }
+        
 
         // handle our special variables
         if (name == FIRST_NAME) {
@@ -105,16 +109,20 @@ public class Template
             return ctx.index;
         }
 
-        while (ctx != null) {
-            Object value = getValueIn(ctx.data, name, line);
-            if (value != null) {
-                return value;
+        if (_options.isStandardsMode()) {
+            return getValueIn(ctx.data, name, line);
+        } else {
+            while (ctx != null) {
+                Object value = getValueIn(ctx.data, name, line);
+                if (value != null) {
+                    return value;
+                }
+                ctx = ctx.parent;
             }
-            ctx = ctx.parent;
+            // we've popped all the way off the top of our stack of contexts, so fail
+            throw new MustacheException(
+                "No key, method or field with name '" + name + "' on line " + line);
         }
-        // we've popped all the way off the top of our stack of contexts, so fail
-        throw new MustacheException(
-            "No key, method or field with name '" + name + "' on line " + line);
     }
 
     protected Object getValueIn (Object data, String name, int line)
@@ -131,10 +139,10 @@ public class Template
                 return fetcher.get(data, name);
             } catch (Exception e) {
                 // zoiks! non-monomorphic call site, update the cache and try again
-                fetcher = createFetcher(key);
+                fetcher = createFetcher(key, _options);
             }
         } else {
-            fetcher = createFetcher(key);
+            fetcher = createFetcher(key, _options);
         }
 
         // if we were unable to create a fetcher, just return null and our caller can either try
@@ -154,14 +162,21 @@ public class Template
     }
 
     protected final Segment[] _segs;
+    private final Options _options;
     protected final Map<Key, VariableFetcher> _fcache =
         new ConcurrentHashMap<Key, VariableFetcher>();
 
-    protected static VariableFetcher createFetcher (Key key)
+    protected static VariableFetcher createFetcher (Key key, Options options)
     {
-        if (key.name == THIS_NAME) {
+        if (options.isStandardsMode()) {
+            if (".".equals(key.name)) {
+                return THIS_FETCHER;
+            }
+        } else if (key.name == THIS_NAME) {
             return THIS_FETCHER;
         }
+
+
 
         if (Map.class.isAssignableFrom(key.cclass)) {
             return MAP_FETCHER;
