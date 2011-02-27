@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.samskivert</groupId>
+  <groupId>org.twdata.com.samskivert</groupId>
   <artifactId>jmustache</artifactId>
   <packaging>jar</packaging>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1-db1-SNAPSHOT</version>
   <name>jmustache</name>
   <description>A Java implementation of the Mustache templating language.</description>
-  <url>http://github.com/samskivert/jmustache</url>
+  <url>http://github.com/mrdon/jmustache</url>
   <issueManagement>
-    <url>http://github.com/samskivert/jmustache/issues</url>
+    <url>http://github.com/mrdon/jmustache/issues</url>
   </issueManagement>
 
   <parent>
@@ -35,9 +35,9 @@
   </developers>
 
   <scm>
-    <connection>scm:git://github.com/samskivert/jmustache.git</connection>
-    <developerConnection>scm:git@github.com:samskivert/jmustache.git</developerConnection>
-    <url>http://github.com/samskivert/jmustache</url>
+    <connection>scm:git://github.com/mrdon/jmustache.git</connection>
+    <developerConnection>scm:git@github.com:mrdon/jmustache.git</developerConnection>
+    <url>http://github.com/mrdon/jmustache</url>
   </scm>
 
   <dependencies>
@@ -102,6 +102,13 @@
         <version>2.5</version>
       </plugin>
     </plugins>
+    <extensions>
+        <extension>
+            <groupId>org.jvnet.wagon-svn</groupId>
+            <artifactId>wagon-svn</artifactId>
+            <version>1.8</version>
+        </extension>
+    </extensions>
   </build>
 
   <profiles>
@@ -133,4 +140,18 @@
       </build>
     </profile>
   </profiles>
+
+    <distributionManagement>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>twdata-m2-repository</id>
+            <url>svn:https://twdata-m2-repository.googlecode.com/svn</url>
+        </repository>
+        <snapshotRepository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>twdata-m2-repository</id>
+            <url>svn:https://twdata-m2-repository.googlecode.com/svn</url>
+        </snapshotRepository>
+    </distributionManagement>
+
 </project>
