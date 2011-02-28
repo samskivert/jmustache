@@ -203,6 +203,33 @@ public class MustacheTest
         }
     }
 
+    @Test public void testStandardsModeWithNullValuesInLoop () {
+        String tmpl = "first line\n{{#nonexistent}}foo{{/nonexistent}}\nsecond line";
+        String result = Mustache.compiler().standardsMode(true).compile(tmpl).execute(new Object());
+        assertEquals("first line\nsecond line", result);
+    }
+
+    @Test public void testStandardsModeWithNullValuesInInverseLoop () {
+        String tmpl = "first line\n{{^nonexistent}}foo{{/nonexistent}} \nsecond line";
+        String result = Mustache.compiler().standardsMode(true).compile(tmpl).execute(new Object());
+        assertEquals("first line\nfoo \nsecond line", result);
+    }
+
+    @Test public void testStandardsModeWithDotValue () {
+        String tmpl = "{{#foo}}:{{.}}:{{/foo}}";
+        String result = Mustache.compiler().standardsMode(true).compile(tmpl).
+            execute(Collections.singletonMap("foo", "bar"));
+        assertEquals(":bar:", result);
+    }
+
+    @Test(expected = MustacheException.class)
+    public void testStandardsModeWithNoParentContextSearching () {
+        String tmpl = "{{#parent}}foo{{parentProperty}}bar{{/parent}}";
+        String result = Mustache.compiler().standardsMode(true).compile(tmpl).
+            execute(context("parent", new Object(),
+                            "parentProperty", "bar"));
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
         assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));
