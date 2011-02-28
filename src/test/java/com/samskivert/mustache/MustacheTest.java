@@ -209,6 +209,12 @@ public class MustacheTest
         assertEquals("first line\nsecond line", result);
     }
 
+    @Test public void testStandardsModeWithNullValuesInInverseLoop () {
+        String tmpl = "first line\n{{^nonexistent}}foo{{/nonexistent}} \nsecond line";
+        String result = Mustache.compiler(Options.builder().setStandardsMode(true).build()).compile(tmpl).execute(new Object());
+        assertEquals("first line\nfoo \nsecond line", result);
+    }
+
     @Test public void testStandardsModeWithDotValue () {
         String tmpl = "{{#foo}}:{{.}}:{{/foo}}";
         String result = Mustache.compiler(Options.builder().setStandardsMode(true).build()).compile(tmpl).execute(Collections.singletonMap("foo", "bar"));

@@ -449,6 +449,7 @@ public class Mustache
             Object value = tmpl.getValue(ctx, _name, _line);
             if (value == null) {
                 executeSegs(tmpl, ctx, out); // TODO: configurable behavior on missing values
+                return;
             }
             if (value instanceof Iterable<?>) {
                 Iterable<?> iable = (Iterable<?>)value;
