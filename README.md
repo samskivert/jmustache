@@ -88,10 +88,9 @@ Example:
     }
 
     String tmpl = "{{#persons}}{{name}}: {{age}}{{/persons}}\n";
-    Object ctx = new Object() {
+    Mustache.compiler().compile(tmpl).execute(new Object() {
         Object persons = Arrays.asList(new Person("Elvis", 75), new Person("Madonna", 52));
-    };
-    Mustache.compiler().compile(tmpl).execute(ctx, new OutputStreamWriter(System.out)));
+    });
 
     // result:
     // Elvis: 75
@@ -125,10 +124,9 @@ Not escaping HTML by default
 
 You can change the default HTML escaping behavior when obtaining a compiler:
 
-    Object ctx = new Object() {
+    Mustache.compiler().escapeHTML(false).compile("{{foo}}").execute(new Object() {
         String foo = "<bar>";
-    };
-    Mustache.compiler().escapeHTML(false).compile("{{foo}}").execute(ctx);
+    });
     // result: <bar>
     // not: &lt;bar&gt;
 
@@ -141,10 +139,9 @@ instead of one of its members. This is particularly useful when iterating over
 lists.
 
     Mustache.compiler().compile("{{this}}").execute("hello"); // returns: hello
-    Object ctx = new Object() {
+    Mustache.compiler().compile("{{#names}}{{this}}{/names}}").execute(new Object() {
         List<String> names () { return Arrays.asList("Tom", "Dick", "Harry"); }
-    };
-    Mustache.compiler().compile("{{#names}}{{this}}{/names}}").execute(ctx);
+    });
     // result: TomDickHarry
 
 ### -first and -last
@@ -159,10 +156,9 @@ One will often make use of these special variables in an inverted section, as
 follows:
 
     String tmpl = "{{#things}}{{^-first}}, {{/-first}}{{self}}{{/things}}";
-    Object ctx = new Object() {
+    Mustache.compiler().compile(tmpl).execute(new Object() {
         List<String> things = Arrays.asList("one", "two", "three");
-    };
-    Mustache.compiler().compile(tmpl).execute(ctx);
+    });
     // result: one, two, three
 
 Note that the values of `-first` and `-last` refer only to the inner-most
@@ -177,10 +173,9 @@ other times. Note that it also contains 0 for a section that is populated by a
 singleton value rather than a list.
 
     String tmpl = "My favorite things:\n{{#things}}{{-index}}. {{self}}\n{{/things}}";
-    Object ctx = new Object() {
+    Mustache.compiler().compile(tmpl).execute(new Object() {
         List<String> things = Arrays.asList("Peanut butter", "Pen spinning", "Handstands");
-    };
-    Mustache.compiler().compile(tmpl).execute(ctx);
+    });
     // result:
     // My favorite things:
     // 1. Peanut butter
@@ -194,12 +189,11 @@ In addition to resolving simple variables using the context, you can use
 compound variables to extract data from sub-objects of the current context. For
 example:
 
-    Object ctx = new Object() {
+    Mustache.compiler().compile("Hello {{field.who}}!").execute(new Object() {
         public Object field = new Object() {
             public String who () { return "world"; }
         }
-    };
-    Mustache.compiler().compile("Hello {{field.who}}!").execute(ctx);
+    });
     // result: Hello world!
 
 By taking advantage of reflection and bean-property-style lookups, you can do kooky things:
@@ -244,11 +238,10 @@ If a variable is not found in a nested context, it is resolved in the next
 outer context. This allows usage like the following:
 
     String template = "{{outer}}:\n{{#inner}}{{outer}}.{{this}}\n{{/inner}}";
-    Object ctx = new Object() {
+    Mustache.compiler().compile(template).execute(new Object() {
         String outer = "foo";
         List<String> inner = Arrays.asList("bar", "baz", "bif");
-    };
-    Mustache.compiler().compile(template).execute(ctx);
+    });
     // results:
     // foo:
     // foo.bar
