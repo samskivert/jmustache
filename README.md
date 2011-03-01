@@ -52,7 +52,7 @@ Usage
 Using JMustache is very simple. Supply your template as a `String` or a
 `Reader` and get back a `Template` that you can execute on any context:
 
-    String text = "One, two, {{{three}}. Three sir!";
+    String text = "One, two, {{three}}. Three sir!";
     Template tmpl = Mustache.compiler().compile(text);
     Map<String, String> data = new HashMap<String, String>();
     data.put("three", "five");
