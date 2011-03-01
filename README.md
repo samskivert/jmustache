@@ -92,7 +92,7 @@ Example:
     }, new OutputStreamWriter(System.out)));
 
     // result:
-    // Elvis: 74
+    // Elvis: 75
     // Madonna: 52
 
 As you can see from the example, the fields (and methods) need not be public.
