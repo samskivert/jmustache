@@ -163,6 +163,24 @@ public class Mustache
                     if (text.charAt(0) == '=') {
                         // TODO: change delimiters
                     } else {
+                        // if we haven't remapped the delimiters, and the tag starts with {{{ then
+                        // require that it end with }}} and disable HTML escaping
+                        if (start1 == '{' && start2 == '{' && text.charAt(0) == '{') {
+                            try {
+                                // we've only parsed }} at this point, so we have to slurp in
+                                // another character from the input stream and check it
+                                int end3 = (char)source.read();
+                                if (end3 != '}') {
+                                    throw new MustacheParseException(
+                                        "Invalid triple-mustache tag: {{{" + text + "}}", line);
+                                }
+                            } catch (IOException e) {
+                                throw new MustacheException(e);
+                            }
+                            // convert it into (equivalent) {{&text}} which addTagSegment handles
+                            text.replace(0, 1, "&");
+                        }
+                        // process the tag between the mustaches
                         sanityCheckTag(text, line, start1, start2);
                         accum = accum.addTagSegment(text, line);
                         skipNewline = accum.skipNewline();
@@ -193,7 +211,7 @@ public class Mustache
             accum.addTextSegment(text);
             break;
         case TAG:
-            throw new MustacheException("Template ended while parsing a tag TODO");
+            throw new MustacheParseException("Template ended while parsing a tag: " + text);
         }
 
         return new Template(accum.finish(), compiler);
@@ -206,9 +224,8 @@ public class Mustache
         for (int ii = 0, ll = accum.length(); ii < ll; ii++) {
             if (accum.charAt(ii) == start1) {
                 if (start2 == -1 || (ii < ll-1 && accum.charAt(ii+1) == start2)) {
-                    throw new MustacheException(
-                        "Tag contains start tag delimiter, probably missing close delimiter " +
-                        "[line=" + line + ", tag=" + accum + "]");
+                    throw new MustacheParseException("Tag contains start tag delimiter, probably " +
+                                                     "missing close delimiter '" + accum + "'", line);
                 }
             }
         }
@@ -260,8 +277,8 @@ public class Mustache
                         return (_segs.size() == 0) || super.skipNewline();
                     }
                     @Override public Template.Segment[] finish () {
-                        throw new MustacheException("Section missing close tag " +
-                                                    "[line=" + tagLine + ", tag=" + tag1 + "]");
+                        throw new MustacheParseException(
+                            "Section missing close tag '" + tag1 + "'", tagLine);
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
@@ -278,8 +295,8 @@ public class Mustache
                         return (_segs.size() == 0) || super.skipNewline();
                     }
                     @Override public Template.Segment[] finish () {
-                        throw new MustacheException("Inverted section missing close tag " +
-                                                    "[line=" + tagLine + ", tag=" + tag1 + "]");
+                        throw new MustacheParseException(
+                            "Inverted section missing close tag '" + tag1 + "'", tagLine);
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
@@ -313,23 +330,22 @@ public class Mustache
         }
 
         protected Accumulator addCloseSectionSegment (String tag, int line) {
-            throw new MustacheException("Section close tag with no open tag " +
-                                        "[line=" + line + ", tag=" + tag + "]");
+            throw new MustacheParseException(
+                "Section close tag with no open tag '" + tag + "'", line);
         }
 
         protected static void requireNoNewlines (String tag, int line) {
             if (tag.indexOf("\n") != -1 || tag.indexOf("\r") != -1) {
-                throw new MustacheException("Invalid tag name: contains newline " +
-                                            "[line=" + line + ", tag=" + tag + "]");
+                throw new MustacheParseException(
+                    "Invalid tag name: contains newline '" + tag + "'", line);
             }
         }
 
         protected static void requireSameName (String name1, String name2, int line)
         {
             if (!name1.equals(name2)) {
-                throw new MustacheException(
-                    "Section close tag with mismatched open tag " +
-                    "[line=" + line + ", expected=" + name1 + ", got=" + name2 + "]");
+                throw new MustacheParseException("Section close tag with mismatched open tag '" +
+                                                 name2 + "' != '" + name1 + "'", line);
             }
         }
 

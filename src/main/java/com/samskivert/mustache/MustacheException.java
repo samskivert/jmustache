@@ -9,6 +9,12 @@ package com.samskivert.mustache;
  */
 public class MustacheException extends RuntimeException
 {
+    public static class Parse extends MustacheException {
+        public Parse (String message) {
+            super(message);
+        }
+    }
+
     public MustacheException (String message) {
         super(message);
     }

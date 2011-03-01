@@ -112,6 +112,28 @@ public class MustacheTest
         test("foobar", "foo{{! nothing to see here}}bar", new Object());
     }
 
+    @Test public void testUnescapeHTML () {
+        assertEquals("<b>", Mustache.compiler().escapeHTML(true).compile("{{&a}}").
+                     execute(context("a", "<b>")));
+        assertEquals("<b>", Mustache.compiler().escapeHTML(true).compile("{{{a}}}").
+                     execute(context("a", "<b>")));
+        // make sure these also work when escape HTML is off
+        assertEquals("<b>", Mustache.compiler().escapeHTML(false).compile("{{&a}}").
+                     execute(context("a", "<b>")));
+        assertEquals("<b>", Mustache.compiler().escapeHTML(false).compile("{{{a}}}").
+                     execute(context("a", "<b>")));
+    }
+
+    @Test(expected = MustacheParseException.class)
+    public void testDanglingTag () {
+        Mustache.compiler().escapeHTML(true).compile("{{a").execute(context("a", "<b>"));
+    }
+
+    @Test(expected = MustacheParseException.class)
+    public void testInvalidUnescapeHTML () {
+        Mustache.compiler().escapeHTML(true).compile("{{{a}}").execute(context("a", "<b>"));
+    }
+
     @Test public void testEscapeHTML () {
         assertEquals("&lt;b&gt;", Mustache.compiler().compile("{{a}}").
                      execute(context("a", "<b>")));
