@@ -3,19 +3,39 @@
 
 package com.samskivert.mustache;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.Reader;
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.*;
-import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  * Various unit tests.
  */
 public class MustacheTest
 {
+    @Test(expected = IllegalArgumentException.class) 
+    public void testDefaultTemplateIncludeBehavior () {
+        test(null, "{{>foo}}", null);
+    }
+    
+    @Test 
+    public void testTemplateIncludeBehavior () {
+        Mustache.setTemplateLoader(new MustacheTemplateLoader() {
+            public Reader getTemplate(String filename) {
+                return new StringReader("inside:{{bar}}");
+            }
+        });
+        test("foo inside:foo foo", "{{bar}} {{>foo}} {{bar}}", context("bar", "foo"));
+    }
+    
     @Test public void testSimpleVariable () {
         test("bar", "{{foo}}", context("foo", "bar"));
     }

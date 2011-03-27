@@ -244,6 +244,12 @@ public class Mustache
     protected static final int MATCHING_END = 2;
     protected static final int TAG = 3;
 
+    private static MustacheTemplateLoader templateLoader = UnsupportedTemplateLoader.INSTANCE;
+    
+    public static void setTemplateLoader(MustacheTemplateLoader _templateLoader) {
+        templateLoader = _templateLoader;
+    }
+    
     protected static class Accumulator {
         public Accumulator (Compiler compiler) {
             _compiler = compiler;
@@ -262,7 +268,7 @@ public class Mustache
             }
         }
 
-        public Accumulator addTagSegment (StringBuilder accum, final int tagLine) {
+        public Accumulator addTagSegment (final StringBuilder accum, final int tagLine) {
             final Accumulator outer = this;
             String tag = accum.toString().trim();
             final String tag1 = tag.substring(1).trim();
@@ -287,6 +293,10 @@ public class Mustache
                     }
                 };
 
+            case '>':
+                _segs.add(new IncludedTemplateSegment(tag1, _compiler));
+                return this;
+                    
             case '^':
                 requireNoNewlines(tag, tagLine);
                 return new Accumulator(_compiler) {
@@ -364,6 +374,20 @@ public class Mustache
         protected final String _text;
     }
 
+    protected static class IncludedTemplateSegment extends Template.Segment {
+        public IncludedTemplateSegment (final String templateName, final Compiler compiler) {
+            try {
+                template = compiler.compile(templateLoader.getTemplate(templateName));
+            } catch (Exception e) {
+                throw new IllegalArgumentException("unable to load " + templateName, e);
+            }
+        }
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
+            template.execute(ctx.data, out);
+        }
+        private final Template template;
+    }
+    
     /** A helper class for named segments. */
     protected static abstract class NamedSegment extends Template.Segment {
         protected NamedSegment (String name, int line) {
