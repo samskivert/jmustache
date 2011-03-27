@@ -80,7 +80,8 @@ public class Template
         if (!_compiler.standardsMode) {
             // if we're dealing with a compound key, resolve each component and use the result to
             // resolve the subsequent component and so forth
-            if (name.indexOf(".") != -1) {
+             
+            if (name.indexOf(DOT_NAME) > 0) {
                 String[] comps = name.split("\\.");
                 // we want to allow the first component of a compound key to be located in a parent
                 // context, but once we're selecting sub-components, they must only be resolved in the

@@ -169,11 +169,14 @@ public class MustacheTest
 
     @Test public void testTopLevelThis () {
         assertEquals("bar", Mustache.compiler().compile("{{this}}").execute("bar"));
+        assertEquals("bar", Mustache.compiler().compile("{{.}}").execute("bar"));
     }
 
     @Test public void testNestedThis () {
         assertEquals("barbazbif", Mustache.compiler().compile("{{#things}}{{this}}{{/things}}").
                      execute(context("things", Arrays.asList("bar", "baz", "bif"))));
+        assertEquals("barbazbif", Mustache.compiler().compile("{{#things}}{{.}}{{/things}}").
+                execute(context("things", Arrays.asList("bar", "baz", "bif"))));
     }
 
     @Test public void testStructuredVariable () {
