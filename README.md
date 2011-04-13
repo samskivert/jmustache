@@ -165,7 +165,7 @@ lists.
 Note that you can also use the special variable `.` to mean the same thing.
 
     Mustache.compiler().compile("{{.}}").execute("hello"); // returns: hello
-    Mustache.compiler().compile("{{#names}}{{this}}{/names}}").execute(new Object() {
+    Mustache.compiler().compile("{{#names}}{{.}}{/names}}").execute(new Object() {
         List<String> names () { return Arrays.asList("Tom", "Dick", "Harry"); }
     });
     // result: TomDickHarry
