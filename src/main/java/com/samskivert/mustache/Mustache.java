@@ -98,7 +98,7 @@ public class Mustache
     {
         // a hand-rolled parser; whee!
         Accumulator accum = new Accumulator(compiler);
-        char start1 = '{', start2 = '{', end1 = '}', end2 = '}';
+        Delims delims = new Delims();
         int state = TEXT;
         StringBuilder text = new StringBuilder();
         int line = 1;
@@ -130,8 +130,8 @@ public class Mustache
 
             switch (state) {
             case TEXT:
-                if (c == start1) {
-                    if (start2 == -1) {
+                if (c == delims.start1) {
+                    if (delims.start2 == NO_CHAR) {
                         accum.addTextSegment(text);
                         state = TAG;
                     } else {
@@ -143,12 +143,12 @@ public class Mustache
                 break;
 
             case MATCHING_START:
-                if (c == start2) {
+                if (c == delims.start2) {
                     accum.addTextSegment(text);
                     state = TAG;
                 } else {
-                    text.append(start1);
-                    if (c != start1) {
+                    text.append(delims.start1);
+                    if (c != delims.start1) {
                         text.append(c);
                         state = TEXT;
                     }
@@ -156,12 +156,13 @@ public class Mustache
                 break;
 
             case TAG:
-                if (c == end1) {
-                    if (end2 == -1) {
+                if (c == delims.end1) {
+                    if (delims.end2 == NO_CHAR) {
                         if (text.charAt(0) == '=') {
-                            // TODO: change delimiters
+                            delims.updateDelims(text.substring(1, text.length()-1));
+                            text.setLength(0);
                         } else {
-                            sanityCheckTag(text, line, start1, start2);
+                            sanityCheckTag(text, line, delims.start1, delims.start2);
                             accum = accum.addTagSegment(text, line);
                             skipNewline = accum.skipNewline();
                         }
@@ -175,13 +176,14 @@ public class Mustache
                 break;
 
             case MATCHING_END:
-                if (c == end2) {
+                if (c == delims.end2) {
                     if (text.charAt(0) == '=') {
-                        // TODO: change delimiters
+                        delims.updateDelims(text.substring(1, text.length()-1));
+                        text.setLength(0);
                     } else {
                         // if we haven't remapped the delimiters, and the tag starts with {{{ then
                         // require that it end with }}} and disable HTML escaping
-                        if (start1 == '{' && start2 == '{' && text.charAt(0) == '{') {
+                        if (delims.isDefault() && text.charAt(0) == delims.start1) {
                             try {
                                 // we've only parsed }} at this point, so we have to slurp in
                                 // another character from the input stream and check it
@@ -197,14 +199,14 @@ public class Mustache
                             text.replace(0, 1, "&");
                         }
                         // process the tag between the mustaches
-                        sanityCheckTag(text, line, start1, start2);
+                        sanityCheckTag(text, line, delims.start1, delims.start2);
                         accum = accum.addTagSegment(text, line);
                         skipNewline = accum.skipNewline();
                     }
                     state = TEXT;
                 } else {
-                    text.append(end1);
-                    if (c != end1) {
+                    text.append(delims.end1);
+                    if (c != delims.end1) {
                         text.append(c);
                         state = TAG;
                     }
@@ -219,11 +221,11 @@ public class Mustache
             accum.addTextSegment(text);
             break;
         case MATCHING_START:
-            text.append(start1);
+            text.append(delims.start1);
             accum.addTextSegment(text);
             break;
         case MATCHING_END:
-            text.append(end1);
+            text.append(delims.end1);
             accum.addTextSegment(text);
             break;
         case TAG:
@@ -239,7 +241,7 @@ public class Mustache
     {
         for (int ii = 0, ll = accum.length(); ii < ll; ii++) {
             if (accum.charAt(ii) == start1) {
-                if (start2 == -1 || (ii < ll-1 && accum.charAt(ii+1) == start2)) {
+                if (start2 == NO_CHAR || (ii < ll-1 && accum.charAt(ii+1) == start2)) {
                     throw new MustacheParseException("Tag contains start tag delimiter, probably " +
                                                      "missing close delimiter '" + accum + "'", line);
                 }
@@ -259,6 +261,51 @@ public class Mustache
     protected static final int MATCHING_START = 1;
     protected static final int MATCHING_END = 2;
     protected static final int TAG = 3;
+
+    protected static class Delims {
+        public char start1 = '{';
+        public char start2 = '{';
+        public char end1 = '}';
+        public char end2 = '}';
+
+        public boolean isDefault () {
+            return start1 == '{' && start2 == '{' && end1 == '}' && end2 == '}';
+        }
+
+        public void updateDelims (String dtext) {
+            String errmsg = "Invalid delimiter configuration '" + dtext + "'. Must be of the " +
+                "form {{=1 2=}} or {{=12 34=}} where 1, 2, 3 and 4 are delimiter chars.";
+
+            String[] delims = dtext.split(" ");
+            if (delims.length != 2) throw new MustacheException(errmsg);
+
+            switch (delims[0].length()) {
+            case 1:
+                start1 = delims[0].charAt(0);
+                start2 = NO_CHAR;
+                break;
+            case 2:
+                start1 = delims[0].charAt(0);
+                start2 = delims[0].charAt(1);
+                break;
+            default:
+                throw new MustacheException(errmsg);
+            }
+
+            switch (delims[1].length()) {
+            case 1:
+                end1 = delims[1].charAt(0);
+                end2 = NO_CHAR;
+                break;
+            case 2:
+                end1 = delims[1].charAt(0);
+                end2 = delims[1].charAt(1);
+                break;
+            default:
+                throw new MustacheException(errmsg);
+            }
+        }
+    }
 
     protected static class Accumulator {
         public Accumulator (Compiler compiler) {
@@ -525,6 +572,9 @@ public class Mustache
         { "<", "&lt;" },
         { ">", "&gt;" },
     };
+
+    /** Used when we have only a single character delimiter. */
+    protected static final char NO_CHAR = Character.MIN_VALUE;
 
     protected static final TemplateLoader FAILING_LOADER = new TemplateLoader() {
         public Reader getTemplate (String name) {

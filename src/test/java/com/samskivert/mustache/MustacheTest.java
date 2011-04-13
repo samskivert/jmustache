@@ -134,6 +134,13 @@ public class MustacheTest
         }), "foo inside:foo nonfoo foo", "{{bar}} {{>foo}} {{>baz}} {{bar}}", context("bar", "foo"));
     }
 
+    @Test public void testDelimiterChange () {
+        test("foo bar baz", "{{one}} {{=<% %>=}}<%two%><%={{ }}=%> {{three}}",
+             context("one", "foo", "two", "bar", "three", "baz"));
+        test("baz bar foo", "{{three}} {{=% %=}}%two%%={{ }}=% {{one}}",
+             context("one", "foo", "two", "bar", "three", "baz"));
+    }
+
     @Test public void testUnescapeHTML () {
         assertEquals("<b>", Mustache.compiler().escapeHTML(true).compile("{{&a}}").
                      execute(context("a", "<b>")));
