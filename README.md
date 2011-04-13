@@ -281,6 +281,18 @@ Note that if a variable _is_ defined in an inner context, it shadows the same
 name in the outer context. There is presently no way to access the variable
 from the outer context.
 
+Standards Mode
+--------------
+
+The more intrusive of these extensions, specifically the searching of parent
+contexts and the use of compound varables, can be disabled when creating a
+compiler, like so:
+
+    Map<String,String> ctx = new HashMap<String,String>();
+    ctx.put("foo.bar", "baz");
+    Mustache.compiler().standardsMode(true).compile("{{foo.bar}}").execute(ctx);
+    // result: baz
+
 Limitations
 ===========
 
