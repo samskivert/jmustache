@@ -113,6 +113,21 @@ for concrete examples. See also the [Mustache
 documentation](http://mustache.github.com/mustache.5.html) for details on the
 template syntax.
 
+Partials
+========
+
+If you wish to make use of partials (e.g. `{{>subtmpl}}`) you must provide a
+`Mustache.TemplateLoader` to the compiler when creating it. For example:
+
+    final File templateDir = ...;
+    Mustache.Compiler c = Mustache.compiler().withLoader(new Mustach.TemplateLoader() {
+        public Reader getTemplate (String name) {
+            return new FileReader(new File(templateDir, name));
+        }
+    });
+    String tmpl = "...some template...";
+    c.compile(tmpl).execute();
+
 Extensions
 ==========
 
@@ -258,5 +273,4 @@ Limitations
 This version of Mustache is intended for use in non-webapp scenarios. In the
 name of simplicity, some features of Mustache were omitted or simplified:
 
-  * `{{< include}}` is not supported. JMustache does not presume to know from whence your templates come, nor to foist upon you a template loading scheme. You give JMustache a `String` or `Reader` and it gives back an executable template.
   * `{{= =}}` only supports one or two character delimiters. This is just because I'm lazy and it simplifies the parser.
