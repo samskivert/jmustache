@@ -125,8 +125,9 @@ If you wish to make use of partials (e.g. `{{>subtmpl}}`) you must provide a
             return new FileReader(new File(templateDir, name));
         }
     });
-    String tmpl = "...some template...";
+    String tmpl = "...{{>subtmpl}}...";
     c.compile(tmpl).execute();
+    // will load `new File(templateDir, "subtmpl")` when compiling the template
 
 Extensions
 ==========
