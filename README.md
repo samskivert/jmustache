@@ -159,6 +159,17 @@ lists.
     });
     // result: TomDickHarry
 
+Note that you can also use the special variable `.` to mean the same thing.
+
+    Mustache.compiler().compile("{{.}}").execute("hello"); // returns: hello
+    Mustache.compiler().compile("{{#names}}{{this}}{/names}}").execute(new Object() {
+        List<String> names () { return Arrays.asList("Tom", "Dick", "Harry"); }
+    });
+    // result: TomDickHarry
+
+`.` is apparently supported by other Mustache implementations, though it does
+not appear in the official documentation.
+
 ### -first and -last
 You can use the special variables `-first` and `-last` to perform special
 processing for list elements. `-first` resolves to `true` when inside a section
