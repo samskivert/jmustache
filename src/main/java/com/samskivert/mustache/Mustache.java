@@ -386,14 +386,20 @@ public class Mustache
 
     protected static class IncludedTemplateSegment extends Template.Segment {
         public IncludedTemplateSegment (final String templateName, final Compiler compiler) {
+            Reader r;
             try {
-                _template = compiler.compile(compiler.loader.getTemplate(templateName));
+                r = compiler.loader.getTemplate(templateName);
             } catch (Exception e) {
-                throw new MustacheException("Unable to load template: " + templateName, e);
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException)e;
+                } else {
+                    throw new MustacheException("Unable to load template: " + templateName, e);
+                }
             }
+            _template = compiler.compile(r);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
-            template.execute(ctx.data, out);
+            _template.execute(ctx.data, out);
         }
         protected final Template _template;
     }
