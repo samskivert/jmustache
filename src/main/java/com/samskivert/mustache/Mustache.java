@@ -387,15 +387,15 @@ public class Mustache
     protected static class IncludedTemplateSegment extends Template.Segment {
         public IncludedTemplateSegment (final String templateName, final Compiler compiler) {
             try {
-                template = compiler.compile(compiler.loader.getTemplate(templateName));
+                _template = compiler.compile(compiler.loader.getTemplate(templateName));
             } catch (Exception e) {
-                throw new IllegalArgumentException("unable to load " + templateName, e);
+                throw new MustacheException("Unable to load template: " + templateName, e);
             }
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             template.execute(ctx.data, out);
         }
-        private final Template template;
+        protected final Template _template;
     }
 
     /** A helper class for named segments. */
