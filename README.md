@@ -296,7 +296,7 @@ compiler, like so:
 Limitations
 ===========
 
-This version of Mustache is intended for use in non-webapp scenarios. In the
-name of simplicity, some features of Mustache were omitted or simplified:
+In the name of simplicity, some features of Mustache were omitted or
+simplified:
 
   * `{{= =}}` only supports one or two character delimiters. This is just because I'm lazy and it simplifies the parser.
