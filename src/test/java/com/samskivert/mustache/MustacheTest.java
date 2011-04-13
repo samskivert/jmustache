@@ -21,20 +21,6 @@ import org.junit.Test;
  */
 public class MustacheTest
 {
-    @Test(expected = IllegalArgumentException.class) 
-    public void testDefaultTemplateIncludeBehavior () {
-        test(null, "{{>foo}}", null);
-    }
-    
-    @Test 
-    public void testTemplateIncludeBehavior () {
-        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
-            public Reader getTemplate (String name) {
-                return new StringReader("inside:{{bar}}");
-            }
-        }), "foo inside:foo foo", "{{bar}} {{>foo}} {{bar}}", context("bar", "foo"));
-    }
-    
     @Test public void testSimpleVariable () {
         test("bar", "{{foo}}", context("foo", "bar"));
     }
@@ -129,6 +115,23 @@ public class MustacheTest
 
     @Test public void testComment () {
         test("foobar", "foo{{! nothing to see here}}bar", new Object());
+    }
+
+    @Test(expected=UnsupportedOperationException.class)
+    public void testPartialUseWhenUnconfigured () {
+        test(null, "{{>foo}}", null);
+    }
+
+    @Test public void testPartial () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                if (name.equals("foo")) {
+                    return new StringReader("inside:{{bar}}");
+                } else {
+                    return new StringReader("nonfoo");
+                }
+            }
+        }), "foo inside:foo nonfoo foo", "{{bar}} {{>foo}} {{>baz}} {{bar}}", context("bar", "foo"));
     }
 
     @Test public void testUnescapeHTML () {
