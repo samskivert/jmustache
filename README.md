@@ -114,7 +114,7 @@ documentation](http://mustache.github.com/mustache.5.html) for details on the
 template syntax.
 
 Partials
-========
+--------
 
 If you wish to make use of partials (e.g. `{{>subtmpl}}`) you must provide a
 `Mustache.TemplateLoader` to the compiler when creating it. For example:
