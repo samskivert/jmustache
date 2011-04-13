@@ -30,41 +30,57 @@ import java.util.List;
 public class Mustache
 {
     /** An interface to the Mustache compilation process. See {@link Mustache}. */
-    public static class Compiler {
+    public static class Compiler
+    {
         /** Whether or not HTML entities are escaped by default. */
         public final boolean escapeHTML;
 
         /** Whether or not standards mode is enabled. */
         public final boolean standardsMode;
 
+        /** The template loader in use during this compilation. */
+        public final TemplateLoader loader;
+
         /** Compiles the supplied template into a repeatedly executable intermediate form. */
-        public Template compile (String template)
-        {
+        public Template compile (String template) {
             return compile(new StringReader(template));
         }
 
         /** Compiles the supplied template into a repeatedly executable intermediate form. */
-        public Template compile (Reader source)
-        {
+        public Template compile (Reader source) {
             return Mustache.compile(source, this);
         }
 
         /** Returns a compiler that either does or does not escape HTML by default. */
         public Compiler escapeHTML (boolean escapeHTML) {
-            return new Compiler(escapeHTML, this.standardsMode);
+            return new Compiler(escapeHTML, this.standardsMode, this.loader);
         }
 
         /** Returns a compiler that either does or does not use standards mode. Standards mode
          * disables the non-standard JMustache extensions like looking up missing names in a parent
          * context. */
         public Compiler standardsMode (boolean standardsMode) {
-            return new Compiler(this.escapeHTML, standardsMode);
+            return new Compiler(this.escapeHTML, standardsMode, this.loader);
         }
 
-        protected Compiler (boolean escapeHTML, boolean standardsMode) {
+        /** Returns a compiler configured to use the supplied template loader to handle partials. */
+        public Compiler withLoader (TemplateLoader loader) {
+            return new Compiler(this.escapeHTML, this.standardsMode, loader);
+        }
+
+        protected Compiler (boolean escapeHTML, boolean standardsMode, TemplateLoader loader) {
             this.escapeHTML = escapeHTML;
             this.standardsMode = standardsMode;
+            this.loader = loader;
         }
+    }
+
+    /** Used to handle partials. */
+    public interface TemplateLoader
+    {
+        /** Returns a reader for the template with the supplied name.
+         * @throws Exception if the template could not be loaded for any reason. */
+        public Reader getTemplate (String name) throws Exception;
     }
 
     /**
@@ -72,7 +88,7 @@ public class Mustache
      */
     public static Compiler compiler ()
     {
-        return new Compiler(true, false);
+        return new Compiler(true, false, FAILING_LOADER);
     }
 
     /**
@@ -244,12 +260,6 @@ public class Mustache
     protected static final int MATCHING_END = 2;
     protected static final int TAG = 3;
 
-    private static MustacheTemplateLoader templateLoader = UnsupportedTemplateLoader.INSTANCE;
-    
-    public static void setTemplateLoader(MustacheTemplateLoader _templateLoader) {
-        templateLoader = _templateLoader;
-    }
-    
     protected static class Accumulator {
         public Accumulator (Compiler compiler) {
             _compiler = compiler;
@@ -296,7 +306,7 @@ public class Mustache
             case '>':
                 _segs.add(new IncludedTemplateSegment(tag1, _compiler));
                 return this;
-                    
+
             case '^':
                 requireNoNewlines(tag, tagLine);
                 return new Accumulator(_compiler) {
@@ -377,7 +387,7 @@ public class Mustache
     protected static class IncludedTemplateSegment extends Template.Segment {
         public IncludedTemplateSegment (final String templateName, final Compiler compiler) {
             try {
-                template = compiler.compile(templateLoader.getTemplate(templateName));
+                template = compiler.compile(compiler.loader.getTemplate(templateName));
             } catch (Exception e) {
                 throw new IllegalArgumentException("unable to load " + templateName, e);
             }
@@ -387,7 +397,7 @@ public class Mustache
         }
         private final Template template;
     }
-    
+
     /** A helper class for named segments. */
     protected static abstract class NamedSegment extends Template.Segment {
         protected NamedSegment (String name, int line) {
@@ -508,5 +518,11 @@ public class Mustache
         { "\"", "&quot;" },
         { "<", "&lt;" },
         { ">", "&gt;" },
+    };
+
+    protected static final TemplateLoader FAILING_LOADER = new TemplateLoader() {
+        public Reader getTemplate (String name) {
+            throw new UnsupportedOperationException("Template loading not configured");
+        }
     };
 }

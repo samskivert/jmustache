@@ -28,12 +28,11 @@ public class MustacheTest
     
     @Test 
     public void testTemplateIncludeBehavior () {
-        Mustache.setTemplateLoader(new MustacheTemplateLoader() {
-            public Reader getTemplate(String filename) {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
                 return new StringReader("inside:{{bar}}");
             }
-        });
-        test("foo inside:foo foo", "{{bar}} {{>foo}} {{bar}}", context("bar", "foo"));
+        }), "foo inside:foo foo", "{{bar}} {{>foo}} {{bar}}", context("bar", "foo"));
     }
     
     @Test public void testSimpleVariable () {
@@ -275,9 +274,14 @@ public class MustacheTest
                             "parentProperty", "bar"));
     }
 
+    protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx)
+    {
+        assertEquals(expected, compiler.compile(template).execute(ctx));
+    }
+
     protected void test (String expected, String template, Object ctx)
     {
-        assertEquals(expected, Mustache.compiler().compile(template).execute(ctx));
+        test(Mustache.compiler(), expected, template, ctx);
     }
 
     protected static Object context (Object... data)
