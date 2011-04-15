@@ -126,6 +126,12 @@ public class Template
         return null;
     }
 
+    protected Object getValueWithDefault (Context ctx, String name, int line)
+    {
+        Object value = getValue(ctx, name, line);
+        return value != null? value : _compiler.missingVariableValue;
+    }
+
     protected Object getValueIn (Object data, String name, int line)
     {
         if (data == null) {

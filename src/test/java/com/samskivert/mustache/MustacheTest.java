@@ -284,6 +284,27 @@ public class MustacheTest
                             "parentProperty", "bar"));
     }
 
+    @Test(expected = MustacheException.class)
+    public void testMissingValue () {
+        String tmpl = "{{ missing }} {{ notmissing }}";
+        Mustache.compiler().compile(tmpl).
+            execute(Collections.singletonMap("notmissing", "bar"));
+    }
+
+    @Test public void testMissingValueWithDefault () {
+        String tmpl = "{{ missing }}{{ notmissing }}";
+        String result = Mustache.compiler().missingVariableValue("").compile(tmpl).
+            execute(Collections.singletonMap("notmissing", "bar"));
+        assertEquals("bar", result);
+    }
+
+    @Test public void testMissingValueWithDefaultNonEmptyString () {
+        String tmpl = "{{ missing }}{{ notmissing }}";
+        String result = Mustache.compiler().missingVariableValue("foo").compile(tmpl).
+            execute(Collections.singletonMap("notmissing", "bar"));
+        assertEquals("foobar", result);
+    }
+
     protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx)
     {
         assertEquals(expected, compiler.compile(template).execute(ctx));

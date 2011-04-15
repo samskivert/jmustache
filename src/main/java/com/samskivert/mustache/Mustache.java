@@ -38,6 +38,9 @@ public class Mustache
         /** Whether or not standards mode is enabled. */
         public final boolean standardsMode;
 
+        /** Replace missnig values with this value - if null will throw an exception on missing values. */
+        public final String missingVariableValue;
+
         /** The template loader in use during this compilation. */
         public final TemplateLoader loader;
 
@@ -53,24 +56,32 @@ public class Mustache
 
         /** Returns a compiler that either does or does not escape HTML by default. */
         public Compiler escapeHTML (boolean escapeHTML) {
-            return new Compiler(escapeHTML, this.standardsMode, this.loader);
+            return new Compiler(escapeHTML, this.standardsMode, this.missingVariableValue, this.loader);
         }
 
         /** Returns a compiler that either does or does not use standards mode. Standards mode
          * disables the non-standard JMustache extensions like looking up missing names in a parent
          * context. */
         public Compiler standardsMode (boolean standardsMode) {
-            return new Compiler(this.escapeHTML, standardsMode, this.loader);
+            return new Compiler(this.escapeHTML, standardsMode, this.missingVariableValue, this.loader);
+        }
+
+        /**
+         * Returns a compiler that will replace missing variables with the given value
+         **/
+        public Compiler missingVariableValue (String missingVariableValue) {
+            return new Compiler(this.escapeHTML, this.standardsMode, missingVariableValue, this.loader);
         }
 
         /** Returns a compiler configured to use the supplied template loader to handle partials. */
         public Compiler withLoader (TemplateLoader loader) {
-            return new Compiler(this.escapeHTML, this.standardsMode, loader);
+            return new Compiler(this.escapeHTML, this.standardsMode, this.missingVariableValue, loader);
         }
 
-        protected Compiler (boolean escapeHTML, boolean standardsMode, TemplateLoader loader) {
+        protected Compiler (boolean escapeHTML, boolean standardsMode, String missingVariableValue, TemplateLoader loader) {
             this.escapeHTML = escapeHTML;
             this.standardsMode = standardsMode;
+            this.missingVariableValue = missingVariableValue;
             this.loader = loader;
         }
     }
@@ -88,7 +99,7 @@ public class Mustache
      */
     public static Compiler compiler ()
     {
-        return new Compiler(true, false, FAILING_LOADER);
+        return new Compiler(true, false, null, FAILING_LOADER);
     }
 
     /**
@@ -468,8 +479,7 @@ public class Mustache
             _escapeHTML = escapeHTML;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
-            Object value = tmpl.getValue(ctx, _name, _line);
-            // TODO: configurable behavior on missing values
+            Object value = tmpl.getValueWithDefault(ctx, _name, _line);
             if (value == null) {
                 throw new MustacheException(
                     "No key, method or field with name '" + _name + "' on line " + _line);
