@@ -299,6 +299,14 @@ public class MustacheTest
              "foobar", "{{missing}}{{notmissing}}", context("notmissing", "bar"));
     }
 
+    @Test public void testNullValueGetsDefault () {
+        test(Mustache.compiler().defaultValue("foo"),
+             "foobar", "{{nullvar}}{{nonnullvar}}", new Object() {
+                 String nonnullvar = "bar";
+                 String nullvar = null;
+             });
+    }
+
     protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx)
     {
         assertEquals(expected, compiler.compile(template).execute(ctx));
