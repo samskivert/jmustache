@@ -126,10 +126,14 @@ public class Template
         return null;
     }
 
-    protected Object getValueWithDefault (Context ctx, String name, int line)
+    /**
+     * Returns the value for the specified variable, or the configured default value if the
+     * variable resolves to null. See {@link #getValue}.
+     */
+    protected Object getValueOrDefault (Context ctx, String name, int line)
     {
         Object value = getValue(ctx, name, line);
-        return value != null? value : _compiler.missingVariableValue;
+        return (value == null) ? _compiler.defaultValue : value;
     }
 
     protected Object getValueIn (Object data, String name, int line)
