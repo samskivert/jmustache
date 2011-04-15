@@ -131,6 +131,22 @@ If you wish to make use of partials (e.g. `{{>subtmpl}}`) you must provide a
 The above snippet will load `new File(templateDir, "subtmpl")` when compiling
 the template.
 
+Default Values
+--------------
+
+By default, an exception will be thrown any time a variable cannot be found, or
+resolves to null. A value to use in such circumstances can be provided when
+creating your compiler:
+
+    String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
+    Mustache.compiler().defaultValue("what").compile(tmpl).execute(new Object() {
+        String exists = "Say";
+        String nullValued = null;
+        // String doesNotExist
+    });
+    // result:
+    Say what what?
+
 Extensions
 ==========
 
