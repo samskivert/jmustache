@@ -458,7 +458,9 @@ public class Mustache
             _template = compiler.compile(r);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
-            _template.execute(ctx.data, out);
+            // we must take care to preserve our context rather than creating a new one, which
+            // would happen if we just called execute() with ctx.data
+            _template.executeSegs(ctx, out);
         }
         protected final Template _template;
     }

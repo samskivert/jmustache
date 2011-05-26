@@ -134,6 +134,21 @@ public class MustacheTest
         }), "foo inside:foo nonfoo foo", "{{bar}} {{>foo}} {{>baz}} {{bar}}", context("bar", "foo"));
     }
 
+    @Test public void testPartialPlusNestedContext () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                if (name.equals("nested")) {
+                    return new StringReader("{{name}}{{thing_name}}");
+                } else {
+                    return new StringReader("nonfoo");
+                }
+            }
+        }), "foo((foobar)(foobaz))", "{{name}}({{#things}}({{>nested}}){{/things}})",
+            context("name", "foo",
+                    "things", Arrays.asList(context("thing_name", "bar"),
+                                            context("thing_name", "baz"))));
+    }
+
     @Test public void testDelimiterChange () {
         test("foo bar baz", "{{one}} {{=<% %>=}}<%two%><%={{ }}=%> {{three}}",
              context("one", "foo", "two", "bar", "three", "baz"));

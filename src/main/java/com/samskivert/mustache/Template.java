@@ -38,18 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Template
 {
     /**
-     * Executes this template with the given context, writing the results to the supplied writer.
-     * @throws MustacheException if an error occurs while executing or writing the template.
-     */
-    public void execute (Object context, Writer out) throws MustacheException
-    {
-        Context ctx = new Context(context, null, 0, Mode.OTHER);
-        for (Segment seg : _segs) {
-            seg.execute(this, ctx, out);
-        }
-    }
-
-    /**
      * Executes this template with the given context, returning the results as a string.
      * @throws MustacheException if an error occurs while executing or writing the template.
      */
@@ -60,10 +48,26 @@ public class Template
         return out.toString();
     }
 
+    /**
+     * Executes this template with the given context, writing the results to the supplied writer.
+     * @throws MustacheException if an error occurs while executing or writing the template.
+     */
+    public void execute (Object context, Writer out) throws MustacheException
+    {
+        executeSegs(new Context(context, null, 0, Mode.OTHER), out);
+    }
+
     protected Template (Segment[] segs, Mustache.Compiler compiler)
     {
         _segs = segs;
         _compiler = compiler;
+    }
+
+    protected void executeSegs (Context ctx, Writer out) throws MustacheException
+    {
+        for (Segment seg : _segs) {
+            seg.execute(this, ctx, out);
+        }
     }
 
     /**
