@@ -38,9 +38,15 @@ public class Mustache
         /** Whether or not standards mode is enabled. */
         public final boolean standardsMode;
 
-        /** A value to use when a variable cannot be resolved, or resolves to null. If the default
-         * value is null (which is the default default value), an exception will be thrown. */
-        public final String defaultValue;
+        /** A value to use when a variable resolves to null. If this value is null (which is the
+         * default null value), an exception will be thrown. If {@link #missingIsNull} is also
+         * true, this value will be used when a variable cannot be resolved. */
+        public final String nullValue;
+
+        /** If this value is true, missing variables will be treated like variables that return
+         * null. {@link #nullValue} will be used in their place, assuming {@link #nullValue} is
+         * configured to a non-null value. */
+        public final boolean missingIsNull;
 
         /** The template loader in use during this compilation. */
         public final TemplateLoader loader;
@@ -57,32 +63,59 @@ public class Mustache
 
         /** Returns a compiler that either does or does not escape HTML by default. */
         public Compiler escapeHTML (boolean escapeHTML) {
-            return new Compiler(escapeHTML, this.standardsMode, this.defaultValue, this.loader);
+            return new Compiler(escapeHTML, this.standardsMode,
+                                this.nullValue, this.missingIsNull, this.loader);
         }
 
         /** Returns a compiler that either does or does not use standards mode. Standards mode
          * disables the non-standard JMustache extensions like looking up missing names in a parent
          * context. */
         public Compiler standardsMode (boolean standardsMode) {
-            return new Compiler(this.escapeHTML, standardsMode, this.defaultValue, this.loader);
+            return new Compiler(this.escapeHTML, standardsMode,
+                                this.nullValue, this.missingIsNull, this.loader);
         }
 
         /** Returns a compiler that will use the given value for any variable that is missing, or
-         * otherwise resolves to null. */
+         * otherwise resolves to null. This is like {@link #nullValue} except that it returns the
+         * supplied default for missing keys and existing keys that return null values. Note that
+         * regardless of whether a null or default value is configured, if the resolution of part
+         * of a compound key results in a missing or null value, an exception will be raised. */
         public Compiler defaultValue (String defaultValue) {
-            return new Compiler(this.escapeHTML, this.standardsMode, defaultValue, this.loader);
+            return new Compiler(this.escapeHTML, this.standardsMode,
+                                defaultValue, true, this.loader);
+        }
+
+        /** Returns a compiler that will use the given value for any variable that resolves to
+         * null, but will still raise an exception for variables for which an accessor cannot be
+         * found. This is like {@link #defaultValue} except that it differentiates between missing
+         * accessors, and accessors that exist but return null.
+         * <ul>
+         * <li>In the case of a Java object being used as a context, if no field or method can be
+         * found for a variable, an exception will be raised.</li>
+         * <li>In the case of a {@link Map} being used as a context, all possible accessors are
+         * assumed to exist (but potentially return null), and no exception will ever be
+         * raised.</li>
+         * </ul>
+         * Note that regardless of whether a null or default value is configured, if the resolution
+         * of part of a compound key results in a missing or null value, an exception will be
+         * raised. */
+        public Compiler nullValue (String nullValue) {
+            return new Compiler(this.escapeHTML, this.standardsMode,
+                                nullValue, false, this.loader);
         }
 
         /** Returns a compiler configured to use the supplied template loader to handle partials. */
         public Compiler withLoader (TemplateLoader loader) {
-            return new Compiler(this.escapeHTML, this.standardsMode, this.defaultValue, loader);
+            return new Compiler(this.escapeHTML, this.standardsMode,
+                                this.nullValue, this.missingIsNull, loader);
         }
 
-        protected Compiler (boolean escapeHTML, boolean standardsMode, String defaultValue,
-                            TemplateLoader loader) {
+        protected Compiler (boolean escapeHTML, boolean standardsMode,
+                            String nullValue, boolean missingIsNull, TemplateLoader loader) {
             this.escapeHTML = escapeHTML;
             this.standardsMode = standardsMode;
-            this.defaultValue = defaultValue;
+            this.nullValue = nullValue;
+            this.missingIsNull = missingIsNull;
             this.loader = loader;
         }
     }
@@ -100,7 +133,7 @@ public class Mustache
      */
     public static Compiler compiler ()
     {
-        return new Compiler(true, false, null, FAILING_LOADER);
+        return new Compiler(true, false, null, true, FAILING_LOADER);
     }
 
     /**
@@ -513,10 +546,7 @@ public class Mustache
             super(name, segs, line);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
-            Object value = tmpl.getValue(ctx, _name, _line);
-            if (value == null) {
-                return; // TODO: configurable behavior on missing values
-            }
+            Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
             if (value instanceof Iterable<?>) {
                 value = ((Iterable<?>)value).iterator();
             }
@@ -551,10 +581,8 @@ public class Mustache
             super(name, segs, line);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
-            Object value = tmpl.getValue(ctx, _name, _line);
-            if (value == null) {
-                executeSegs(tmpl, ctx, out); // TODO: configurable behavior on missing values
-            } else if (value instanceof Iterable<?>) {
+            Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
+            if (value instanceof Iterable<?>) {
                 Iterable<?> iable = (Iterable<?>)value;
                 if (!iable.iterator().hasNext()) {
                     executeSegs(tmpl, ctx, out);

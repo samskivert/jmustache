@@ -105,6 +105,7 @@ Sections behave as you would expect:
 
  * `Boolean` values enable or disable the section.
  * Array, `Iterator`, or `Iterable` values repeatedly execute the section with each element used as the context for each iteration. Empty collections result in zero instances of the section being included in the template.
+ * An unresolvable or null value is treated as false (by default, see //Default Values// for more details).
  * Any other object results in a single execution of the section with that object as a context.
 
 See the code in
@@ -134,9 +135,9 @@ the template.
 Default Values
 --------------
 
-By default, an exception will be thrown any time a variable cannot be found, or
-resolves to null. A value to use in such circumstances can be provided when
-creating your compiler:
+By default, an exception will be thrown any time a variable cannot be resolved,
+or resolves to null. You can change this behavior in two ways. If you want to
+provide a value for use in all such circumstances, use `defaultValue()`:
 
     String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
     Mustache.compiler().defaultValue("what").compile(tmpl).execute(new Object() {
@@ -146,6 +147,33 @@ creating your compiler:
     });
     // result:
     Say what what?
+
+If you only wish to provide a default value for variables that resolve to null,
+and wish to preserve exceptions in cases where variables cannot be resolved,
+use `nullValue()`:
+
+    String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
+    Mustache.compiler().nullValue("what").compile(tmpl).execute(new Object() {
+        String exists = "Say";
+        String nullValued = null;
+        // String doesNotExist
+    });
+    // throws MustacheException when executing the template because
+    // doesNotExist cannot be resolved
+
+Note that any variable resolved against a `Map` context will be resolvable, but
+will be treated as having the value null if the map contains no mapping for the
+variable. Only variables resolved against Java object fields or methods risk
+being unresolvable.
+
+Note that section behavior deviates from the above specification (for
+historical reasons and because it's kind of useful). By default, a section that
+is not resolvable or resolves to null will be omitted (and conversely, an
+inverse section that is not resolvable or resolves to null will be included).
+If you use `defaultValue()`, this behavior is preserved. If you use
+`nullValue()`, sections that refer to an unresolvable variable will now throw
+an exception (sections that refer to a resolvable, but null-valued variable,
+will behave as before).
 
 Extensions
 ==========

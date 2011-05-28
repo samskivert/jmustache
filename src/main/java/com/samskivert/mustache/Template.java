@@ -9,6 +9,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -76,10 +77,12 @@ public class Template
      *
      * @param ctx the context in which to look up the variable.
      * @param name the name of the variable to be resolved, which must be an interned string.
+     * @param missingIsNull whether to fail if a variable cannot be resolved, or to return null in
+     * that case.
      *
      * @return the value associated with the supplied name or null if no value could be resolved.
      */
-    protected Object getValue (Context ctx, String name, int line)
+    protected Object getValue (Context ctx, String name, int line, boolean missingIsNull)
     {
         if (!_compiler.standardsMode) {
             // if we're dealing with a compound key, resolve each component and use the result to
@@ -89,10 +92,13 @@ public class Template
                 // we want to allow the first component of a compound key to be located in a parent
                 // context, but once we're selecting sub-components, they must only be resolved in the
                 // object that represents that component
-                Object data = getValue(ctx, comps[0].intern(), line);
+                Object data = getValue(ctx, comps[0].intern(), line, missingIsNull);
                 for (int ii = 1; ii < comps.length; ii++) {
-                    // generate more helpful error message
-                    if (data == null) {
+                    if (data == NO_FETCHER_FOUND) {
+                        throw new NullPointerException(
+                            "Missing context for compound variable '" + name + "' on line " + line +
+                            ". '" + comps[ii - 1] + "' was not found.");
+                    } else if (data == null) {
                         throw new NullPointerException(
                             "Null context for compound variable '" + name + "' on line " + line +
                             ". '" + comps[ii - 1] + "' resolved to null.");
@@ -101,7 +107,7 @@ public class Template
                     // contexts; that would be weird and confusing
                     data = getValueIn(data, comps[ii].intern(), line);
                 }
-                return data;
+                return checkForMissing(name, line, missingIsNull, data);
             }
         }
 
@@ -116,18 +122,40 @@ public class Template
 
         // if we're in standards mode, we don't search our parent contexts
         if (_compiler.standardsMode) {
-            return getValueIn(ctx.data, name, line);
+            return checkForMissing(name, line, missingIsNull, getValueIn(ctx.data, name, line));
         }
 
+        boolean variableMissing = true;
         while (ctx != null) {
             Object value = getValueIn(ctx.data, name, line);
-            if (value != null) {
+            if (value == NO_FETCHER_FOUND) {
+                // preserve variableMissing
+            } else if (value == null) {
+                // we found a fetcher, and it returned null; so we keep searching our parents, but
+                // we won't freak out about a missing variable if we have a nullValue configured
+                variableMissing = false;
+            } else {
                 return value;
             }
             ctx = ctx.parent;
         }
-        // we've popped off the top of our stack of contexts, so return null
-        return null;
+        // we've popped off the top of our stack of contexts, if we never actually found a fetcher
+        // for our variable, we need to let checkForMissing() know
+        return checkForMissing(name, line, missingIsNull, variableMissing ? NO_FETCHER_FOUND : null);
+    }
+
+    /**
+     * Returns the value of the specified variable, noting that it is intended to be used as the
+     * contents for a segment. Presently this does not do anything special, but eventually this
+     * will be the means by which we enact configured behavior for sections that reference null or
+     * missing variables. Right now, all such variables result in a length 0 section.
+     */
+    protected Object getSectionValue (Context ctx, String name, int line)
+    {
+        // TODO: configurable behavior on missing values
+        Object value = getValue(ctx, name, line, _compiler.missingIsNull);
+        // TODO: configurable behavior on null values
+        return (value == null) ? Collections.emptyList() : value;
     }
 
     /**
@@ -136,8 +164,11 @@ public class Template
      */
     protected Object getValueOrDefault (Context ctx, String name, int line)
     {
-        Object value = getValue(ctx, name, line);
-        return (value == null) ? _compiler.defaultValue : value;
+        Object value = getValue(ctx, name, line, _compiler.missingIsNull);
+        // getValue will raise MustacheException if a variable cannot be resolved and missingIsNull
+        // is not configured; so we're safe to assume that any null that makes it up to this point
+        // can be converted to nullValue
+        return (value == null) ? _compiler.nullValue : value;
     }
 
     protected Object getValueIn (Object data, String name, int line)
@@ -163,7 +194,7 @@ public class Template
         // if we were unable to create a fetcher, just return null and our caller can either try
         // the parent context, or do le freak out
         if (fetcher == null) {
-            return null;
+            return NO_FETCHER_FOUND;
         }
 
         try {
@@ -173,6 +204,20 @@ public class Template
         } catch (Exception e) {
             throw new MustacheException(
                 "Failure fetching variable '" + name + "' on line " + line, e);
+        }
+    }
+
+    protected Object checkForMissing (String name, int line, boolean missingIsNull, Object value)
+    {
+        if (value == NO_FETCHER_FOUND) {
+            if (missingIsNull) {
+                return null;
+            } else {
+                throw new MustacheException(
+                    "No method or field with name '" + name + "' on line " + line);
+            }
+        } else {
+            return value;
         }
     }
 
@@ -338,6 +383,8 @@ public class Template
             return ctx;
         }
     };
+
+    protected static final Object NO_FETCHER_FOUND = new Object();
 
     protected static final String DOT_NAME = ".".intern();
     protected static final String THIS_NAME = "this".intern();

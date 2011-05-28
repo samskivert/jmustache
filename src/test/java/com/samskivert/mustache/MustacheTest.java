@@ -113,6 +113,43 @@ public class MustacheTest
                                   "d", new Object[] { context("e", "3"), context("e", "4") })));
     }
 
+    @Test public void testNullSection () {
+        test("", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            Object foo = null;
+        });
+    }
+
+    @Test public void testNullSectionWithDefaultValue () {
+        test(Mustache.compiler().defaultValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            Object foo = null;
+        });
+    }
+
+    @Test public void testNullSectionWithNullValue () {
+        test(Mustache.compiler().nullValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            Object foo = null;
+        });
+    }
+
+    @Test public void testMissingSection () {
+        test("", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            // no foo
+        });
+    }
+
+    @Test public void testMissingSectionWithDefaultValue () {
+        test(Mustache.compiler().defaultValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            // no foo
+        });
+    }
+
+    @Test(expected=MustacheException.class)
+    public void testMissingSectionWithNullValue () {
+        test(Mustache.compiler().nullValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            // no foo
+        });
+    }
+
     @Test public void testComment () {
         test("foobar", "foo{{! nothing to see here}}bar", new Object());
     }
@@ -211,6 +248,28 @@ public class MustacheTest
                         String baz = "hello";
                     };
                 };
+            }
+        });
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testNullComponentInCompoundVariable () {
+        // make sure that even if we have a null value configured, we freak out
+        test(Mustache.compiler().nullValue("foo"), "unused", "{{foo.bar.baz}}", new Object() {
+            Object foo () {
+                return new Object() {
+                    Object bar = null;
+                };
+            }
+        });
+    }
+
+    @Test(expected=NullPointerException.class)
+    public void testMissingComponentInCompoundVariable () {
+        // make sure that even if we have a default value configured, we freak out
+        test(Mustache.compiler().defaultValue("foo"), "unused", "{{foo.bar.baz}}", new Object() {
+            Object foo () {
+                return new Object(); // no bar
             }
         });
     }
@@ -316,6 +375,23 @@ public class MustacheTest
 
     @Test public void testNullValueGetsDefault () {
         test(Mustache.compiler().defaultValue("foo"),
+             "foobar", "{{nullvar}}{{nonnullvar}}", new Object() {
+                 String nonnullvar = "bar";
+                 String nullvar = null;
+             });
+    }
+
+    @Test(expected=MustacheException.class)
+    public void testMissingValueWithNullDefault () {
+        test(Mustache.compiler().nullValue(""),
+             "bar", "{{missing}}{{notmissing}}", new Object() {
+                 String notmissing = "bar";
+                 // no field or method for 'missing'
+             });
+    }
+
+    @Test public void testNullValueGetsNullDefault () {
+        test(Mustache.compiler().nullValue("foo"),
              "foobar", "{{nullvar}}{{nonnullvar}}", new Object() {
                  String nonnullvar = "bar";
                  String nullvar = null;
