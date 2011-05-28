@@ -158,8 +158,7 @@ use `nullValue()`:
         String nullValued = null;
         // String doesNotExist
     });
-    // throws MustacheException when executing the template because
-    // doesNotExist cannot be resolved
+    // throws MustacheException when executing the template because doesNotExist cannot be resolved
 
 Note that any variable resolved against a `Map` context will be resolvable, but
 will be treated as having the value null if the map contains no mapping for the
