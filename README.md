@@ -105,7 +105,7 @@ Sections behave as you would expect:
 
  * `Boolean` values enable or disable the section.
  * Array, `Iterator`, or `Iterable` values repeatedly execute the section with each element used as the context for each iteration. Empty collections result in zero instances of the section being included in the template.
- * An unresolvable or null value is treated as false (by default, see //Default Values// for more details).
+ * An unresolvable or null value is treated as false (by default, see _Default Values_ for more details).
  * Any other object results in a single execution of the section with that object as a context.
 
 See the code in
