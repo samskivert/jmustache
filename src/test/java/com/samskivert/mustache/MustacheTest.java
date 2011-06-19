@@ -186,6 +186,35 @@ public class MustacheTest
                                             context("thing_name", "baz"))));
     }
 
+    @Test public void testDynamicPartial () {
+        test(Mustache.compiler().withDynamicLoader(),
+             "foo((foobar)(foobaz))", "{{name}}({{#things}}({{>nested}}){{/things}})",
+             context("name", "foo",
+                     "nested", "{{name}}{{thing_name}}",
+                     "things", Arrays.asList(context("thing_name", "bar"),
+                                             context("thing_name", "baz"))));
+    }
+
+    @Test(expected=MustacheException.class)
+    public void testDynamicPartialMissingTemplate () {
+        test(Mustache.compiler().withDynamicLoader(),
+             "foo((foobar)(foobaz))", "{{name}}({{#things}}({{>nested}}){{/things}})",
+             context("name", "foo",
+                     // definition for nested is missing
+                     "things", Arrays.asList(context("thing_name", "bar"),
+                                             context("thing_name", "baz"))));
+    }
+
+    @Test(expected=MustacheParseException.class)
+    public void testDynamicPartialInvalidTemplate () {
+        test(Mustache.compiler().withDynamicLoader(),
+             "foo((foobar)(foobaz))", "{{name}}({{#things}}({{>nested}}){{/things}})",
+             context("name", "foo",
+                     "nested", "{{#sec}}", // missing closing {{/sec}}
+                     "things", Arrays.asList(context("thing_name", "bar"),
+                                             context("thing_name", "baz"))));
+    }
+
     @Test public void testDelimiterChange () {
         test("foo bar baz", "{{one}} {{=<% %>=}}<%two%><%={{ }}=%> {{three}}",
              context("one", "foo", "two", "bar", "three", "baz"));

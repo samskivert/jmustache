@@ -132,6 +132,41 @@ If you wish to make use of partials (e.g. `{{>subtmpl}}`) you must provide a
 The above snippet will load `new File(templateDir, "subtmpl")` when compiling
 the template.
 
+Dynamic Partials
+----------------
+
+If you are an especially dynamic person, you may also enjoy the ability to load
+the template data for your partials from the context itself. In this mode, the
+name of the partial is resolved as a variable, and the textual value of that
+variable is then compiled as a template and executed as a partial. For example:
+
+    Mustache.Compiler c = Mustache.compiler().withDynamicLoader();
+    String tmpl = "{{>header}}\nDear {{recipient}},\nBlah blah blah.\n{{>footer}}";
+    c.compile(tmpl).execute(new Object() {
+        String header = "{{company}} Memo";
+        String footer = "Respectfully, {{sender}}";
+        String company = "Foo Corp.";
+        String recipient = "Sir or Madam";
+        String sender = "The Management";
+    });
+
+    // result:
+    // Foo Corp. Memo
+    // Dear Sir or Madam,
+    // Blah blah blah.
+    // Respectfully, The Management
+
+Note that dynamic partials cannot be mixed and matched with normal partials. A
+given compiler can only use one or the other.
+
+Note also that with dynamic partials, your partials are compiled when you
+execute your template, rather than when the outer template is compiled as with
+normal partials. This raises two issues: first, an invalid template will result
+in a `MustacheParseException` being thrown at template execution time, second,
+the partial template is compiled every time you call execute (as it may
+change). Thus this feature should be avoided in circumstances where performance
+is a concern.
+
 Default Values
 --------------
 

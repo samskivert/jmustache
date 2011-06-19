@@ -110,6 +110,15 @@ public class Mustache
                                 this.nullValue, this.missingIsNull, loader);
         }
 
+        /** Returns a compiler configured to handle partials by dynamically fetching the value
+         * associated with the template name from the context and compiling and executing it. See
+         * the <em>Dynamic Partials</em> section of the
+         * <a href="https://github.com/samskivert/jmustache">JMustache documentation</a>. */
+        public Compiler withDynamicLoader () {
+            return new Compiler(this.escapeHTML, this.standardsMode,
+                                this.nullValue, this.missingIsNull, DYNAMIC_LOADER);
+        }
+
         protected Compiler (boolean escapeHTML, boolean standardsMode,
                             String nullValue, boolean missingIsNull, TemplateLoader loader) {
             this.escapeHTML = escapeHTML;
@@ -396,7 +405,11 @@ public class Mustache
                 };
 
             case '>':
-                _segs.add(new IncludedTemplateSegment(tag1, _compiler));
+                if (_compiler.loader == DYNAMIC_LOADER) {
+                    _segs.add(new DynamicIncludedTemplateSegment(tag1, tagLine, _compiler));
+                } else {
+                    _segs.add(new IncludedTemplateSegment(tag1, _compiler));
+                }
                 return this;
 
             case '^':
@@ -476,28 +489,6 @@ public class Mustache
         protected final String _text;
     }
 
-    protected static class IncludedTemplateSegment extends Template.Segment {
-        public IncludedTemplateSegment (final String templateName, final Compiler compiler) {
-            Reader r;
-            try {
-                r = compiler.loader.getTemplate(templateName);
-            } catch (Exception e) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException)e;
-                } else {
-                    throw new MustacheException("Unable to load template: " + templateName, e);
-                }
-            }
-            _template = compiler.compile(r);
-        }
-        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
-            // we must take care to preserve our context rather than creating a new one, which
-            // would happen if we just called execute() with ctx.data
-            _template.executeSegs(ctx, out);
-        }
-        protected final Template _template;
-    }
-
     /** A helper class for named segments. */
     protected static abstract class NamedSegment extends Template.Segment {
         protected NamedSegment (String name, int line) {
@@ -508,11 +499,10 @@ public class Mustache
         protected final int _line;
     }
 
-    /** A segment that substitutes the contents of a variable. */
-    protected static class VariableSegment extends NamedSegment {
-        public VariableSegment (String name, boolean escapeHTML, int line) {
+    /** A helper class for segments that look up the value of a variable. */
+    protected static abstract class LookupSegment extends NamedSegment {
+        public LookupSegment (String name, int line) {
             super(name, line);
-            _escapeHTML = escapeHTML;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getValueOrDefault(ctx, _name, _line);
@@ -520,7 +510,20 @@ public class Mustache
                 throw new MustacheException(
                     "No key, method or field with name '" + _name + "' on line " + _line);
             }
-            String text = String.valueOf(value);
+            execute(tmpl, ctx, out, String.valueOf(value));
+        }
+        protected abstract void execute (
+            Template tmpl, Template.Context ctx, Writer out, String text);
+    }
+
+    /** A segment that substitutes the contents of a variable. */
+    protected static class VariableSegment extends LookupSegment {
+        public VariableSegment (String name, boolean escapeHTML, int line) {
+            super(name, line);
+            _escapeHTML = escapeHTML;
+        }
+        @Override protected void execute (
+            Template tmpl, Template.Context ctx, Writer out, String text)  {
             write(out, _escapeHTML ? escapeHTML(text) : text);
         }
         protected boolean _escapeHTML;
@@ -604,6 +607,42 @@ public class Mustache
         }
     }
 
+    protected static class IncludedTemplateSegment extends Template.Segment {
+        public IncludedTemplateSegment (final String templateName, final Compiler compiler) {
+            Reader r;
+            try {
+                r = compiler.loader.getTemplate(templateName);
+            } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException)e;
+                } else {
+                    throw new MustacheException("Unable to load template: " + templateName, e);
+                }
+            }
+            _template = compiler.compile(r);
+        }
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
+            // we must take care to preserve our context rather than creating a new one, which
+            // would happen if we just called execute() with ctx.data
+            _template.executeSegs(ctx, out);
+        }
+        protected final Template _template;
+    }
+
+    protected static class DynamicIncludedTemplateSegment extends LookupSegment {
+        public DynamicIncludedTemplateSegment (String name, int line, Compiler compiler) {
+            super(name, line);
+            _compiler = compiler;
+        }
+        @Override protected void execute (
+            Template tmpl, Template.Context ctx, Writer out, String text) {
+            // we must take care to preserve our context rather than creating a new one, which
+            // would happen if we just called execute() with ctx.data
+            _compiler.compile(text).executeSegs(ctx, out);
+        }
+        protected final Compiler _compiler;
+    }
+
     /** Map of strings that must be replaced inside html attributes and their replacements. (They
      * need to be applied in order so amps are not double escaped.) */
     protected static final String[][] ATTR_ESCAPES = {
@@ -620,6 +659,12 @@ public class Mustache
     protected static final TemplateLoader FAILING_LOADER = new TemplateLoader() {
         public Reader getTemplate (String name) {
             throw new UnsupportedOperationException("Template loading not configured");
+        }
+    };
+
+    protected static final TemplateLoader DYNAMIC_LOADER = new TemplateLoader() {
+        public Reader getTemplate (String name) {
+            throw new AssertionError(); // will never be called
         }
     };
 }
