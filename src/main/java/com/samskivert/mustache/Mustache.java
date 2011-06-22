@@ -141,46 +141,111 @@ public class Mustache
      */
     protected static Template compile (Reader source, Compiler compiler)
     {
-        // a hand-rolled parser; whee!
-        Accumulator accum = new Accumulator(compiler);
-        Delims delims = new Delims();
+        Accumulator accum = new Parser(compiler).parse(source);
+        return new Template(accum.finish(), compiler);
+    }
+
+    private Mustache () {} // no instantiateski
+
+    protected static void restoreStartTag (StringBuilder text, Delims starts)
+    {
+        text.insert(0, starts.start1);
+        if (starts.start2 != NO_CHAR) {
+            text.insert(1, starts.start2);
+        }
+    }
+
+    protected static String escapeHTML (String text)
+    {
+        for (String[] escape : ATTR_ESCAPES) {
+            text = text.replace(escape[0], escape[1]);
+        }
+        return text;
+    }
+
+    protected static boolean allowsWhitespace (char typeChar)
+    {
+        return (typeChar == '=') || // change delimiters
+            (typeChar == '!');      // comment
+    }
+
+    protected static final int TEXT = 0;
+    protected static final int MATCHING_START = 1;
+    protected static final int MATCHING_END = 2;
+    protected static final int TAG = 3;
+
+    // a hand-rolled parser; whee!
+    protected static class Parser {
+        final Delims delims = new Delims();
+        final StringBuilder text = new StringBuilder();
+
+        Reader source;
+        Accumulator accum;
+
         int state = TEXT;
-        StringBuilder text = new StringBuilder();
         int line = 1;
         boolean skipNewline = false;
 
-        while (true) {
-            char c;
-            try {
-                int v = source.read();
-                if (v == -1) {
-                    break;
-                }
-                c = (char)v;
-            } catch (IOException e) {
-                throw new MustacheException(e);
-            }
+        public Parser (Compiler compiler) {
+            this.accum = new Accumulator(compiler);
+        }
 
-            if (c == '\n') {
-                line++;
-                // if we just parsed an open section or close section task, we'll skip the first
-                // newline character following it, if desired; TODO: handle CR, sigh
-                if (skipNewline) {
+        public Accumulator parse (Reader source) {
+            this.source = source;
+
+            while (true) {
+                char c;
+                try {
+                    int v = source.read();
+                    if (v == -1) {
+                        break;
+                    }
+                    c = (char)v;
+                } catch (IOException e) {
+                    throw new MustacheException(e);
+                }
+
+                if (c == '\n') {
+                    line++;
+                    // if we just parsed an open section or close section task, we'll skip the first
+                    // newline character following it, if desired; TODO: handle CR, sigh
+                    if (skipNewline) {
+                        skipNewline = false;
+                        continue;
+                    }
+                } else {
                     skipNewline = false;
-                    continue;
                 }
-            } else {
-                skipNewline = false;
+
+                parseChar(c);
             }
 
+            // accumulate any trailing text
+            switch (state) {
+            case TAG:
+                restoreStartTag(text, delims);
+                break;
+            case MATCHING_END:
+                restoreStartTag(text, delims);
+                text.append(delims.end1);
+                break;
+            case MATCHING_START:
+                text.append(delims.start1);
+                break;
+                // case TEXT: // do nothing
+            }
+            accum.addTextSegment(text);
+
+            return accum;
+        }
+
+        protected void parseChar (char c) {
             switch (state) {
             case TEXT:
                 if (c == delims.start1) {
+                    state = MATCHING_START;
                     if (delims.start2 == NO_CHAR) {
-                        accum.addTextSegment(text);
-                        state = TAG;
-                    } else {
-                        state = MATCHING_START;
+                        parseChar(NO_CHAR);
                     }
                 } else {
                     text.append(c);
@@ -193,28 +258,31 @@ public class Mustache
                     state = TAG;
                 } else {
                     text.append(delims.start1);
-                    if (c != delims.start1) {
-                        text.append(c);
-                        state = TEXT;
-                    }
+                    state = TEXT;
+                    parseChar(c);
                 }
                 break;
 
             case TAG:
                 if (c == delims.end1) {
+                    state = MATCHING_END;
                     if (delims.end2 == NO_CHAR) {
-                        if (text.charAt(0) == '=') {
-                            delims.updateDelims(text.substring(1, text.length()-1));
-                            text.setLength(0);
-                        } else {
-                            sanityCheckTag(text, line, delims.start1, delims.start2);
-                            accum = accum.addTagSegment(text, line);
-                            skipNewline = accum.skipNewline();
-                        }
-                        state = TEXT;
-                    } else {
-                        state = MATCHING_END;
+                        parseChar(NO_CHAR);
                     }
+
+                } else if (c == delims.start1 && text.length() > 0) {
+                    // if we've already matched some tag characters and we see a new start tag
+                    // character (e.g. "{{foo {" but not "{{{"), treat the already matched text as
+                    // plain text and start matching a new tag from this point
+                    restoreStartTag(text, delims);
+                    accum.addTextSegment(text);
+                    if (delims.start2 == NO_CHAR) {
+                        accum.addTextSegment(text);
+                        state = TAG;
+                    } else {
+                        state = MATCHING_START;
+                    }
+
                 } else {
                     text.append(c);
                 }
@@ -244,68 +312,20 @@ public class Mustache
                             text.replace(0, 1, "&");
                         }
                         // process the tag between the mustaches
-                        sanityCheckTag(text, line, delims.start1, delims.start2);
                         accum = accum.addTagSegment(text, line);
                         skipNewline = accum.skipNewline();
                     }
                     state = TEXT;
+
                 } else {
                     text.append(delims.end1);
-                    if (c != delims.end1) {
-                        text.append(c);
-                        state = TAG;
-                    }
+                    state = TAG;
+                    parseChar(c);
                 }
                 break;
             }
         }
-
-        // accumulate any trailing text
-        switch (state) {
-        case TEXT:
-            accum.addTextSegment(text);
-            break;
-        case MATCHING_START:
-            text.append(delims.start1);
-            accum.addTextSegment(text);
-            break;
-        case MATCHING_END:
-            text.append(delims.end1);
-            accum.addTextSegment(text);
-            break;
-        case TAG:
-            throw new MustacheParseException("Template ended while parsing a tag: " + text);
-        }
-
-        return new Template(accum.finish(), compiler);
     }
-
-    private Mustache () {} // no instantiateski
-
-    protected static void sanityCheckTag (StringBuilder accum, int line, char start1, char start2)
-    {
-        for (int ii = 0, ll = accum.length(); ii < ll; ii++) {
-            if (accum.charAt(ii) == start1) {
-                if (start2 == NO_CHAR || (ii < ll-1 && accum.charAt(ii+1) == start2)) {
-                    throw new MustacheParseException("Tag contains start tag delimiter, probably " +
-                                                     "missing close delimiter '" + accum + "'", line);
-                }
-            }
-        }
-    }
-
-    protected static String escapeHTML (String text)
-    {
-        for (String[] escape : ATTR_ESCAPES) {
-            text = text.replace(escape[0], escape[1]);
-        }
-        return text;
-    }
-
-    protected static final int TEXT = 0;
-    protected static final int MATCHING_START = 1;
-    protected static final int MATCHING_END = 2;
-    protected static final int TAG = 3;
 
     protected static class Delims {
         public char start1 = '{';

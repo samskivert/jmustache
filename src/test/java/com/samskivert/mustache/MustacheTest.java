@@ -205,9 +205,16 @@ public class MustacheTest
                      execute(context("a", "<b>")));
     }
 
-    @Test(expected=MustacheParseException.class)
-    public void testDanglingTag () {
-        Mustache.compiler().escapeHTML(true).compile("{{a").execute(context("a", "<b>"));
+    @Test public void testDanglingTag () {
+        test("foo{", "foo{", context("a", "<b>"));
+        test("foo{{", "foo{{", context("a", "<b>"));
+        test("foo{{a", "foo{{a", context("a", "<b>"));
+        test("foo{{a}", "foo{{a}", context("a", "<b>"));
+    }
+
+    @Test public void testRepeatedOpenTag () {
+        test("{{ funny [b] business", "{{ funny {{a}} business", context("a", "[b]"));
+        test("{{ funny <b> business", "{{ funny {{{a}}} business", context("a", "<b>"));
     }
 
     @Test(expected=MustacheParseException.class)
