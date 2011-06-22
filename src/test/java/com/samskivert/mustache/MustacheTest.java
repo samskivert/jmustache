@@ -212,9 +212,15 @@ public class MustacheTest
         test("foo{{a}", "foo{{a}", context("a", "<b>"));
     }
 
-    @Test public void testRepeatedOpenTag () {
+    @Test public void testStrayTagCharacters () {
+        test("funny [b] business {{", "funny {{a}} business {{", context("a", "[b]"));
+        test("funny <b> business {{", "funny {{{a}}} business {{", context("a", "<b>"));
         test("{{ funny [b] business", "{{ funny {{a}} business", context("a", "[b]"));
         test("{{ funny <b> business", "{{ funny {{{a}}} business", context("a", "<b>"));
+        test("funny [b] business }}", "funny {{a}} business }}", context("a", "[b]"));
+        test("funny <b> business }}", "funny {{{a}}} business }}", context("a", "<b>"));
+        test("}} funny [b] business", "}} funny {{a}} business", context("a", "[b]"));
+        test("}} funny <b> business", "}} funny {{{a}}} business", context("a", "<b>"));
     }
 
     @Test(expected=MustacheParseException.class)
