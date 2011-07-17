@@ -240,6 +240,7 @@ public class Template
         final Method m = getMethod(key.cclass, key.name);
         if (m != null) {
             return new VariableFetcher() {
+                @Override
                 public Object get (Object ctx, String name) throws Exception {
                     return m.invoke(ctx);
                 }
@@ -249,6 +250,7 @@ public class Template
         final Field f = getField(key.cclass, key.name);
         if (f != null) {
             return new VariableFetcher() {
+                @Override
                 public Object get (Object ctx, String name) throws Exception {
                     return f.get(ctx);
                 }
@@ -373,12 +375,14 @@ public class Template
     }
 
     protected static final VariableFetcher MAP_FETCHER = new VariableFetcher() {
+        @Override
         public Object get (Object ctx, String name) throws Exception {
             return ((Map<?,?>)ctx).get(name);
         }
     };
 
     protected static final VariableFetcher THIS_FETCHER = new VariableFetcher() {
+        @Override
         public Object get (Object ctx, String name) throws Exception {
             return ctx;
         }
