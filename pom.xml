@@ -20,8 +20,8 @@
 
   <licenses>
     <license>
-      <name>GNU Lesser General Public License (LGPL), Version 2.1</name>
-      <url>http://www.fsf.org/licensing/licenses/lgpl.txt</url>
+      <name>The (New) BSD License</name>
+      <url>http://www.opensource.org/licenses/bsd-license.php</url>
       <distribution>repo</distribution>
     </license>
   </licenses>
