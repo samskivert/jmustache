@@ -90,8 +90,8 @@ public class Template
             if (name != DOT_NAME && name.indexOf(DOT_NAME) != -1) {
                 String[] comps = name.split("\\.");
                 // we want to allow the first component of a compound key to be located in a parent
-                // context, but once we're selecting sub-components, they must only be resolved in the
-                // object that represents that component
+                // context, but once we're selecting sub-components, they must only be resolved in
+                // the object that represents that component
                 Object data = getValue(ctx, comps[0].intern(), line, missingIsNull);
                 for (int ii = 1; ii < comps.length; ii++) {
                     if (data == NO_FETCHER_FOUND) {
@@ -141,7 +141,8 @@ public class Template
         }
         // we've popped off the top of our stack of contexts, if we never actually found a fetcher
         // for our variable, we need to let checkForMissing() know
-        return checkForMissing(name, line, missingIsNull, variableMissing ? NO_FETCHER_FOUND : null);
+        return checkForMissing(name, line, missingIsNull,
+                               variableMissing ? NO_FETCHER_FOUND : null);
     }
 
     /**
