@@ -276,8 +276,8 @@ By taking advantage of reflection and bean-property-style lookups, you can do ko
 Newline trimming
 ----------------
 
-Newlines immediately following the opening or closing section tag are trimmed.
-This allows for civilized templates, like:
+If the opening or closing section tag are the only thing on a line, any newline
+following the tag is trimmed. This allows for civilized templates, like:
 
     Favorite foods:
     {{#people}}

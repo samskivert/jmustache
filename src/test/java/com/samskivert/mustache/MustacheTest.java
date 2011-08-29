@@ -306,6 +306,16 @@ public class MustacheTest
              "endlist", tmpl, context("items", Collections.emptyList()));
     }
 
+    @Test public void testNewlineNonSkipping () {
+        // only when a section tag is by itself on a line should we absorb the newline following it
+        String tmpl = "thing?: {{#thing}}yes{{/thing}}{{^thing}}no{{/thing}}\n" +
+            "that's nice";
+        test("thing?: yes\n" +
+             "that's nice", tmpl, context("thing", true));
+        test("thing?: no\n" +
+             "that's nice", tmpl, context("thing", false));
+    }
+
     @Test public void testNestedContexts () {
         test("foo((foobar)(foobaz))", "{{name}}({{#things}}({{name}}{{thing_name}}){{/things}})",
              context("name", "foo",
@@ -352,7 +362,7 @@ public class MustacheTest
     }
 
     @Test public void testStandardsModeWithNullValuesInLoop () {
-        String tmpl = "first line\n{{#nonexistent}}foo{{/nonexistent}}\nsecond line";
+        String tmpl = "first line\n{{#nonexistent}}foo\n{{/nonexistent}}\nsecond line";
         String result = Mustache.compiler().standardsMode(true).compile(tmpl).execute(new Object());
         assertEquals("first line\nsecond line", result);
     }

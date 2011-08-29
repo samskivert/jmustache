@@ -183,7 +183,8 @@ public class Mustache
         Accumulator accum;
 
         int state = TEXT;
-        int line = 1;
+        int line = 1, column = 0;
+        int tagStartColumn = -1;
         boolean skipNewline = false;
 
         public Parser (Compiler compiler) {
@@ -206,14 +207,15 @@ public class Mustache
                 }
 
                 if (c == '\n') {
+                    column = 0;
                     line++;
-                    // if we just parsed an open section or close section task, we'll skip the first
-                    // newline character following it, if desired; TODO: handle CR, sigh
+                    // skip this newline character if we're configured to do so; TODO: handle CR
                     if (skipNewline) {
                         skipNewline = false;
                         continue;
                     }
                 } else {
+                    column++;
                     skipNewline = false;
                 }
 
@@ -244,6 +246,7 @@ public class Mustache
             case TEXT:
                 if (c == delims.start1) {
                     state = MATCHING_START;
+                    tagStartColumn = column;
                     if (delims.start2 == NO_CHAR) {
                         parseChar(NO_CHAR);
                     }
@@ -276,6 +279,7 @@ public class Mustache
                     // plain text and start matching a new tag from this point
                     restoreStartTag(text, delims);
                     accum.addTextSegment(text);
+                    tagStartColumn = column;
                     if (delims.start2 == NO_CHAR) {
                         accum.addTextSegment(text);
                         state = TAG;
@@ -313,7 +317,7 @@ public class Mustache
                         }
                         // process the tag between the mustaches
                         accum = accum.addTagSegment(text, line);
-                        skipNewline = accum.skipNewline();
+                        skipNewline = (tagStartColumn == 1) && accum.justOpenedOrClosedCompound();
                     }
                     state = TEXT;
 
@@ -377,10 +381,9 @@ public class Mustache
             _compiler = compiler;
         }
 
-        public boolean skipNewline () {
-            // return true if we just added a compound segment which means we're immediately
-            // following the close section tag
-            return (_segs.size() > 0 && _segs.get(_segs.size()-1) instanceof CompoundSegment);
+        public boolean justOpenedOrClosedCompound () {
+            // return true if we just closed a compound segment; we'll handle just opened elsewhere
+            return (!_segs.isEmpty() && _segs.get(_segs.size()-1) instanceof CompoundSegment);
         }
 
         public void addTextSegment (StringBuilder text) {
@@ -400,9 +403,9 @@ public class Mustache
             case '#':
                 requireNoNewlines(tag, tagLine);
                 return new Accumulator(_compiler) {
-                    @Override public boolean skipNewline () {
-                        // if we just opened this section, we want to skip a newline
-                        return (_segs.size() == 0) || super.skipNewline();
+                    @Override public boolean justOpenedOrClosedCompound () {
+                        // if we just opened this section, we'll have no segments
+                        return (_segs.isEmpty()) || super.justOpenedOrClosedCompound();
                     }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheParseException(
@@ -422,9 +425,9 @@ public class Mustache
             case '^':
                 requireNoNewlines(tag, tagLine);
                 return new Accumulator(_compiler) {
-                    @Override public boolean skipNewline () {
-                        // if we just opened this section, we want to skip a newline
-                        return (_segs.size() == 0) || super.skipNewline();
+                    @Override public boolean justOpenedOrClosedCompound () {
+                        // if we just opened this section, we'll have no segments
+                        return (_segs.isEmpty()) || super.justOpenedOrClosedCompound();
                     }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheParseException(
