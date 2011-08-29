@@ -55,7 +55,7 @@ public class Template
      */
     public void execute (Object context, Writer out) throws MustacheException
     {
-        executeSegs(new Context(context, null, 0, Mode.OTHER), out);
+        executeSegs(new Context(context, null, 0, false, false), out);
     }
 
     protected Template (Segment[] segs, Mustache.Compiler compiler)
@@ -113,9 +113,9 @@ public class Template
 
         // handle our special variables
         if (name == FIRST_NAME) {
-            return ctx.mode == Mode.FIRST;
+            return ctx.onFirst;
         } else if (name == LAST_NAME) {
-            return ctx.mode == Mode.LAST;
+            return ctx.onLast;
         } else if (name == INDEX_NAME) {
             return ctx.index;
         }
@@ -313,24 +313,24 @@ public class Template
         return null;
     }
 
-    protected static enum Mode { FIRST, OTHER, LAST };
-
     protected static class Context
     {
         public final Object data;
         public final Context parent;
         public final int index;
-        public final Mode mode;
+        public final boolean onFirst;
+        public final boolean onLast;
 
-        public Context (Object data, Context parent, int index, Mode mode) {
+        public Context (Object data, Context parent, int index, boolean onFirst, boolean onLast) {
             this.data = data;
             this.parent = parent;
             this.index = index;
-            this.mode = mode;
+            this.onFirst = onFirst;
+            this.onLast = onLast;
         }
 
-        public Context nest (Object data, int index, Mode mode) {
-            return new Context(data, this, index, mode);
+        public Context nest (Object data, int index, boolean onFirst, boolean onLast) {
+            return new Context(data, this, index, onFirst, onLast);
         }
     }
 

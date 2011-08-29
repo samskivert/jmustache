@@ -571,13 +571,11 @@ public class Mustache
                 value = ((Iterable<?>)value).iterator();
             }
             if (value instanceof Iterator<?>) {
-                Template.Mode mode = null;
                 int index = 0;
                 for (Iterator<?> iter = (Iterator<?>)value; iter.hasNext(); ) {
                     Object elem = iter.next();
-                    mode = (mode == null) ? Template.Mode.FIRST :
-                        (iter.hasNext() ? Template.Mode.OTHER : Template.Mode.LAST);
-                    executeSegs(tmpl, ctx.nest(elem, ++index, mode), out);
+                    boolean onFirst = (index == 0), onLast = !iter.hasNext();
+                    executeSegs(tmpl, ctx.nest(elem, ++index, onFirst, onLast), out);
                 }
             } else if (value instanceof Boolean) {
                 if ((Boolean)value) {
@@ -585,12 +583,11 @@ public class Mustache
                 }
             } else if (value.getClass().isArray()) {
                 for (int ii = 0, ll = Array.getLength(value); ii < ll; ii++) {
-                    Template.Mode mode = (ii == 0) ? Template.Mode.FIRST :
-                        ((ii == ll-1) ? Template.Mode.LAST : Template.Mode.OTHER);
-                    executeSegs(tmpl, ctx.nest(Array.get(value, ii), ii+1, mode), out);
+                    boolean onFirst = (ii == 0), onLast = (ii == ll-1);
+                    executeSegs(tmpl, ctx.nest(Array.get(value, ii), ii+1, onFirst, onLast), out);
                 }
             } else {
-                executeSegs(tmpl, ctx.nest(value, 0, Template.Mode.OTHER), out);
+                executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
             }
         }
     }

@@ -329,6 +329,13 @@ public class MustacheTest
              context("things", Arrays.asList("foo", "bar", "baz")));
     }
 
+    @Test public void testFirstLast () {
+        test("[foo]", "{{#things}}{{#-first}}[{{/-first}}{{this}}{{#-last}}]{{/-last}}{{/things}}",
+             context("things", Arrays.asList("foo")));
+        test("foo", "{{#things}}{{this}}{{^-last}}|{{/-last}}{{/things}}",
+             context("things", Arrays.asList("foo")));
+    }
+
     @Test public void testIndex () {
         test("123", "{{#things}}{{-index}}{{/things}}",
              context("things", Arrays.asList("foo", "bar", "baz")));
