@@ -48,7 +48,17 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
+    <!-- we include the source files in our main jar for use by GWT -->
+    <resources>
+      <resource>
+        <directory>${project.build.sourceDirectory}</directory>
+        <excludes>
+          <exclude>com/samskivert/mustache/DefaultCollector.java</exclude>
+        </excludes>
+      </resource>
+    </resources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
