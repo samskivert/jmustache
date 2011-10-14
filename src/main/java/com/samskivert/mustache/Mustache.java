@@ -8,24 +8,29 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 /**
  * Provides <a href="http://mustache.github.com/">Mustache</a> templating services.
- * <p> Basic usage: <pre>{@code
+ *
+ * <p> Basic usage:
+ * <pre>{@code
  * String source = "Hello {{arg}}!";
  * Template tmpl = Mustache.compiler().compile(source);
  * Map<String, Object> context = new HashMap<String, Object>();
  * context.put("arg", "world");
- * tmpl.execute(context); // returns "Hello world!" }</pre>
+ * tmpl.execute(context); // returns "Hello world!"
+ * }</pre>
+ *
  * <p> Limitations:
- * <ul><li> Only one or two character delimiters are supported when using {{=ab cd=}} to change
+ * <ul>
+ * <li> Only one or two character delimiters are supported when using {{=ab cd=}} to change
  * delimiters.
  * <li> {{< include}} is not supported. We specifically do not want the complexity of handling the
- * automatic loading of dependent templates. </ul>
+ * automatic loading of dependent templates.
+ * </ul>
  */
 public class Mustache
 {
@@ -51,6 +56,9 @@ public class Mustache
         /** The template loader in use during this compilation. */
         public final TemplateLoader loader;
 
+        /** The collector used by templates compiled with this compiler. */
+        public final Collector collector;
+
         /** Compiles the supplied template into a repeatedly executable intermediate form. */
         public Template compile (String template) {
             return compile(new StringReader(template));
@@ -63,16 +71,16 @@ public class Mustache
 
         /** Returns a compiler that either does or does not escape HTML by default. */
         public Compiler escapeHTML (boolean escapeHTML) {
-            return new Compiler(escapeHTML, this.standardsMode,
-                                this.nullValue, this.missingIsNull, this.loader);
+            return new Compiler(escapeHTML, this.standardsMode, this.nullValue, this.missingIsNull,
+                                this.loader, this.collector);
         }
 
         /** Returns a compiler that either does or does not use standards mode. Standards mode
          * disables the non-standard JMustache extensions like looking up missing names in a parent
          * context. */
         public Compiler standardsMode (boolean standardsMode) {
-            return new Compiler(this.escapeHTML, standardsMode,
-                                this.nullValue, this.missingIsNull, this.loader);
+            return new Compiler(this.escapeHTML, standardsMode, this.nullValue, this.missingIsNull,
+                                this.loader, this.collector);
         }
 
         /** Returns a compiler that will use the given value for any variable that is missing, or
@@ -81,8 +89,8 @@ public class Mustache
          * regardless of whether a null or default value is configured, if the resolution of part
          * of a compound key results in a missing or null value, an exception will be raised. */
         public Compiler defaultValue (String defaultValue) {
-            return new Compiler(this.escapeHTML, this.standardsMode,
-                                defaultValue, true, this.loader);
+            return new Compiler(this.escapeHTML, this.standardsMode, defaultValue, true,
+                                this.loader, this.collector);
         }
 
         /** Returns a compiler that will use the given value for any variable that resolves to
@@ -100,23 +108,24 @@ public class Mustache
          * of part of a compound key results in a missing or null value, an exception will be
          * raised. */
         public Compiler nullValue (String nullValue) {
-            return new Compiler(this.escapeHTML, this.standardsMode,
-                                nullValue, false, this.loader);
+            return new Compiler(this.escapeHTML, this.standardsMode, nullValue, false,
+                                this.loader, this.collector);
         }
 
         /** Returns a compiler configured to use the supplied template loader to handle partials. */
         public Compiler withLoader (TemplateLoader loader) {
-            return new Compiler(this.escapeHTML, this.standardsMode,
-                                this.nullValue, this.missingIsNull, loader);
+            return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
+                                this.missingIsNull, loader, this.collector);
         }
 
-        protected Compiler (boolean escapeHTML, boolean standardsMode,
-                            String nullValue, boolean missingIsNull, TemplateLoader loader) {
+        protected Compiler (boolean escapeHTML, boolean standardsMode, String nullValue,
+                            boolean missingIsNull, TemplateLoader loader, Collector collector) {
             this.escapeHTML = escapeHTML;
             this.standardsMode = standardsMode;
             this.nullValue = nullValue;
             this.missingIsNull = missingIsNull;
             this.loader = loader;
+            this.collector = collector;
         }
     }
 
@@ -128,12 +137,30 @@ public class Mustache
         public Reader getTemplate (String name) throws Exception;
     }
 
+    /** Used to read variables from values. */
+    public interface VariableFetcher
+    {
+        /** Reads the so-named variable from the supplied context object. */
+        Object get (Object ctx, String name) throws Exception;
+    }
+
+    /** Handles interpreting objects as collections. */
+    public interface Collector
+    {
+        /** Returns an iterator that can iterate over the supplied value, or null if the value is
+         * not a collection. */
+        Iterator<?> toIterator (final Object value);
+
+        /** Creates a fetcher for a so-named variable on instances of the given class. */
+        VariableFetcher createFetcher (Class<?> cclass, String name);
+    }
+
     /**
      * Returns a compiler that escapes HTML by default and does not use standards mode.
      */
     public static Compiler compiler ()
     {
-        return new Compiler(true, false, null, true, FAILING_LOADER);
+        return new Compiler(true, false, null, true, FAILING_LOADER, new DefaultCollector());
     }
 
     /**
@@ -570,12 +597,10 @@ public class Mustache
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
-            if (value instanceof Iterable<?>) {
-                value = ((Iterable<?>)value).iterator();
-            }
-            if (value instanceof Iterator<?>) {
+            Iterator<?> iter = tmpl._compiler.collector.toIterator(value);
+            if (iter != null) {
                 int index = 0;
-                for (Iterator<?> iter = (Iterator<?>)value; iter.hasNext(); ) {
+                while (iter.hasNext()) {
                     Object elem = iter.next();
                     boolean onFirst = (index == 0), onLast = !iter.hasNext();
                     executeSegs(tmpl, ctx.nest(elem, ++index, onFirst, onLast), out);
@@ -583,11 +608,6 @@ public class Mustache
             } else if (value instanceof Boolean) {
                 if ((Boolean)value) {
                     executeSegs(tmpl, ctx, out);
-                }
-            } else if (value.getClass().isArray()) {
-                for (int ii = 0, ll = Array.getLength(value); ii < ll; ii++) {
-                    boolean onFirst = (ii == 0), onLast = (ii == ll-1);
-                    executeSegs(tmpl, ctx.nest(Array.get(value, ii), ii+1, onFirst, onLast), out);
                 }
             } else {
                 executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
@@ -602,22 +622,13 @@ public class Mustache
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
-            if (value instanceof Iterable<?>) {
-                Iterable<?> iable = (Iterable<?>)value;
-                if (!iable.iterator().hasNext()) {
+            Iterator<?> iter = tmpl._compiler.collector.toIterator(value);
+            if (iter != null) {
+                if (!iter.hasNext()) {
                     executeSegs(tmpl, ctx, out);
                 }
             } else if (value instanceof Boolean) {
                 if (!(Boolean)value) {
-                    executeSegs(tmpl, ctx, out);
-                }
-            } else if (value.getClass().isArray()) {
-                if (Array.getLength(value) == 0) {
-                    executeSegs(tmpl, ctx, out);
-                }
-            } else if (value instanceof Iterator<?>) {
-                Iterator<?> iter = (Iterator<?>)value;
-                if (!iter.hasNext()) {
                     executeSegs(tmpl, ctx, out);
                 }
             } // TODO: fail?

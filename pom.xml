@@ -62,6 +62,9 @@
           <showWarnings>true</showWarnings>
           <!-- yes, those quoted spaces are a workaround sanctioned by the Maven idiocracy -->
           <compilerArgument>-Xlint" "-Xlint:-serial" "-Xlint:-path</compilerArgument>
+          <excludes>
+            <exclude>com/samskivert/mustache/gwt/**</exclude>
+          </excludes>
         </configuration>
       </plugin>
       <plugin>

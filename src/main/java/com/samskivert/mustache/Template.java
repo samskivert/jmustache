@@ -7,12 +7,10 @@ package com.samskivert.mustache;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents a compiled template. Templates are executed with a <em>context</em> to generate
@@ -180,16 +178,19 @@ public class Template
         }
 
         Key key = new Key(data.getClass(), name);
-        VariableFetcher fetcher = _fcache.get(key);
+        Mustache.VariableFetcher fetcher;
+        synchronized (_fcache) {
+            fetcher = _fcache.get(key);
+        }
         if (fetcher != null) {
             try {
                 return fetcher.get(data, name);
             } catch (Exception e) {
                 // zoiks! non-monomorphic call site, update the cache and try again
-                fetcher = createFetcher(key);
+                fetcher = _compiler.collector.createFetcher(key.cclass, key.name);
             }
         } else {
-            fetcher = createFetcher(key);
+            fetcher = _compiler.collector.createFetcher(key.cclass, key.name);
         }
 
         // if we were unable to create a fetcher, just return null and our caller can either try
@@ -200,7 +201,9 @@ public class Template
 
         try {
             Object value = fetcher.get(data, name);
-            _fcache.put(key, fetcher);
+            synchronized (_fcache) {
+                _fcache.put(key, fetcher);
+            }
             return value;
         } catch (Exception e) {
             throw new MustacheException(
@@ -224,94 +227,8 @@ public class Template
 
     protected final Segment[] _segs;
     protected final Mustache.Compiler _compiler;
-    protected final Map<Key, VariableFetcher> _fcache =
-        new ConcurrentHashMap<Key, VariableFetcher>();
-
-    protected static VariableFetcher createFetcher (Key key)
-    {
-        // support both .name and this.name to fetch members
-        if (key.name == DOT_NAME || key.name == THIS_NAME) {
-            return THIS_FETCHER;
-        }
-
-        if (Map.class.isAssignableFrom(key.cclass)) {
-            return MAP_FETCHER;
-        }
-
-        final Method m = getMethod(key.cclass, key.name);
-        if (m != null) {
-            return new VariableFetcher() {
-                @Override public Object get (Object ctx, String name) throws Exception {
-                    return m.invoke(ctx);
-                }
-            };
-        }
-
-        final Field f = getField(key.cclass, key.name);
-        if (f != null) {
-            return new VariableFetcher() {
-                @Override public Object get (Object ctx, String name) throws Exception {
-                    return f.get(ctx);
-                }
-            };
-        }
-
-        return null;
-    }
-
-    protected static Method getMethod (Class<?> clazz, String name)
-    {
-        Method m;
-        try {
-            m = clazz.getDeclaredMethod(name);
-            if (!m.getReturnType().equals(void.class)) {
-                if (!m.isAccessible()) {
-                    m.setAccessible(true);
-                }
-                return m;
-            }
-        } catch (Exception e) {
-            // fall through
-        }
-        try {
-            m = clazz.getDeclaredMethod(
-                "get" + Character.toUpperCase(name.charAt(0)) + name.substring(1));
-            if (!m.getReturnType().equals(void.class)) {
-                if (!m.isAccessible()) {
-                    m.setAccessible(true);
-                }
-                return m;
-            }
-        } catch (Exception e) {
-            // fall through
-        }
-
-        Class<?> sclass = clazz.getSuperclass();
-        if (sclass != Object.class && sclass != null) {
-            return getMethod(clazz.getSuperclass(), name);
-        }
-        return null;
-    }
-
-    protected static Field getField (Class<?> clazz, String name)
-    {
-        Field f;
-        try {
-            f = clazz.getDeclaredField(name);
-            if (!f.isAccessible()) {
-                f.setAccessible(true);
-            }
-            return f;
-        } catch (Exception e) {
-            // fall through
-        }
-
-        Class<?> sclass = clazz.getSuperclass();
-        if (sclass != Object.class && sclass != null) {
-            return getField(clazz.getSuperclass(), name);
-        }
-        return null;
-    }
+    protected final Map<Key, Mustache.VariableFetcher> _fcache =
+        new HashMap<Key, Mustache.VariableFetcher>();
 
     protected static class Context
     {
@@ -368,22 +285,6 @@ public class Template
             return okey.cclass == cclass && okey.name == name;
         }
     }
-
-    protected static abstract class VariableFetcher {
-        abstract Object get (Object ctx, String name) throws Exception;
-    }
-
-    protected static final VariableFetcher MAP_FETCHER = new VariableFetcher() {
-        @Override public Object get (Object ctx, String name) throws Exception {
-            return ((Map<?,?>)ctx).get(name);
-        }
-    };
-
-    protected static final VariableFetcher THIS_FETCHER = new VariableFetcher() {
-        @Override public Object get (Object ctx, String name) throws Exception {
-            return ctx;
-        }
-    };
 
     protected static final Object NO_FETCHER_FOUND = new Object();
 

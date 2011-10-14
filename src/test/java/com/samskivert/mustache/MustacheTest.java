@@ -50,6 +50,12 @@ public class MustacheTest
         });
     }
 
+    @Test public void testPrimitiveArrayVariable () {
+        test("1234", "{{#foo}}{{this}}{{/foo}}", new Object() {
+            int[] getFoo () { return new int[] { 1, 2, 3, 4 }; }
+        });
+    }
+
     @Test public void testCallSiteReuse () {
         Template tmpl = Mustache.compiler().compile("{{foo}}");
         Object ctx = new Object() {
