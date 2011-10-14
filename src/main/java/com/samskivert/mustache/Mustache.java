@@ -118,6 +118,12 @@ public class Mustache
                                 this.missingIsNull, loader, this.collector);
         }
 
+        /** Returns a compiler configured to use the supplied collector. */
+        public Compiler withCollector (Collector collector) {
+            return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
+                                this.missingIsNull, this.loader, collector);
+        }
+
         protected Compiler (boolean escapeHTML, boolean standardsMode, String nullValue,
                             boolean missingIsNull, TemplateLoader loader, Collector collector) {
             this.escapeHTML = escapeHTML;
