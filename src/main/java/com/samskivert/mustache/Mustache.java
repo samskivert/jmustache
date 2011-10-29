@@ -85,9 +85,7 @@ public class Mustache
 
         /** Returns a compiler that will use the given value for any variable that is missing, or
          * otherwise resolves to null. This is like {@link #nullValue} except that it returns the
-         * supplied default for missing keys and existing keys that return null values. Note that
-         * regardless of whether a null or default value is configured, if the resolution of part
-         * of a compound key results in a missing or null value, an exception will be raised. */
+         * supplied default for missing keys and existing keys that return null values. */
         public Compiler defaultValue (String defaultValue) {
             return new Compiler(this.escapeHTML, this.standardsMode, defaultValue, true,
                                 this.loader, this.collector);
@@ -103,10 +101,7 @@ public class Mustache
          * <li>In the case of a {@link Map} being used as a context, all possible accessors are
          * assumed to exist (but potentially return null), and no exception will ever be
          * raised.</li>
-         * </ul>
-         * Note that regardless of whether a null or default value is configured, if the resolution
-         * of part of a compound key results in a missing or null value, an exception will be
-         * raised. */
+         * </ul> */
         public Compiler nullValue (String nullValue) {
             return new Compiler(this.escapeHTML, this.standardsMode, nullValue, false,
                                 this.loader, this.collector);

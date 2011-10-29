@@ -259,7 +259,7 @@ public class MustacheTest
                 execute(context("things", Arrays.asList("bar", "baz", "bif"))));
     }
 
-    @Test public void testStructuredVariable () {
+    @Test public void testCompoundVariable () {
         test("hello", "{{foo.bar.baz}}", new Object() {
             Object foo () {
                 return new Object() {
@@ -271,25 +271,39 @@ public class MustacheTest
         });
     }
 
-    @Test(expected=NullPointerException.class)
+    @Test(expected=MustacheException.class)
     public void testNullComponentInCompoundVariable () {
-        // make sure that even if we have a null value configured, we freak out
-        test(Mustache.compiler().nullValue("foo"), "unused", "{{foo.bar.baz}}", new Object() {
-            Object foo () {
-                return new Object() {
-                    Object bar = null;
-                };
-            }
+        test(Mustache.compiler(), "unused", "{{foo.bar.baz}}", new Object() {
+            Object foo = new Object() {
+                Object bar = null;
+            };
         });
     }
 
-    @Test(expected=NullPointerException.class)
+    @Test(expected=MustacheException.class)
     public void testMissingComponentInCompoundVariable () {
-        // make sure that even if we have a default value configured, we freak out
-        test(Mustache.compiler().defaultValue("foo"), "unused", "{{foo.bar.baz}}", new Object() {
-            Object foo () {
-                return new Object(); // no bar
-            }
+        test(Mustache.compiler(), "unused", "{{foo.bar.baz}}", new Object() {
+            Object foo = new Object(); // no bar
+        });
+    }
+
+    public void testNullComponentInCompoundVariableWithDefault () {
+        test(Mustache.compiler().nullValue("null"), "null", "{{foo.bar.baz}}", new Object() {
+            Object foo = null;
+        });
+        test(Mustache.compiler().nullValue("null"), "null", "{{foo.bar.baz}}", new Object() {
+            Object foo = new Object() {
+                Object bar = null;
+            };
+        });
+    }
+
+    public void testMissingComponentInCompoundVariableWithDefault () {
+        test(Mustache.compiler().defaultValue("?"), "?", "{{foo.bar.baz}}", new Object() {
+            // no foo, no bar
+        });
+        test(Mustache.compiler().defaultValue("?"), "?", "{{foo.bar.baz}}", new Object() {
+            Object foo = new Object(); // no bar
         });
     }
 

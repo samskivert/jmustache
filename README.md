@@ -280,18 +280,9 @@ sections. The above examples could also be represented as:
     Hello {{#class}}{{name}}{{/class}}!
 
 Note also that one semantic difference exists between nested singleton sections
-and compound variables: compound variables do not make use of the default value
-and null value configuration. If a null or missing value is encountered while
-resolving a compound variable, an exception is always raised.
-
-If you desire for a default value to be used when null or missing values are
-encountered, use the somewhat more verbose singleton sections. The use of
-sections clearly communicates to someone reading the template that the section
-will not be rendered if the object it references is missing or null and allows
-for a site-specific default value to be used, as in:
-
-    {{#foo}}{{name}}{{/foo}}
-    {{^foo}}Missing foo!{{/foo}}
+and compound variables: after resolving the object for the first component of
+the compound variable, parent contexts will not be searched when resolving
+subcomponents.
 
 Newline trimming
 ----------------

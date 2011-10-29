@@ -93,13 +93,12 @@ public class Template
                 Object data = getValue(ctx, comps[0].intern(), line, missingIsNull);
                 for (int ii = 1; ii < comps.length; ii++) {
                     if (data == NO_FETCHER_FOUND) {
-                        throw new NullPointerException(
+                        if (!missingIsNull) throw new MustacheException(
                             "Missing context for compound variable '" + name + "' on line " + line +
                             ". '" + comps[ii - 1] + "' was not found.");
+                        return null;
                     } else if (data == null) {
-                        throw new NullPointerException(
-                            "Null context for compound variable '" + name + "' on line " + line +
-                            ". '" + comps[ii - 1] + "' resolved to null.");
+                        return null;
                     }
                     // once we step into a composite key, we drop the ability to query our parent
                     // contexts; that would be weird and confusing
@@ -214,12 +213,9 @@ public class Template
     protected Object checkForMissing (String name, int line, boolean missingIsNull, Object value)
     {
         if (value == NO_FETCHER_FOUND) {
-            if (missingIsNull) {
-                return null;
-            } else {
-                throw new MustacheException(
-                    "No method or field with name '" + name + "' on line " + line);
-            }
+            if (missingIsNull) return null;
+            throw new MustacheException(
+                "No method or field with name '" + name + "' on line " + line);
         } else {
             return value;
         }
