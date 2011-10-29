@@ -345,7 +345,7 @@ public class Mustache
                         }
                         // process the tag between the mustaches
                         accum = accum.addTagSegment(text, line);
-                        skipNewline = (tagStartColumn == 1) && accum.justOpenedOrClosedCompound();
+                        skipNewline = (tagStartColumn == 1) && accum.justOpenedOrClosedBlock();
                     }
                     state = TEXT;
 
@@ -409,9 +409,9 @@ public class Mustache
             _compiler = compiler;
         }
 
-        public boolean justOpenedOrClosedCompound () {
-            // return true if we just closed a compound segment; we'll handle just opened elsewhere
-            return (!_segs.isEmpty() && _segs.get(_segs.size()-1) instanceof CompoundSegment);
+        public boolean justOpenedOrClosedBlock () {
+            // return true if we just closed a block segment; we'll handle just opened elsewhere
+            return (!_segs.isEmpty() && _segs.get(_segs.size()-1) instanceof BlockSegment);
         }
 
         public void addTextSegment (StringBuilder text) {
@@ -431,9 +431,9 @@ public class Mustache
             case '#':
                 requireNoNewlines(tag, tagLine);
                 return new Accumulator(_compiler) {
-                    @Override public boolean justOpenedOrClosedCompound () {
+                    @Override public boolean justOpenedOrClosedBlock () {
                         // if we just opened this section, we'll have no segments
-                        return (_segs.isEmpty()) || super.justOpenedOrClosedCompound();
+                        return (_segs.isEmpty()) || super.justOpenedOrClosedBlock();
                     }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheParseException(
@@ -453,9 +453,9 @@ public class Mustache
             case '^':
                 requireNoNewlines(tag, tagLine);
                 return new Accumulator(_compiler) {
-                    @Override public boolean justOpenedOrClosedCompound () {
+                    @Override public boolean justOpenedOrClosedBlock () {
                         // if we just opened this section, we'll have no segments
-                        return (_segs.isEmpty()) || super.justOpenedOrClosedCompound();
+                        return (_segs.isEmpty()) || super.justOpenedOrClosedBlock();
                     }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheParseException(
@@ -577,9 +577,9 @@ public class Mustache
         protected boolean _escapeHTML;
     }
 
-    /** A helper class for compound segments. */
-    protected static abstract class CompoundSegment extends NamedSegment {
-        protected CompoundSegment (String name, Template.Segment[] segs, int line) {
+    /** A helper class for block segments. */
+    protected static abstract class BlockSegment extends NamedSegment {
+        protected BlockSegment (String name, Template.Segment[] segs, int line) {
             super(name, line);
             _segs = segs;
         }
@@ -592,7 +592,7 @@ public class Mustache
     }
 
     /** A segment that represents a section. */
-    protected static class SectionSegment extends CompoundSegment {
+    protected static class SectionSegment extends BlockSegment {
         public SectionSegment (String name, Template.Segment[] segs, int line) {
             super(name, segs, line);
         }
@@ -617,7 +617,7 @@ public class Mustache
     }
 
     /** A segment that represents an inverted section. */
-    protected static class InvertedSectionSegment extends CompoundSegment {
+    protected static class InvertedSectionSegment extends BlockSegment {
         public InvertedSectionSegment (String name, Template.Segment[] segs, int line) {
             super(name, segs, line);
         }
