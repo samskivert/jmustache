@@ -282,7 +282,7 @@ sections. The above examples could also be represented as:
 Note also that one semantic difference exists between nested singleton sections
 and compound variables: compound variables do not make use of the default value
 and null value configuration. If a null or missing value is encountered while
-resolving a compound section, an exception is always raised.
+resolving a compound variable, an exception is always raised.
 
 If you desire for a default value to be used when null or missing values are
 encountered, use the somewhat more verbose singleton sections. The use of
