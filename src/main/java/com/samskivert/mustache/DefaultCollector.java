@@ -34,11 +34,12 @@ public class DefaultCollector extends BasicCollector
     }
 
     @Override
-    public Mustache.VariableFetcher createFetcher (Class<?> cclass, String name)
+    public Mustache.VariableFetcher createFetcher (Object ctx, String name)
     {
-        Mustache.VariableFetcher fetcher = super.createFetcher(cclass, name);
+        Mustache.VariableFetcher fetcher = super.createFetcher(ctx, name);
         if (fetcher != null) return fetcher;
 
+        Class<?> cclass = ctx.getClass();
         final Method m = getMethod(cclass, name);
         if (m != null) {
             return new Mustache.VariableFetcher() {

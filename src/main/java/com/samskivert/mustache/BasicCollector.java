@@ -23,14 +23,14 @@ public class BasicCollector implements Mustache.Collector
     }
 
     @Override
-    public Mustache.VariableFetcher createFetcher (Class<?> cclass, String name)
+    public Mustache.VariableFetcher createFetcher (Object ctx, String name)
     {
         // support both .name and this.name to fetch members
         if (name == Template.DOT_NAME || name == Template.THIS_NAME) {
             return THIS_FETCHER;
         }
 
-        if (Map.class.isAssignableFrom(cclass)) {
+        if (ctx instanceof Map<?,?>) {
             return MAP_FETCHER;
         }
 

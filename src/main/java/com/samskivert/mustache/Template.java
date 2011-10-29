@@ -186,10 +186,10 @@ public class Template
                 return fetcher.get(data, name);
             } catch (Exception e) {
                 // zoiks! non-monomorphic call site, update the cache and try again
-                fetcher = _compiler.collector.createFetcher(key.cclass, key.name);
+                fetcher = _compiler.collector.createFetcher(data, key.name);
             }
         } else {
-            fetcher = _compiler.collector.createFetcher(key.cclass, key.name);
+            fetcher = _compiler.collector.createFetcher(data, key.name);
         }
 
         // if we were unable to create a fetcher, just return null and our caller can either try

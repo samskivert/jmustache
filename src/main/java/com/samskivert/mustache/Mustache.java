@@ -144,8 +144,10 @@ public class Mustache
          * not a collection. */
         Iterator<?> toIterator (final Object value);
 
-        /** Creates a fetcher for a so-named variable on instances of the given class. */
-        VariableFetcher createFetcher (Class<?> cclass, String name);
+        /** Creates a fetcher for a so-named variable in the supplied context object, which will
+         * never be null. The fetcher will be cached and reused for future contexts for which
+         * {@code octx.getClass().equals(nctx.getClass()}. */
+        VariableFetcher createFetcher (Object ctx, String name);
     }
 
     /**
