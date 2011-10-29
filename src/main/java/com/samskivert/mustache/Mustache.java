@@ -23,14 +23,6 @@ import java.util.List;
  * context.put("arg", "world");
  * tmpl.execute(context); // returns "Hello world!"
  * }</pre>
- *
- * <p> Limitations:
- * <ul>
- * <li> Only one or two character delimiters are supported when using {{=ab cd=}} to change
- * delimiters.
- * <li> {{< include}} is not supported. We specifically do not want the complexity of handling the
- * automatic loading of dependent templates.
- * </ul>
  */
 public class Mustache
 {
