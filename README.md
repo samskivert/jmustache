@@ -276,8 +276,8 @@ By taking advantage of reflection and bean-property-style lookups, you can do ko
 Note that compound variables are essentially short-hand for using singleton
 sections. The above examples could also be represented as:
 
-    "Hello {{#field}}{{who}}{{/field}}"
-    "Hello {{#class}}{{name}}{{/class}}"
+    Hello {{#field}}{{who}}{{/field}}!
+    Hello {{#class}}{{name}}{{/class}}!
 
 Note also that one semantic difference exists between nested singleton sections
 and compound variables: compound variables do not make use of the default value
