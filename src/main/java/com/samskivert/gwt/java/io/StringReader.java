@@ -6,7 +6,7 @@ package java.io;
 /**
  * A basic implementation of {@code StringReader} for use in GWT.
  */
-public class StringReader implements Reader
+public class StringReader extends Reader
 {
     public StringReader (String data) {
         _data = data;

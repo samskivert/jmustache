@@ -6,7 +6,7 @@ package java.io;
 /**
  * A minimal version of {@code Reader} to satisfy GWT.
  */
-public interface Reader
+public abstract class Reader
 {
-    int read () throws IOException;
+    public abstract int read () throws IOException;
 }

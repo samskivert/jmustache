@@ -6,7 +6,7 @@ package java.io;
 /**
  * A minimal version of {@code Writer} to satisfy GWT.
  */
-public interface Writer
+public abstract class Writer
 {
-    void write (String text) throws IOException;
+    public abstract void write (String text) throws IOException;
 }
