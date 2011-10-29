@@ -1,5 +1,6 @@
 //
-// $Id$
+// JMustache - A Java implementation of the Mustache templating language
+// http://github.com/samskivert/jmustache/blob/master/LICENSE
 
 package com.samskivert.mustache;
 
@@ -458,7 +459,7 @@ public class MustacheTest
         test(Mustache.compiler(), expected, template, ctx);
     }
 
-    protected static Object context (Object... data)
+    protected Object context (Object... data)
     {
         Map<String, Object> ctx = new HashMap<String, Object>();
         for (int ii = 0; ii < data.length; ii += 2) {
