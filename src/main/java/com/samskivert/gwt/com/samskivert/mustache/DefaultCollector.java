@@ -17,8 +17,10 @@ public class DefaultCollector extends BasicCollector
         if (iter != null) return iter;
 
         if (value.getClass().isArray()) {
-            return Arrays.asList((Object[])value);
+            return Arrays.asList((Object[])value).iterator();
         }
         return null;
     }
+
+    // TODO: override createFetcher and do some magic for JavaScript/JSON objects
 }
