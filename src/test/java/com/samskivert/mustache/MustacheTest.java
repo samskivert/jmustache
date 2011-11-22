@@ -58,6 +58,23 @@ public class MustacheTest
         });
     }
 
+    @Test public void testLambdaVariableGetsUnrenderedContent () {
+        final Lambda toLower = new Lambda() {
+            public String apply(String inside) {
+                return inside.toLowerCase();
+            }
+        };
+        
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                return new StringReader("never seen");
+            }
+        }), "{{bar}}{{>ignored}}", "{{#foo}}{{bar}}{{>ignored}}{{/foo}}", new Object() {
+            String getBar () { return "never seen"; }
+            Lambda getFoo () { return toLower; }
+        });
+    }
+
     @Test public void testSkipVoidReturn () {
         test("bar", "{{foo}}", new Object() {
             void foo () {}

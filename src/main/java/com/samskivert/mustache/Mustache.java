@@ -10,6 +10,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -133,7 +134,7 @@ public class Mustache
     
     public interface Lambda
     {
-        public String apply(String inside);
+        public String apply (String unrendered);
     }
 
     /** Used to read variables from values. */
@@ -264,7 +265,7 @@ public class Mustache
                 break;
                 // case TEXT: // do nothing
             }
-            accum.addTextSegment(text);
+            accum.addTextSegment(text, delims);
 
             return accum;
         }
@@ -285,7 +286,7 @@ public class Mustache
 
             case MATCHING_START:
                 if (c == delims.start2) {
-                    accum.addTextSegment(text);
+                    accum.addTextSegment(text, delims);
                     state = TAG;
                 } else {
                     text.append(delims.start1);
@@ -306,10 +307,10 @@ public class Mustache
                     // character (e.g. "{{foo {" but not "{{{"), treat the already matched text as
                     // plain text and start matching a new tag from this point
                     restoreStartTag(text, delims);
-                    accum.addTextSegment(text);
+                    accum.addTextSegment(text, delims);
                     tagStartColumn = column;
                     if (delims.start2 == NO_CHAR) {
-                        accum.addTextSegment(text);
+                        accum.addTextSegment(text, delims);
                         state = TAG;
                     } else {
                         state = MATCHING_START;
@@ -344,7 +345,7 @@ public class Mustache
                             text.replace(0, 1, "&");
                         }
                         // process the tag between the mustaches
-                        accum = accum.addTagSegment(text, line);
+                        accum = accum.addTagSegment(text, line, delims);
                         skipNewline = (tagStartColumn == 1) && accum.justOpenedOrClosedBlock();
                     }
                     state = TEXT;
@@ -402,6 +403,14 @@ public class Mustache
                 throw new MustacheException(errmsg);
             }
         }
+
+      public String makeTag(String string) {
+         StringBuilder sb = new StringBuilder();
+         sb.append(start1).append(start2);
+         sb.append(string);
+         sb.append(end1).append(end2);
+         return sb.toString();
+      }
     }
 
     protected static class Accumulator {
@@ -414,14 +423,14 @@ public class Mustache
             return (!_segs.isEmpty() && _segs.get(_segs.size()-1) instanceof BlockSegment);
         }
 
-        public void addTextSegment (StringBuilder text) {
+        public void addTextSegment (StringBuilder text, Delims delims) {
             if (text.length() > 0) {
                 _segs.add(new StringSegment(text.toString()));
                 text.setLength(0);
             }
         }
 
-        public Accumulator addTagSegment (final StringBuilder accum, final int tagLine) {
+        public Accumulator addTagSegment (final StringBuilder accum, final int tagLine, final Delims delims) {
             final Accumulator outer = this;
             String tag = accum.toString().trim();
             final String tag1 = tag.substring(1).trim();
@@ -441,13 +450,13 @@ public class Mustache
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
-                        outer._segs.add(new SectionSegment(itag, super.finish(), tagLine));
+                        outer._segs.add(new SectionSegment(itag, super.finish(), tagLine, delims));
                         return outer;
                     }
                 };
 
             case '>':
-                _segs.add(new IncludedTemplateSegment(tag1, _compiler));
+                _segs.add(new IncludedTemplateSegment(tag1, _compiler, delims));
                 return this;
 
             case '^':
@@ -463,7 +472,7 @@ public class Mustache
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
-                        outer._segs.add(new InvertedSectionSegment(itag, super.finish(), tagLine));
+                        outer._segs.add(new InvertedSectionSegment(itag, super.finish(), tagLine, delims));
                         return outer;
                     }
                 };
@@ -478,12 +487,12 @@ public class Mustache
 
             case '&':
                 requireNoNewlines(tag, tagLine);
-                _segs.add(new VariableSegment(tag1, false, tagLine));
+                _segs.add(new VariableSegment(tag1, false, tagLine, delims));
                 return this;
 
             default:
                 requireNoNewlines(tag, tagLine);
-                _segs.add(new VariableSegment(tag, _compiler.escapeHTML, tagLine));
+                _segs.add(new VariableSegment(tag, _compiler.escapeHTML, tagLine, delims));
                 return this;
             }
         }
@@ -524,11 +533,14 @@ public class Mustache
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             write(out, _text);
         }
+        @Override public String getOriginalString () {
+            return _text;
+        }
         protected final String _text;
     }
 
     protected static class IncludedTemplateSegment extends Template.Segment {
-        public IncludedTemplateSegment (final String templateName, final Compiler compiler) {
+        public IncludedTemplateSegment (final String templateName, final Compiler compiler, Delims delims) {
             Reader r;
             try {
                 r = compiler.loader.getTemplate(templateName);
@@ -540,13 +552,18 @@ public class Mustache
                 }
             }
             _template = compiler.compile(r);
+            _original = delims.makeTag(">" + templateName);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             // we must take care to preserve our context rather than creating a new one, which
             // would happen if we just called execute() with ctx.data
             _template.executeSegs(ctx, out);
         }
+        @Override public String getOriginalString () {
+            return _original;
+        }
         protected final Template _template;
+        protected final String _original;
     }
 
     /** A helper class for named segments. */
@@ -561,9 +578,10 @@ public class Mustache
 
     /** A segment that substitutes the contents of a variable. */
     protected static class VariableSegment extends NamedSegment {
-        public VariableSegment (String name, boolean escapeHTML, int line) {
+        public VariableSegment (String name, boolean escapeHTML, int line, Delims delims) {
             super(name, line);
             _escapeHTML = escapeHTML;
+            _original = delims.makeTag(name);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getValueOrDefault(ctx, _name, _line);
@@ -574,13 +592,19 @@ public class Mustache
             String text = String.valueOf(value);
             write(out, _escapeHTML ? escapeHTML(text) : text);
         }
+        @Override public String getOriginalString () {
+            return _original;
+        }
         protected boolean _escapeHTML;
+        protected final String _original;
     }
 
     /** A helper class for block segments. */
     protected static abstract class BlockSegment extends NamedSegment {
-        protected BlockSegment (String name, Template.Segment[] segs, int line) {
+        protected BlockSegment (String name, Template.Segment[] segs, int line, String blockTypeChar, Delims delims) {
             super(name, line);
+            _original = toOriginalString(segs, name, blockTypeChar, delims, true);
+            _originalInside = toOriginalString(segs, name, blockTypeChar, delims, false);
             _segs = segs;
         }
         protected void executeSegs (Template tmpl, Template.Context ctx, Writer out)  {
@@ -589,12 +613,28 @@ public class Mustache
             }
         }
         protected final Template.Segment[] _segs;
+        protected final String _original;
+        protected final String _originalInside;
+        
+        protected static String toOriginalString(Template.Segment[] segs, String name, String blockTypeChar, Delims delims, boolean openAndClose) {
+            StringWriter sw = new StringWriter();
+            if (openAndClose) sw.append(delims.makeTag(blockTypeChar + name));
+            for (int i = 0; i < segs.length; ++i) {
+               sw.append(segs[i].getOriginalString());
+            }
+            if (openAndClose) sw.append(delims.makeTag("/" + name));
+            return sw.toString();
+        }
+
+        @Override public String getOriginalString () {
+            return _original;
+        }
     }
 
     /** A segment that represents a section. */
     protected static class SectionSegment extends BlockSegment {
-        public SectionSegment (String name, Template.Segment[] segs, int line) {
-            super(name, segs, line);
+        public SectionSegment (String name, Template.Segment[] segs, int line, Delims delims) {
+            super(name, segs, line, "#", delims);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
@@ -612,9 +652,7 @@ public class Mustache
                 }
             } else if (value instanceof Lambda) {
                 Lambda lambda = (Lambda)value;
-                StringWriter capture = new StringWriter();
-                executeSegs(tmpl, ctx, capture);
-                String text = lambda.apply(capture.toString());
+                String text = lambda.apply(_originalInside);
             	 write(out, text);
             } else {
                 executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
@@ -624,8 +662,8 @@ public class Mustache
 
     /** A segment that represents an inverted section. */
     protected static class InvertedSectionSegment extends BlockSegment {
-        public InvertedSectionSegment (String name, Template.Segment[] segs, int line) {
-            super(name, segs, line);
+        public InvertedSectionSegment (String name, Template.Segment[] segs, int line, Delims delims) {
+            super(name, segs, line, "^", delims);
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
