@@ -264,6 +264,8 @@ public class Template
     protected static abstract class Segment
     {
         abstract void execute (Template tmpl, Context ctx, Writer out);
+        
+        abstract String getOriginalString ();
 
         protected static void write (Writer out, String data) {
             try {
