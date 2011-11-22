@@ -56,9 +56,17 @@ public class Template
         executeSegs(new Context(context, null, 0, false, false), out);
     }
 
+    /**
+     * Executes this template with the supplied context and parent context, writing the results to
+     * the supplied writer. The parent context will be searched for variables that cannot be found
+     * in the main context, in the same way the main context becomes a parent context when entering
+     * a block.
+     * @throws MustacheException if an error occurs while executing or writing the template.
+     */
     public void execute (Object context, Object parentContext, Writer out) throws MustacheException
     {
-        executeSegs(new Context(context, new Context(parentContext, null, 0, false, false), 0, false, false), out);
+        Context pctx = new Context(parentContext, null, 0, false, false);
+        executeSegs(new Context(context, pctx, 0, false, false), out);
     }
 
     protected Template (Segment[] segs, Mustache.Compiler compiler)
