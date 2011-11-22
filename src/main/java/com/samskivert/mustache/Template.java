@@ -56,6 +56,11 @@ public class Template
         executeSegs(new Context(context, null, 0, false, false), out);
     }
 
+    public void execute (Object context, Object parentContext, Writer out) throws MustacheException
+    {
+        executeSegs(new Context(context, new Context(parentContext, null, 0, false, false), 0, false, false), out);
+    }
+
     protected Template (Segment[] segs, Mustache.Compiler compiler)
     {
         _segs = segs;
