@@ -617,7 +617,7 @@ public class Mustache
         protected final String _originalInside;
         
         protected static String toOriginalString(Template.Segment[] segs, String name, String blockTypeChar, Delims delims, boolean openAndClose) {
-            StringWriter sw = new StringWriter();
+            StringBuilder sw = new StringBuilder();
             if (openAndClose) sw.append(delims.makeTag(blockTypeChar + name));
             for (int i = 0; i < segs.length; ++i) {
                sw.append(segs[i].getOriginalString());
