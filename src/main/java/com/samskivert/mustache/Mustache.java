@@ -7,6 +7,7 @@ package com.samskivert.mustache;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -128,6 +129,11 @@ public class Mustache
         /** Returns a reader for the template with the supplied name.
          * @throws Exception if the template could not be loaded for any reason. */
         public Reader getTemplate (String name) throws Exception;
+    }
+    
+    public interface Lambda
+    {
+        public String apply(String inside);
     }
 
     /** Used to read variables from values. */
@@ -604,6 +610,12 @@ public class Mustache
                 if ((Boolean)value) {
                     executeSegs(tmpl, ctx, out);
                 }
+            } else if (value instanceof Lambda) {
+                Lambda lambda = (Lambda)value;
+                StringWriter capture = new StringWriter();
+                executeSegs(tmpl, ctx, capture);
+                String text = lambda.apply(capture.toString());
+            	 write(out, text);
             } else {
                 executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
             }

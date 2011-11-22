@@ -17,6 +17,8 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import com.samskivert.mustache.Mustache.Lambda;
+
 /**
  * Various unit tests.
  */
@@ -41,6 +43,18 @@ public class MustacheTest
     @Test public void testPropertyVariable () {
         test("bar", "{{foo}}", new Object() {
             String getFoo () { return "bar"; }
+        });
+    }
+
+    @Test public void testLambdaVariable () {
+        final Lambda toLower = new Lambda() {
+            public String apply(String inside) {
+                return inside.toLowerCase();
+            }
+        };
+       
+        test("hello", "{{#foo}}Hello{{/foo}}", new Object() {
+            Lambda getFoo () { return toLower; }
         });
     }
 
