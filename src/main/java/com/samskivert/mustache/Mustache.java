@@ -523,6 +523,10 @@ public class Mustache
 
     protected static class IncludedTemplateSegment extends Template.Segment {
         public IncludedTemplateSegment (final String templateName, final Compiler compiler) {
+            this.compiler = compiler;
+            this.templateName = templateName;
+        }
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             Reader r;
             try {
                 r = compiler.loader.getTemplate(templateName);
@@ -533,14 +537,13 @@ public class Mustache
                     throw new MustacheException("Unable to load template: " + templateName, e);
                 }
             }
-            _template = compiler.compile(r);
-        }
-        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
+            Template _template = compiler.compile(r);
             // we must take care to preserve our context rather than creating a new one, which
             // would happen if we just called execute() with ctx.data
             _template.executeSegs(ctx, out);
         }
-        protected final Template _template;
+        protected String templateName;
+        protected Compiler compiler;
     }
 
     /** A helper class for named segments. */
