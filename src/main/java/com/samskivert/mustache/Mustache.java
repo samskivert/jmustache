@@ -522,28 +522,31 @@ public class Mustache
     }
 
     protected static class IncludedTemplateSegment extends Template.Segment {
-        public IncludedTemplateSegment (final String templateName, final Compiler compiler) {
-            this.compiler = compiler;
-            this.templateName = templateName;
+        public IncludedTemplateSegment (String name, Compiler compiler) {
+            _name = name;
+            _compiler = compiler;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
-            Reader r;
-            try {
-                r = compiler.loader.getTemplate(templateName);
-            } catch (Exception e) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException)e;
-                } else {
-                    throw new MustacheException("Unable to load template: " + templateName, e);
+            // we compile our template lazily to avoid infinie recursion if a template includes
+            // itself (see issue #13)
+            if (_template == null) {
+                try {
+                    _template = _compiler.compile(_compiler.loader.getTemplate(_name));
+                } catch (Exception e) {
+                    if (e instanceof RuntimeException) {
+                        throw (RuntimeException)e;
+                    } else {
+                        throw new MustacheException("Unable to load template: " + _name, e);
+                    }
                 }
             }
-            Template _template = compiler.compile(r);
             // we must take care to preserve our context rather than creating a new one, which
             // would happen if we just called execute() with ctx.data
             _template.executeSegs(ctx, out);
         }
-        protected String templateName;
-        protected Compiler compiler;
+        protected final String _name;
+        protected final Compiler _compiler;
+        protected Template _template;
     }
 
     /** A helper class for named segments. */
