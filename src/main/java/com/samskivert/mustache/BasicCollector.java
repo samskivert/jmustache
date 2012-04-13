@@ -11,7 +11,6 @@ import java.util.Map;
  */
 public class BasicCollector implements Mustache.Collector
 {
-    @Override
     public Iterator<?> toIterator (final Object value) {
         if (value instanceof Iterable<?>) {
             return ((Iterable<?>)value).iterator();
@@ -22,7 +21,6 @@ public class BasicCollector implements Mustache.Collector
         return null;
     }
 
-    @Override
     public Mustache.VariableFetcher createFetcher (Object ctx, String name)
     {
         // support both .name and this.name to fetch members
@@ -38,13 +36,13 @@ public class BasicCollector implements Mustache.Collector
     }
 
     protected static final Mustache.VariableFetcher MAP_FETCHER = new Mustache.VariableFetcher() {
-        @Override public Object get (Object ctx, String name) throws Exception {
+        public Object get (Object ctx, String name) throws Exception {
             return ((Map<?,?>)ctx).get(name);
         }
     };
 
     protected static final Mustache.VariableFetcher THIS_FETCHER = new Mustache.VariableFetcher() {
-        @Override public Object get (Object ctx, String name) throws Exception {
+        public Object get (Object ctx, String name) throws Exception {
             return ctx;
         }
     };
