@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>com.samskivert</groupId>
   <artifactId>jmustache</artifactId>
-  <packaging>jar</packaging>
+  <packaging>bundle</packaging>
   <version>1.6-SNAPSHOT</version>
+
   <name>jmustache</name>
   <description>A Java implementation of the Mustache templating language.</description>
   <url>http://github.com/samskivert/jmustache</url>
@@ -82,6 +85,19 @@
           <excludes>
             <exclude>com/samskivert/gwt/**</exclude>
           </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>2.3.7</version>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <_removeheaders>
+              Bnd*,Created-By,Include-Resource,Private-Package,Tool
+            </_removeheaders>
+          </instructions>
         </configuration>
       </plugin>
       <plugin>
