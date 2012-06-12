@@ -640,7 +640,7 @@ public class Mustache
      * need to be applied in order so amps are not double escaped.) */
     protected static final String[][] ATTR_ESCAPES = {
         { "&", "&amp;" },
-        { "'", "&apos;" },
+        { "'", "&#39;" },
         { "\"", "&quot;" },
         { "<", "&lt;" },
         { ">", "&gt;" },
