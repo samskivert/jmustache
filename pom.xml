@@ -92,6 +92,7 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
+            <Bundle-ActivationPolicy>lazy</Bundle-ActivationPolicy>
             <_removeheaders>
               Bnd*,Created-By,Include-Resource,Private-Package,Tool
             </_removeheaders>
