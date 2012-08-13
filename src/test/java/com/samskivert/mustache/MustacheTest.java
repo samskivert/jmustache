@@ -138,6 +138,12 @@ public class MustacheTest
         });
     }
 
+    @Test public void testSectionWithEmptyString () {
+        test(Mustache.compiler().emptyStringIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
+            String foo = "";
+        });
+    }
+
     @Test public void testMissingSection () {
         test("", "{{#foo}}{{bar}}{{/foo}}", new Object() {
             // no foo

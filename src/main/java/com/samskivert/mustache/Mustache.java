@@ -45,6 +45,10 @@ public class Mustache
          * configured to a non-null value. */
         public final boolean missingIsNull;
 
+        /** If this value is true, empty string will be treated as a false value, as in 
+         * Javascript mustache implementation, default is false. */
+        public final boolean emptyStringIsFalse;
+
         /** The template loader in use during this compilation. */
         public final TemplateLoader loader;
 
@@ -64,7 +68,7 @@ public class Mustache
         /** Returns a compiler that either does or does not escape HTML by default. */
         public Compiler escapeHTML (boolean escapeHTML) {
             return new Compiler(escapeHTML, this.standardsMode, this.nullValue, this.missingIsNull,
-                                this.loader, this.collector);
+                                this.emptyStringIsFalse, this.loader, this.collector);
         }
 
         /** Returns a compiler that either does or does not use standards mode. Standards mode
@@ -72,7 +76,7 @@ public class Mustache
          * context. */
         public Compiler standardsMode (boolean standardsMode) {
             return new Compiler(this.escapeHTML, standardsMode, this.nullValue, this.missingIsNull,
-                                this.loader, this.collector);
+                                this.emptyStringIsFalse, this.loader, this.collector);
         }
 
         /** Returns a compiler that will use the given value for any variable that is missing, or
@@ -80,7 +84,7 @@ public class Mustache
          * supplied default for missing keys and existing keys that return null values. */
         public Compiler defaultValue (String defaultValue) {
             return new Compiler(this.escapeHTML, this.standardsMode, defaultValue, true,
-                                this.loader, this.collector);
+                                this.emptyStringIsFalse, this.loader, this.collector);
         }
 
         /** Returns a compiler that will use the given value for any variable that resolves to
@@ -96,27 +100,34 @@ public class Mustache
          * </ul> */
         public Compiler nullValue (String nullValue) {
             return new Compiler(this.escapeHTML, this.standardsMode, nullValue, false,
-                                this.loader, this.collector);
+                                this.emptyStringIsFalse, this.loader, this.collector);
+        }
+
+        /** Returns a compiler that will treat empty string as a false value if parameter is true. */
+        public Compiler emptyStringIsFalse(boolean emptyStringIsFalse) {
+            return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
+                    this.missingIsNull, emptyStringIsFalse, this.loader, this.collector);
         }
 
         /** Returns a compiler configured to use the supplied template loader to handle partials. */
         public Compiler withLoader (TemplateLoader loader) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                                this.missingIsNull, loader, this.collector);
+                                this.missingIsNull, this.emptyStringIsFalse, loader, this.collector);
         }
 
         /** Returns a compiler configured to use the supplied collector. */
         public Compiler withCollector (Collector collector) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.loader, collector);
+                                this.missingIsNull, this.emptyStringIsFalse, this.loader, collector);
         }
 
         protected Compiler (boolean escapeHTML, boolean standardsMode, String nullValue,
-                            boolean missingIsNull, TemplateLoader loader, Collector collector) {
+                            boolean missingIsNull, boolean emptyStringIsFalse, TemplateLoader loader, Collector collector) {
             this.escapeHTML = escapeHTML;
             this.standardsMode = standardsMode;
             this.nullValue = nullValue;
             this.missingIsNull = missingIsNull;
+            this.emptyStringIsFalse = emptyStringIsFalse;
             this.loader = loader;
             this.collector = collector;
         }
@@ -155,7 +166,7 @@ public class Mustache
      */
     public static Compiler compiler ()
     {
-        return new Compiler(true, false, null, true, FAILING_LOADER, new DefaultCollector());
+        return new Compiler(true, false, null, true, false, FAILING_LOADER, new DefaultCollector());
     }
 
     /**
@@ -435,7 +446,7 @@ public class Mustache
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
-                        outer._segs.add(new SectionSegment(itag, super.finish(), tagLine));
+                        outer._segs.add(new SectionSegment(itag, super.finish(), tagLine, _compiler));
                         return outer;
                     }
                 };
@@ -593,8 +604,9 @@ public class Mustache
 
     /** A segment that represents a section. */
     protected static class SectionSegment extends BlockSegment {
-        public SectionSegment (String name, Template.Segment[] segs, int line) {
+        public SectionSegment (String name, Template.Segment[] segs, int line, Compiler _compiler) {
             super(name, segs, line);
+            this._compiler = _compiler;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
@@ -610,10 +622,15 @@ public class Mustache
                 if ((Boolean)value) {
                     executeSegs(tmpl, ctx, out);
                 }
+            } else if (value instanceof String && value != null && value.equals("")) {
+                if (!_compiler.emptyStringIsFalse) {
+                    executeSegs(tmpl, ctx, out);
+                }
             } else {
                 executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
             }
         }
+        protected final Compiler _compiler;
     }
 
     /** A segment that represents an inverted section. */
