@@ -45,8 +45,8 @@ public class Mustache
          * configured to a non-null value. */
         public final boolean missingIsNull;
 
-        /** If this value is true, empty string will be treated as a false value, as in 
-         * Javascript mustache implementation, default is false. */
+        /** If this value is true, empty string will be treated as a false value, as in JavaScript
+         * mustache implementation. Default is false. */
         public final boolean emptyStringIsFalse;
 
         /** The template loader in use during this compilation. */
@@ -104,9 +104,9 @@ public class Mustache
         }
 
         /** Returns a compiler that will treat empty string as a false value if parameter is true. */
-        public Compiler emptyStringIsFalse(boolean emptyStringIsFalse) {
+        public Compiler emptyStringIsFalse (boolean emptyStringIsFalse) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                    this.missingIsNull, emptyStringIsFalse, this.loader, this.collector);
+                                this.missingIsNull, emptyStringIsFalse, this.loader, this.collector);
         }
 
         /** Returns a compiler configured to use the supplied template loader to handle partials. */
@@ -122,7 +122,8 @@ public class Mustache
         }
 
         protected Compiler (boolean escapeHTML, boolean standardsMode, String nullValue,
-                            boolean missingIsNull, boolean emptyStringIsFalse, TemplateLoader loader, Collector collector) {
+                            boolean missingIsNull, boolean emptyStringIsFalse, TemplateLoader loader,
+                            Collector collector) {
             this.escapeHTML = escapeHTML;
             this.standardsMode = standardsMode;
             this.nullValue = nullValue;
@@ -446,7 +447,8 @@ public class Mustache
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
-                        outer._segs.add(new SectionSegment(itag, super.finish(), tagLine, _compiler));
+                        outer._segs.add(
+                            new SectionSegment(itag, super.finish(), tagLine, _compiler));
                         return outer;
                     }
                 };
@@ -517,7 +519,7 @@ public class Mustache
             }
         }
 
-        protected Compiler _compiler;
+        protected final Compiler _compiler;
         protected final List<Template.Segment> _segs = new ArrayList<Template.Segment>();
     }
 
@@ -604,9 +606,9 @@ public class Mustache
 
     /** A segment that represents a section. */
     protected static class SectionSegment extends BlockSegment {
-        public SectionSegment (String name, Template.Segment[] segs, int line, Compiler _compiler) {
+        public SectionSegment (String name, Template.Segment[] segs, int line, Compiler compiler) {
             super(name, segs, line);
-            this._compiler = _compiler;
+            _compiler = compiler;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
@@ -622,10 +624,8 @@ public class Mustache
                 if ((Boolean)value) {
                     executeSegs(tmpl, ctx, out);
                 }
-            } else if (value instanceof String && value != null && value.equals("")) {
-                if (!_compiler.emptyStringIsFalse) {
-                    executeSegs(tmpl, ctx, out);
-                }
+            } else if (_compiler.emptyStringIsFalse && "".equals(value)) {
+                // omit the section
             } else {
                 executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
             }
