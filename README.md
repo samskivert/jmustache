@@ -43,8 +43,8 @@ Get It
 
 JMustache is available via Maven Central and can thus be easily added to your
 Maven, Ivy, etc. projects by adding a dependency on
-`com.samskivert:jmustache:1.5`. Or download the [pre-built jar
-file](http://repo1.maven.org/maven2/com/samskivert/jmustache/1.5/jmustache-1.5.jar).
+`com.samskivert:jmustache:1.6`. Or download the [pre-built jar
+file](http://repo1.maven.org/maven2/com/samskivert/jmustache/1.6/jmustache-1.6.jar).
 
 Usage
 =====
