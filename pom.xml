@@ -10,7 +10,7 @@
   <groupId>com.samskivert</groupId>
   <artifactId>jmustache</artifactId>
   <packaging>bundle</packaging>
-  <version>1.6</version>
+  <version>1.7-SNAPSHOT</version>
 
   <name>jmustache</name>
   <description>A Java implementation of the Mustache templating language.</description>
