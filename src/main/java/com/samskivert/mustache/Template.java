@@ -140,10 +140,6 @@ public class Template
             Object value = getValueIn(ctx.data, name, line);
             if (value == NO_FETCHER_FOUND) {
                 // preserve variableMissing
-            } else if (value == null) {
-                // we found a fetcher, and it returned null; so we keep searching our parents, but
-                // we won't freak out about a missing variable if we have a nullValue configured
-                variableMissing = false;
             } else {
                 return value;
             }

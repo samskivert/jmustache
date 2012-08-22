@@ -357,7 +357,8 @@ public class MustacheTest
     }
 
     @Test public void testShadowedContextWithNull () {
-        test("outer", "{{foo}}{{#inner}}{{foo}}{{/inner}}",
+        test(Mustache.compiler().nullValue("(null)"),
+            "outer(null)", "{{foo}}{{#inner}}{{foo}}{{/inner}}",
              context("foo", "outer", "inner", context("foo", null))
             );
     }
