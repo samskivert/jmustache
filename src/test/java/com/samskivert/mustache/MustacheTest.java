@@ -356,6 +356,12 @@ public class MustacheTest
                      "things", Arrays.asList(context("name", "bar"), context("name", "baz"))));
     }
 
+    @Test public void testShadowedContextWithNull () {
+        test("outer", "{{foo}}{{#inner}}{{foo}}{{/inner}}",
+             context("foo", "outer", "inner", context("foo", null))
+            );
+    }
+
     @Test public void testFirst () {
         test("foo|bar|baz", "{{#things}}{{^-first}}|{{/-first}}{{this}}{{/things}}",
              context("things", Arrays.asList("foo", "bar", "baz")));
