@@ -11,6 +11,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Provides <a href="http://mustache.github.com/">Mustache</a> templating services.
@@ -160,6 +161,11 @@ public class Mustache
          * never be null. The fetcher will be cached and reused for future contexts for which
          * {@code octx.getClass().equals(nctx.getClass()}. */
         VariableFetcher createFetcher (Object ctx, String name);
+
+        /** Creates a map to be used to cache {@link VariableFetcher} instances. The GWT-compatible
+         * collector returns a HashMap here, but the reflection based fetcher (which only works on
+         * the JVM and Android, returns a concurrent hashmap. */
+        <K,V> Map<K,V> createFetcherCache ();
     }
 
     /**

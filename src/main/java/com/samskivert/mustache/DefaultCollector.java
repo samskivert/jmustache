@@ -9,6 +9,8 @@ import java.lang.reflect.Method;
 
 import java.util.AbstractList;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The default collector used by JMustache.
@@ -34,8 +36,7 @@ public class DefaultCollector extends BasicCollector
     }
 
     @Override
-    public Mustache.VariableFetcher createFetcher (Object ctx, String name)
-    {
+    public Mustache.VariableFetcher createFetcher (Object ctx, String name) {
         Mustache.VariableFetcher fetcher = super.createFetcher(ctx, name);
         if (fetcher != null) return fetcher;
 
@@ -61,8 +62,12 @@ public class DefaultCollector extends BasicCollector
         return null;
     }
 
-    protected Method getMethod (Class<?> clazz, String name)
-    {
+    @Override
+    public <K,V> Map<K,V> createFetcherCache () {
+        return new ConcurrentHashMap<K,V>();
+    }
+
+    protected Method getMethod (Class<?> clazz, String name) {
         Method m;
         try {
             m = clazz.getDeclaredMethod(name);
@@ -95,8 +100,7 @@ public class DefaultCollector extends BasicCollector
         return null;
     }
 
-    protected Field getField (Class<?> clazz, String name)
-    {
+    protected Field getField (Class<?> clazz, String name) {
         Field f;
         try {
             f = clazz.getDeclaredField(name);

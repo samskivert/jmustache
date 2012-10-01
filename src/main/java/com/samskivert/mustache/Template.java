@@ -73,6 +73,7 @@ public class Template
     {
         _segs = segs;
         _compiler = compiler;
+        _fcache = _compiler.collector.createFetcherCache();
     }
 
     protected void executeSegs (Context ctx, Writer out) throws MustacheException
@@ -190,10 +191,7 @@ public class Template
         }
 
         Key key = new Key(data.getClass(), name);
-        Mustache.VariableFetcher fetcher;
-        synchronized (_fcache) {
-            fetcher = _fcache.get(key);
-        }
+        Mustache.VariableFetcher fetcher = _fcache.get(key);
         if (fetcher != null) {
             try {
                 return fetcher.get(data, name);
@@ -213,9 +211,7 @@ public class Template
 
         try {
             Object value = fetcher.get(data, name);
-            synchronized (_fcache) {
-                _fcache.put(key, fetcher);
-            }
+            _fcache.put(key, fetcher);
             return value;
         } catch (Exception e) {
             throw new MustacheException(
@@ -236,8 +232,7 @@ public class Template
 
     protected final Segment[] _segs;
     protected final Mustache.Compiler _compiler;
-    protected final Map<Key, Mustache.VariableFetcher> _fcache =
-        new HashMap<Key, Mustache.VariableFetcher>();
+    protected final Map<Key, Mustache.VariableFetcher> _fcache;
 
     protected static class Context
     {
