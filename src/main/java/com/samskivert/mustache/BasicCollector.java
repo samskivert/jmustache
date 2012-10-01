@@ -13,7 +13,6 @@ import java.util.Map;
  */
 public class BasicCollector implements Mustache.Collector
 {
-    @Override
     public Iterator<?> toIterator (final Object value) {
         if (value instanceof Iterable<?>) {
             return ((Iterable<?>)value).iterator();
@@ -24,7 +23,6 @@ public class BasicCollector implements Mustache.Collector
         return null;
     }
 
-    @Override
     public Mustache.VariableFetcher createFetcher (Object ctx, String name) {
         // support both .name and this.name to fetch members
         if (name == Template.DOT_NAME || name == Template.THIS_NAME) {
@@ -38,7 +36,6 @@ public class BasicCollector implements Mustache.Collector
         return null;
     }
 
-    @Override
     public <K,V> Map<K,V> createFetcherCache () {
         return Collections.synchronizedMap(new HashMap<K,V>());
     }
