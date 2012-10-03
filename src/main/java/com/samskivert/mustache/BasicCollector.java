@@ -4,14 +4,13 @@
 package com.samskivert.mustache;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 /**
  * A collector that does not use reflection and can be used in GWT.
  */
-public class BasicCollector implements Mustache.Collector
+public abstract class BasicCollector implements Mustache.Collector
 {
     public Iterator<?> toIterator (final Object value) {
         if (value instanceof Iterable<?>) {
@@ -36,9 +35,9 @@ public class BasicCollector implements Mustache.Collector
         return null;
     }
 
-    public <K,V> Map<K,V> createFetcherCache () {
-        return Collections.synchronizedMap(new HashMap<K,V>());
-    }
+    /** This should return a thread-safe map, either {@link Collections#synchronizedMap} called on
+     * a standard {@link Map} implementation or something like {@code ConcurrentHashMap}. */
+    public abstract <K,V> Map<K,V> createFetcherCache ();
 
     protected static final Mustache.VariableFetcher MAP_FETCHER = new Mustache.VariableFetcher() {
         public Object get (Object ctx, String name) throws Exception {
