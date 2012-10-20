@@ -260,6 +260,8 @@ public class Template
     {
         abstract void execute (Template tmpl, Context ctx, Writer out);
 
+        abstract void expand (Writer out);
+
         protected static void write (Writer out, String data) {
             try {
                 out.write(data);
