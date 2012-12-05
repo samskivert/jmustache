@@ -357,10 +357,17 @@ public class MustacheTest
     }
 
     @Test public void testShadowedContextWithNull () {
-        test(Mustache.compiler().nullValue("(null)"),
-            "outer(null)", "{{foo}}{{#inner}}{{foo}}{{/inner}}",
-             context("foo", "outer", "inner", context("foo", null))
-            );
+        Mustache.Compiler comp = Mustache.compiler().nullValue("(null)");
+        String tmpl = "{{foo}}{{#inner}}{{foo}}{{/inner}}", expect = "outer(null)";
+        test(comp, expect, tmpl, new Object() {
+            public String foo = "outer";
+            public Object inner = new Object() {
+                // this foo should shadow the outer foo even though it's null
+                public String foo = null;
+            };
+        });
+        // same as above, but with maps instead of objects
+        test(comp, expect, tmpl, context("foo", "outer", "inner", context("foo", null)));
     }
 
     @Test public void testFirst () {
