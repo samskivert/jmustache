@@ -136,20 +136,14 @@ public class Template
             return checkForMissing(name, line, missingIsNull, getValueIn(ctx.data, name, line));
         }
 
-        boolean variableMissing = true;
         while (ctx != null) {
             Object value = getValueIn(ctx.data, name, line);
-            if (value == NO_FETCHER_FOUND) {
-                // preserve variableMissing
-            } else {
-                return value;
-            }
+            if (value != NO_FETCHER_FOUND) return value;
             ctx = ctx.parent;
         }
-        // we've popped off the top of our stack of contexts, if we never actually found a fetcher
-        // for our variable, we need to let checkForMissing() know
-        return checkForMissing(name, line, missingIsNull,
-                               variableMissing ? NO_FETCHER_FOUND : null);
+        // we've popped off the top of our stack of contexts; we never found a fetcher for our
+        // variable, so let checkForMissing() decide what to do
+        return checkForMissing(name, line, missingIsNull, NO_FETCHER_FOUND);
     }
 
     /**
