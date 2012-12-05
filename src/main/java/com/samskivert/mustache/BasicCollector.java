@@ -41,11 +41,8 @@ public abstract class BasicCollector implements Mustache.Collector
 
     protected static final Mustache.VariableFetcher MAP_FETCHER = new Mustache.VariableFetcher() {
         public Object get (Object ctx, String name) throws Exception {
-            if (((Map<?,?>)ctx).containsKey(name)) {
-                return ((Map<?,?>)ctx).get(name);
-            } else {
-                return Template.NO_FETCHER_FOUND;
-            }
+            Map<?,?> map = (Map<?,?>)ctx;
+            return map.containsKey(name) ? map.get(name) : Template.NO_FETCHER_FOUND;
         }
     };
 
