@@ -38,7 +38,10 @@ public class Mustache
 
         /** A value to use when a variable resolves to null. If this value is null (which is the
          * default null value), an exception will be thrown. If {@link #missingIsNull} is also
-         * true, this value will be used when a variable cannot be resolved. */
+         * true, this value will be used when a variable cannot be resolved.
+         * If the nullValue contains a substring "{{name}}", then this substring
+         * will be replaced by name of the variable. For example, if nullValue="?{{name}}?"
+         * and the missing variable is "foo", then string "?foo?" will be used. */
         public final String nullValue;
 
         /** If this value is true, missing variables will be treated like variables that return

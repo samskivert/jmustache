@@ -444,6 +444,21 @@ public class MustacheTest
              "foobar", "{{missing}}{{notmissing}}", context("notmissing", "bar"));
     }
 
+    @Test public void testMissingValueWithDefaultSubstitution () {
+        test(Mustache.compiler().defaultValue("?{{name}}?"),
+             "?missing?bar", "{{missing}}{{notmissing}}", context("notmissing", "bar"));
+    }
+
+    @Test public void testMissingValueWithDefaultSubstitution2 () {
+        test(Mustache.compiler().defaultValue("{{{{name}}}}"),
+             "{{missing}}bar", "{{missing}}{{notmissing}}", context("notmissing", "bar"));
+    }
+
+    @Test public void testMissingValueWithDefaultSubstitution3 () {
+        test(Mustache.compiler().defaultValue("{{?{{name}}?}}"),
+             "{{?missing?}}bar", "{{missing}}{{notmissing}}", context("notmissing", "bar"));
+    }
+
     @Test public void testNullValueGetsDefault () {
         test(Mustache.compiler().defaultValue("foo"),
              "foobar", "{{nullvar}}{{nonnullvar}}", new Object() {
