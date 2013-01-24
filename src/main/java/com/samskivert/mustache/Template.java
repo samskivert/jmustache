@@ -170,16 +170,7 @@ public class Template
         // getValue will raise MustacheException if a variable cannot be resolved and missingIsNull
         // is not configured; so we're safe to assume that any null that makes it up to this point
         // can be converted to nullValue
-        return (value == null) ? substituteNullValue(name) : value;
-    }
-
-    private String substituteNullValue(String name) {
-        String SUBST = "\\{\\{name\\}\\}"; // escaping needed for regex
-        String result = _compiler.nullValue;
-        if (result != null) {
-            result = result.replaceAll(SUBST, name);
-        }
-        return result;
+        return (value == null) ? _compiler.computeNullValue(name) : value;
     }
 
     protected Object getValueIn (Object data, String name, int line)
