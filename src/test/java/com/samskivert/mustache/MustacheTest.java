@@ -17,6 +17,9 @@ import java.util.Map;
 
 import org.junit.Test;
 
+import com.samskivert.mustache.Mustache.Lambda;
+import com.samskivert.mustache.Template.Context;
+
 /**
  * Various unit tests.
  */
@@ -44,16 +47,54 @@ public class MustacheTest
         });
     }
 
+    @Test public void testPrimitiveArrayVariable () {
+        test("1234", "{{#foo}}{{this}}{{/foo}}", new Object() {
+            int[] getFoo () { return new int[] { 1, 2, 3, 4 }; }
+        });
+    }
+
+    @Test public void testLambdaVariable () {
+        test("hello", "{{#foo}}Hello{{/foo}}", new Object() {
+            Lambda getFoo () { return new Lambda() {
+                public String apply(String inside, Object ctx) {
+                    return inside.toLowerCase();
+                }
+            };}
+        });
+    }
+
+    @Test public void testLambdaVariableContext () {
+        test("baz", "{{#foo}}Hello{{/foo}}", context("foo", new Lambda() {
+                public String apply(String inside, Object ctx) {
+                    return ((Map)ctx).get("bar").toString();
+                }
+            },
+            "bar", "baz")
+        );
+    }
+
+    @Test public void testLambdaVariableGetsUnrenderedContent () {
+        final String lowerCasedTemplate = "{{bar}}{{^baz}}{{^boo}}ha{{/boo}}ho}}{{/baz}}{{>ignored}}";
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                return new StringReader("BAZ");
+            }
+        }), lowerCasedTemplate, "{{#foo}}" + lowerCasedTemplate + "{{/foo}}", new Object() {
+            String getBar () { return "Bar"; }
+            String getBaz () { return "baZ"; }
+            String getBoo () { return "bOo"; }
+            Lambda getFoo () { return new Lambda() {
+                public String apply(String inside, Object ctx) {
+                    return inside.toLowerCase();
+                }
+            };}
+        });
+    }
+
     @Test public void testSkipVoidReturn () {
         test("bar", "{{foo}}", new Object() {
             void foo () {}
             String getFoo () { return "bar"; }
-        });
-    }
-
-    @Test public void testPrimitiveArrayVariable () {
-        test("1234", "{{#foo}}{{this}}{{/foo}}", new Object() {
-            int[] getFoo () { return new int[] { 1, 2, 3, 4 }; }
         });
     }
 
