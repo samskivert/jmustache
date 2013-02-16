@@ -142,6 +142,7 @@ the standard Mustache documentation on lambdas:
 
     String tmpl = "{{#bold}}{{name}} is awesome.{{/bold}}";
     Mustache.compiler().compile(tmpl).execute(new Object() {
+        String name = "Willy";
         Mustache.Lambda bold = new Mustache.Lambda() {
              public void execute (Template.Fragment frag, Writer out) throws IOException {
                  out.write("<b>");
