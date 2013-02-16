@@ -8,8 +8,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -482,6 +484,32 @@ public class MustacheTest
                  String nonnullvar = "bar";
                  String nullvar = null;
              });
+    }
+
+    @Test public void testLambda1 () {
+        test("<b>Willy is awesome.</b>", "{{#bold}}{{name}} is awesome.{{/bold}}",
+             context("name", "Willy", "bold", new Mustache.Lambda() {
+                 public void execute (Template.Fragment frag, Writer out) throws IOException {
+                     out.write("<b>");
+                     frag.execute(out);
+                     out.write("</b>");
+                 }
+             }));
+    }
+
+    @Test public void testLambda2 () {
+        test("Slug bug potato!", "{{#l}}1{{/l}} {{#l}}2{{/l}} {{#l}}{{three}}{{/l}}",
+             context("three", "3", "l", new Mustache.Lambda() {
+                 public void execute (Template.Fragment frag, Writer out) throws IOException {
+                     out.write(lookup(frag.execute()));
+                 }
+                 protected String lookup (String contents) {
+                     if (contents.equals("1")) return "Slug";
+                     else if (contents.equals("2")) return "bug";
+                     else if (contents.equals("3")) return "potato!";
+                     else return "Who was that man?";
+                 }
+             }));
     }
 
     protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx)

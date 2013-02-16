@@ -132,6 +132,47 @@ If you wish to make use of partials (e.g. `{{>subtmpl}}`) you must provide a
 The above snippet will load `new File(templateDir, "subtmpl")` when compiling
 the template.
 
+Lambdas
+-------
+
+JMustache implements lambdas by passing you a `Template.Fragment` instance
+which you can use to execute the fragment of the template that was passed to
+the lambda. You can decorate the results of the fragment execution, as shown in
+the standard Mustache documentation on lambdas:
+
+    String tmpl = "{{#bold}}{{name}} is awesome.{{/bold}}";
+    Mustache.compiler().compile(tmpl).execute(new Object() {
+        Mustache.Lambda bold = new Mustache.Lambda() {
+             public void execute (Template.Fragment frag, Writer out) throws IOException {
+                 out.write("<b>");
+                 frag.execute(out);
+                 out.write("</b>");
+             }
+         };
+     });
+     // result:
+     <b>Willy is awsome.</b>
+
+You can also obtain the results of the fragment execution to do things like
+internationalization or caching:
+
+    Object ctx = new Object() {
+        Mustache.Lambda i18n = new Mustache.Lambda() {
+             public void execute (Template.Fragment frag, Writer out) throws IOException {
+                 String key = frag.execute();
+                 String text = // look up key in i18n system
+                 out.write(text);
+             }
+        };
+    };
+    // template might look something like:
+    <h2>{{#i18n}}title{{/i18n}</h2>
+    {{#i18n}}welcome_msg{{/i18n}}
+
+Currently there is no support for "unexecuting" the template and obtaining the
+original Mustache template text contained in the section. File a feature
+request with a sane use case if you have one.
+
 Default Values
 --------------
 

@@ -150,7 +150,19 @@ public class Mustache
     {
         /** Returns a reader for the template with the supplied name.
          * @throws Exception if the template could not be loaded for any reason. */
-        public Reader getTemplate (String name) throws Exception;
+        Reader getTemplate (String name) throws Exception;
+    }
+
+    /** Used to handle lambdas. */
+    public interface Lambda
+    {
+        /** Executes this lambda on the supplied template fragment. The lambda should write its
+         * results to {@code out}.
+         *
+         * @param tmpl the fragment of the template that was passed to the lambda.
+         * @param out the writer to which the lambda should write its output.
+         */
+        void execute (Template.Fragment frag, Writer out) throws IOException;
     }
 
     /** Used to read variables from values. */
@@ -639,6 +651,12 @@ public class Mustache
             } else if (value instanceof Boolean) {
                 if ((Boolean)value) {
                     executeSegs(tmpl, ctx, out);
+                }
+            } else if (value instanceof Lambda) {
+                try {
+                    ((Lambda)value).execute(tmpl.createFragment(_segs, ctx), out);
+                } catch (IOException ioe) {
+                    throw new MustacheException(ioe);
                 }
             } else if (_compiler.emptyStringIsFalse && "".equals(value)) {
                 // omit the section

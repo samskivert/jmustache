@@ -37,6 +37,22 @@ import java.util.Map;
 public class Template
 {
     /**
+     * Encapsulates a fragment of a template that is passed to a lambda. The fragment is bound to
+     * the variable context that was in effect at the time the lambda was called.
+     */
+    public abstract class Fragment {
+        /** Executes this template fragment, writing its result to {@code out}. */
+        public abstract void execute (Writer out);
+
+        /** Executes this template fragment and returns is result as a string. */
+        public String execute () {
+            StringWriter out = new StringWriter();
+            execute(out);
+            return out.toString();
+        }
+    }
+
+    /**
      * Executes this template with the given context, returning the results as a string.
      * @throws MustacheException if an error occurs while executing or writing the template.
      */
@@ -73,7 +89,7 @@ public class Template
     {
         _segs = segs;
         _compiler = compiler;
-        _fcache = _compiler.collector.createFetcherCache();
+        _fcache = compiler.collector.createFetcherCache();
     }
 
     protected void executeSegs (Context ctx, Writer out) throws MustacheException
@@ -81,6 +97,17 @@ public class Template
         for (Segment seg : _segs) {
             seg.execute(this, ctx, out);
         }
+    }
+
+    protected Fragment createFragment (final Segment[] segs, final Context ctx)
+    {
+        return new Fragment() {
+            @Override public void execute (Writer out) {
+                for (Segment seg : segs) {
+                    seg.execute(Template.this, ctx, out);
+                }
+            }
+        };
     }
 
     /**
