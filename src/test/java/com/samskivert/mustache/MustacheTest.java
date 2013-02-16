@@ -294,7 +294,7 @@ public class MustacheTest
         });
     }
 
-    public void testNullComponentInCompoundVariableWithDefault () {
+    @Test public void testNullComponentInCompoundVariableWithDefault () {
         test(Mustache.compiler().nullValue("null"), "null", "{{foo.bar.baz}}", new Object() {
             Object foo = null;
         });
@@ -305,7 +305,7 @@ public class MustacheTest
         });
     }
 
-    public void testMissingComponentInCompoundVariableWithDefault () {
+    @Test public void testMissingComponentInCompoundVariableWithDefault () {
         test(Mustache.compiler().defaultValue("?"), "?", "{{foo.bar.baz}}", new Object() {
             // no foo, no bar
         });
