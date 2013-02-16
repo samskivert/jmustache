@@ -152,7 +152,7 @@ the standard Mustache documentation on lambdas:
          };
      });
      // result:
-     <b>Willy is awsome.</b>
+     <b>Willy is awesome.</b>
 
 You can also obtain the results of the fragment execution to do things like
 internationalization or caching:
