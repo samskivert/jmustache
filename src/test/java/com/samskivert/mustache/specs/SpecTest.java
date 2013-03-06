@@ -4,16 +4,15 @@
  */
 package com.samskivert.mustache.specs;
 
-import com.samskivert.mustache.Mustache;
-import com.samskivert.mustache.Template;
-import java.util.Collection;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
+import com.samskivert.mustache.Mustache;
+import com.samskivert.mustache.Template;
 
 /**
  *
- * @author valotas
+ * @author Yoryos Valotasios
  */
 @RunWith(SpecRunner.class)
 public class SpecTest {
@@ -27,7 +26,7 @@ public class SpecTest {
     }
     
     public static String[] getSpecsGroupsToRun() {
-        return new String[] {"comments", "delimiters", "interpolation"};
+        return new String[] {"comments", "delimiters", "interpolation", "inverted", "partials", "sections"};
     }
     
     public void test(Spec spec) {
