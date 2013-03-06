@@ -9,7 +9,7 @@ import org.junit.runners.model.FrameworkMethod;
 
 /**
  *
- * @author valotas
+ * @author Yoryos Valotasios
  */
 public class SpecFrameworkTest extends FrameworkMethod {
     private final Spec spec;
@@ -22,5 +22,10 @@ public class SpecFrameworkTest extends FrameworkMethod {
     @Override
     public Object invokeExplosively(Object target, Object... params) throws Throwable {
         return super.invokeExplosively(target, spec);
+    }
+    
+    @Override
+    public String getName() {
+    	return spec.getSpecName();
     }
 }
