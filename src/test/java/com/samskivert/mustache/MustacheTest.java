@@ -15,7 +15,10 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.Test;
 
@@ -510,6 +513,18 @@ public class MustacheTest
                      else return "Who was that man?";
                  }
              }));
+    }
+
+    @Test public void testGetKeys() {
+        String template = "{{#one}}1{{/one}} {{^two}}2{{three}}{{/two}}{{four}}";
+        Set<String> keys = Mustache.compiler().compile(template).getKeys();
+        assertEquals(new HashSet<String>(Arrays.asList("one", "two", "three", "four")), keys);
+    }
+
+    @Test public void testGetKeys2() {
+        String template = "{{#one}}1{{/one}} {{^two}}2{{two_and_half}}{{#five}}{{three}}{{/five}}{{/two}} {{#one}}{{three}}{{/one}} {{four}}{{! ignore me }}";
+        Set<String> keys = Mustache.compiler().compile(template).getKeys();
+        assertEquals(new HashSet<String>(Arrays.asList("one", "two", "three", "four", "two_and_half", "five")), keys);
     }
 
     protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx)

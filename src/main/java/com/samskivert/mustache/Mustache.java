@@ -12,6 +12,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import com.samskivert.mustache.Template.Segment;
 
 /**
  * Provides <a href="http://mustache.github.com/">Mustache</a> templating services.
@@ -559,6 +562,9 @@ public class Mustache
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             write(out, _text);
         }
+        @Override protected Set<String> getKeys(Set<String> keys) {
+            return keys; // nothing to add
+        }
         protected final String _text;
     }
 
@@ -567,7 +573,7 @@ public class Mustache
             _name = name;
             _compiler = compiler;
         }
-        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
+        private void lazyCompileTemplate() {
             // we compile our template lazily to avoid infinie recursion if a template includes
             // itself (see issue #13)
             if (_template == null) {
@@ -581,9 +587,18 @@ public class Mustache
                     }
                 }
             }
+        }
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
+            lazyCompileTemplate();
             // we must take care to preserve our context rather than creating a new one, which
             // would happen if we just called execute() with ctx.data
             _template.executeSegs(ctx, out);
+        }
+        @Override protected Set<String> getKeys(Set<String> keys) {
+            lazyCompileTemplate();
+            keys.add(_name); // Add template name to keys. Is it good idea?
+            keys.addAll(_template.getKeys());
+            return keys;
         }
         protected final String _name;
         protected final Compiler _compiler;
@@ -615,6 +630,10 @@ public class Mustache
             String text = String.valueOf(value);
             write(out, _escapeHTML ? escapeHTML(text) : text);
         }
+        @Override protected Set<String> getKeys(Set<String> keys) {
+            keys.add(_name);
+            return keys;
+        }
         protected boolean _escapeHTML;
     }
 
@@ -628,6 +647,13 @@ public class Mustache
             for (Template.Segment seg : _segs) {
                 seg.execute(tmpl, ctx, out);
             }
+        }
+        @Override protected Set<String> getKeys(Set<String> keys) {
+            keys.add(_name); // Add template name to keys. Is it good idea?
+            for (Segment seg : _segs) {
+                seg.getKeys(keys);
+            }
+            return keys;
         }
         protected final Template.Segment[] _segs;
     }
@@ -686,6 +712,7 @@ public class Mustache
             } // TODO: fail?
         }
     }
+
 
     /** Map of strings that must be replaced inside html attributes and their replacements. (They
      * need to be applied in order so amps are not double escaped.) */
