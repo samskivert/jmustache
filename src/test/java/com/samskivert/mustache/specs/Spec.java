@@ -30,7 +30,7 @@ public class Spec {
     }
     
     public String getDescription() {
-    	return (String) map.get("descr");
+    	return (String) map.get("desc");
     }
     
     public String getSpecName() {
