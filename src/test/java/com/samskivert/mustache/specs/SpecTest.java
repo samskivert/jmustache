@@ -26,7 +26,7 @@ public class SpecTest {
     }
     
     public static String[] getSpecsGroupsToRun() {
-        return new String[] {"comments", "delimiters", "interpolation", "inverted", "partials", "sections"};
+        return new String[] {"comments", "delimiters", "interpolation", "inverted", "sections"};
     }
     
     public void test(Spec spec) {
