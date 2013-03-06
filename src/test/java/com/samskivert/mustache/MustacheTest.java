@@ -169,6 +169,10 @@ public class MustacheTest
         test("foobar", "foo{{! nothing to see here}}bar", new Object());
     }
 
+    @Test public void testCommentWithFunnyChars() {
+        test("foobar", "foo{{! {baz\n }}bar", new Object());
+    }
+
     @Test(expected=UnsupportedOperationException.class)
     public void testPartialUseWhenUnconfigured () {
         test(null, "{{>foo}}", null);
