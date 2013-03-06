@@ -1,11 +1,10 @@
 package com.samskivert.mustache.specs;
 
-import com.samskivert.mustache.Mustache;
 import java.util.Map;
 
 /**
  *
- * @author valotas
+ * @author Yoryos Valotasios
  */
 public class Spec {
     private final Map<String, Object> map;
@@ -30,7 +29,11 @@ public class Spec {
         return map.get("data");
     }
     
-    public void testWith(Mustache mustache) {
-        
+    public String getDescription() {
+    	return (String) map.get("descr");
+    }
+    
+    public String getSpecName() {
+    	return String.format("%s - %s", getName(), getDescription());
     }
 }
