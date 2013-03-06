@@ -8,9 +8,10 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents a compiled template. Templates are executed with a <em>context</em> to generate
@@ -83,6 +84,21 @@ public class Template
     {
         Context pctx = new Context(parentContext, null, 0, false, false);
         executeSegs(new Context(context, pctx, 0, false, false), out);
+    }
+
+    /** Return all keys found in the template as variables or section names.
+     *  Note that keys are result of static parsing, no context evaluation was applied
+     *  (e.g. a variable will be listed even if is used in a section that is always skipped).
+     *  For the same reason, keys in lambda fragments are included here.
+     *  Partials are processed recursively (because they are included at parse time).
+     *
+     */
+    public Set<String> getKeys() {
+        Set<String> keys = new HashSet<String>();
+        for (Segment seg : _segs) {
+            seg.getKeys(keys);
+        }
+        return keys;
     }
 
     protected Template (Segment[] segs, Mustache.Compiler compiler)
@@ -276,6 +292,9 @@ public class Template
     protected static abstract class Segment
     {
         abstract void execute (Template tmpl, Context ctx, Writer out);
+
+        /** Add keys of this segment to the set. */
+        abstract protected Set<String> getKeys(Set<String> keys);
 
         protected static void write (Writer out, String data) {
             try {
