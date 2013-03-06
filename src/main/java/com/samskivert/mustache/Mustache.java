@@ -609,8 +609,8 @@ public class Mustache
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getValueOrDefault(ctx, _name, _line);
             if (value == null) {
-                throw new MustacheContextException(
-                    "No key, method or field with name '" + _name + "' on line " + _line, _name, _line);
+                throw new MustacheException.Context("No key, method or field with name '" + _name +
+                                                    "' on line " + _line, _name, _line);
             }
             String text = String.valueOf(value);
             write(out, _escapeHTML ? escapeHTML(text) : text);

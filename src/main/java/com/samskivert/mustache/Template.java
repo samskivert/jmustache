@@ -134,7 +134,7 @@ public class Template
                 Object data = getValue(ctx, comps[0].intern(), line, missingIsNull);
                 for (int ii = 1; ii < comps.length; ii++) {
                     if (data == NO_FETCHER_FOUND) {
-                        if (!missingIsNull) throw new MustacheContextException(
+                        if (!missingIsNull) throw new MustacheException.Context(
                             "Missing context for compound variable '" + name + "' on line " + line +
                             ". '" + comps[ii - 1] + "' was not found.", name, line);
                         return null;
@@ -231,7 +231,7 @@ public class Template
             _fcache.put(key, fetcher);
             return value;
         } catch (Exception e) {
-            throw new MustacheContextException(
+            throw new MustacheException.Context(
                 "Failure fetching variable '" + name + "' on line " + line, name, line, e);
         }
     }
@@ -240,7 +240,7 @@ public class Template
     {
         if (value == NO_FETCHER_FOUND) {
             if (missingIsNull) return null;
-            throw new MustacheContextException(
+            throw new MustacheException.Context(
                 "No method or field with name '" + name + "' on line " + line, name, line);
         } else {
             return value;
