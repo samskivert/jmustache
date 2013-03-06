@@ -8,8 +8,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runners.BlockJUnit4ClassRunner;
@@ -19,7 +17,7 @@ import org.yaml.snakeyaml.Yaml;
 
 /**
  *
- * @author valotas
+ * @author Yoryos Valotasios
  */
 public class SpecRunner extends BlockJUnit4ClassRunner { 
     private final List<FrameworkMethod> tests;
@@ -77,8 +75,10 @@ public class SpecRunner extends BlockJUnit4ClassRunner {
     
     private Collection<Spec> getSpecsOfGroup(String name) {
         Yaml yalm = new Yaml();
-        Map<String, Object> map = (Map<String, Object>) yalm.load(getClass().getResourceAsStream("/specs/specs/" + name + ".json"));
-        List<Map<String, Object>> tests = (List<Map<String, Object>>) map.get("tests");
+        @SuppressWarnings("unchecked")
+		Map<String, Object> map = (Map<String, Object>) yalm.load(getClass().getResourceAsStream("/specs/specs/" + name + ".yml"));
+        @SuppressWarnings("unchecked")
+		List<Map<String, Object>> tests = (List<Map<String, Object>>) map.get("tests");
         Collection<Spec> specs = new HashSet<Spec>();
         for (Map<String, Object> test: tests) {
             specs.add(new Spec(test));
