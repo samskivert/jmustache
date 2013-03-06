@@ -21,8 +21,7 @@ public class SpecTest {
     
     @BeforeClass
     public static void setUp() {
-        compiler = Mustache.compiler();
-        System.out.println("Created " + compiler);
+        compiler = Mustache.compiler().defaultValue("");
     }
     
     public static String[] getSpecsGroupsToRun() {
