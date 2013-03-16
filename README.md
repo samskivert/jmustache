@@ -121,7 +121,7 @@ If you wish to make use of partials (e.g. `{{>subtmpl}}`) you must provide a
 `Mustache.TemplateLoader` to the compiler when creating it. For example:
 
     final File templateDir = ...;
-    Mustache.Compiler c = Mustache.compiler().withLoader(new Mustach.TemplateLoader() {
+    Mustache.Compiler c = Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
         public Reader getTemplate (String name) {
             return new FileReader(new File(templateDir, name));
         }
