@@ -7,6 +7,7 @@ package com.samskivert.mustache.specs;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
+
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 
@@ -18,17 +19,23 @@ import com.samskivert.mustache.Template;
 public class SpecTest {
     
     private static Mustache.Compiler compiler;
+    private static SpecAwareTemplateLoader loader;
     
     @BeforeClass
     public static void setUp() {
-        compiler = Mustache.compiler().defaultValue("");
+    	loader = new SpecAwareTemplateLoader();
+        compiler = Mustache
+        		.compiler()
+        		.defaultValue("")
+        		.withLoader(loader);
     }
     
     public static String[] getSpecsGroupsToRun() {
-        return new String[] {"comments", "delimiters", "interpolation", "inverted", "sections"};
+        return new String[] {"comments", "delimiters", "interpolation", "inverted", "sections", "partials"};
     }
     
     public void test(Spec spec) {
+    	loader.setSpec(spec);
     	String tmpl = spec.getTemplate();
         Template t = compiler.compile(spec.getTemplate());
         String out = t.execute(spec.getData());
