@@ -33,6 +33,16 @@ public class Spec {
     	return (String) map.get("desc");
     }
     
+    public String getPartial(String name) {
+    	Object p = map.get("partials");
+    	if (p == null) {
+    		return null;
+    	}
+    	@SuppressWarnings("unchecked")
+		Map<String, String> partials = (Map<String, String>) p;
+    	return partials.get(name);
+    }
+    
     public String getSpecName() {
     	return String.format("%s - %s", getName(), getDescription());
     }
