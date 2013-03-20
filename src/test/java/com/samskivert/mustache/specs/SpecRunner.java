@@ -19,12 +19,13 @@ import org.yaml.snakeyaml.Yaml;
  *
  * @author Yoryos Valotasios
  */
-public class SpecRunner extends BlockJUnit4ClassRunner { 
+public class SpecRunner extends BlockJUnit4ClassRunner {
+	private final Yaml yalm = new Yaml();
     private final List<FrameworkMethod> tests;
     
     public SpecRunner(Class<?> klass) throws InitializationError {
         super(klass);
-        assert  klass == SpecTest.class;
+        if (klass != SpecTest.class) throw new IllegalArgumentException(SpecRunner.class.getSimpleName() + " should only be used with classes of type " + SpecTest.class.getName());
         this.tests = computeTests();
     }
     
@@ -74,7 +75,6 @@ public class SpecRunner extends BlockJUnit4ClassRunner {
     }
     
     private Collection<Spec> getSpecsOfGroup(String name) {
-        Yaml yalm = new Yaml();
         @SuppressWarnings("unchecked")
 		Map<String, Object> map = (Map<String, Object>) yalm.load(getClass().getResourceAsStream("/specs/specs/" + name + ".yml"));
         @SuppressWarnings("unchecked")
