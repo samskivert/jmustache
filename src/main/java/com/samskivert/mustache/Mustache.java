@@ -335,10 +335,11 @@ public class Mustache
                         parseChar(NO_CHAR);
                     }
 
-                } else if (c == delims.start1 && text.length() > 0) {
+                } else if (c == delims.start1 && text.length() > 0 && text.charAt(0) != '!') {
                     // if we've already matched some tag characters and we see a new start tag
                     // character (e.g. "{{foo {" but not "{{{"), treat the already matched text as
-                    // plain text and start matching a new tag from this point
+                    // plain text and start matching a new tag from this point, unless we're in
+                    // a comment tag.
                     restoreStartTag(text, delims);
                     accum.addTextSegment(text);
                     tagStartColumn = column;
@@ -618,8 +619,8 @@ public class Mustache
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getValueOrDefault(ctx, _name, _line);
             if (value == null) {
-                throw new MustacheException(
-                    "No key, method or field with name '" + _name + "' on line " + _line);
+                throw new MustacheException.Context("No key, method or field with name '" + _name +
+                                                    "' on line " + _line, _name, _line);
             }
             String text = String.valueOf(value);
             write(out, _escapeHTML ? escapeHTML(text) : text);
