@@ -408,8 +408,17 @@ public class Mustache
             String errmsg = "Invalid delimiter configuration '" + dtext + "'. Must be of the " +
                 "form {{=1 2=}} or {{=12 34=}} where 1, 2, 3 and 4 are delimiter chars.";
 
-            String[] delims = dtext.split(" ");
-            if (delims.length != 2) throw new MustacheException(errmsg);
+            String[] delims = dtext.trim().split(" ");
+            String[] delims2 = new String[2];
+            int position = 0;
+            for (String s: delims) {
+            	if (!"".equals(s)) {
+            		if (position >= delims2.length) throw new MustacheException(errmsg); 
+            		delims2[position] = s;
+            		position++;
+            	}
+            }
+            delims = delims2;
 
             switch (delims[0].length()) {
             case 1:
