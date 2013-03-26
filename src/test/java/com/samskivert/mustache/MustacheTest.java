@@ -516,6 +516,12 @@ public class MustacheTest
              }));
     }
 
+    @Test public void testNonStandardDefaultDelims () {
+        test(Mustache.compiler().withDelims(new Mustache.Delims("<% %>")), "bar", "<%foo%>", new Object() {
+            String foo = "bar";
+        });
+    }
+
     protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx)
     {
         assertEquals(expected, compiler.compile(template).execute(ctx));

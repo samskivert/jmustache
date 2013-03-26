@@ -60,6 +60,9 @@ public class Mustache
         /** The collector used by templates compiled with this compiler. */
         public final Collector collector;
 
+        /** The Delimiters used by default int he templates compiled with this compiler. */
+        public final Delims delims;
+
         /** Compiles the supplied template into a repeatedly executable intermediate form. */
         public Template compile (String template) {
             return compile(new StringReader(template));
@@ -73,7 +76,7 @@ public class Mustache
         /** Returns a compiler that either does or does not escape HTML by default. */
         public Compiler escapeHTML (boolean escapeHTML) {
             return new Compiler(escapeHTML, this.standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.loader, this.collector);
+                                this.emptyStringIsFalse, this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler that either does or does not use standards mode. Standards mode
@@ -81,7 +84,7 @@ public class Mustache
          * context. */
         public Compiler standardsMode (boolean standardsMode) {
             return new Compiler(this.escapeHTML, standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.loader, this.collector);
+                                this.emptyStringIsFalse, this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler that will use the given value for any variable that is missing, or
@@ -89,7 +92,7 @@ public class Mustache
          * supplied default for missing keys and existing keys that return null values. */
         public Compiler defaultValue (String defaultValue) {
             return new Compiler(this.escapeHTML, this.standardsMode, defaultValue, true,
-                                this.emptyStringIsFalse, this.loader, this.collector);
+                                this.emptyStringIsFalse, this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler that will use the given value for any variable that resolves to
@@ -105,25 +108,31 @@ public class Mustache
          * </ul> */
         public Compiler nullValue (String nullValue) {
             return new Compiler(this.escapeHTML, this.standardsMode, nullValue, false,
-                                this.emptyStringIsFalse, this.loader, this.collector);
+                                this.emptyStringIsFalse, this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler that will treat empty string as a false value if parameter is true. */
         public Compiler emptyStringIsFalse (boolean emptyStringIsFalse) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                                this.missingIsNull, emptyStringIsFalse, this.loader, this.collector);
+                                this.missingIsNull, emptyStringIsFalse, this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler configured to use the supplied template loader to handle partials. */
         public Compiler withLoader (TemplateLoader loader) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.emptyStringIsFalse, loader, this.collector);
+                                this.missingIsNull, this.emptyStringIsFalse, loader, this.collector, this.delims);
         }
 
         /** Returns a compiler configured to use the supplied collector. */
         public Compiler withCollector (Collector collector) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.emptyStringIsFalse, this.loader, collector);
+                                this.missingIsNull, this.emptyStringIsFalse, this.loader, collector, this.delims);
+        }
+
+        /** Returns a compiler configured to use the supplied delims as default delimiters. */
+        public Compiler withDelims (Delims delims) {
+            return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
+                                this.missingIsNull, this.emptyStringIsFalse, this.loader, this.collector, delims);
         }
 
         /** Returns the value to use in the template for the null-valued property {@code name}. See
@@ -134,7 +143,7 @@ public class Mustache
 
         protected Compiler (boolean escapeHTML, boolean standardsMode, String nullValue,
                             boolean missingIsNull, boolean emptyStringIsFalse, TemplateLoader loader,
-                            Collector collector) {
+                            Collector collector, Delims delims) {
             this.escapeHTML = escapeHTML;
             this.standardsMode = standardsMode;
             this.nullValue = nullValue;
@@ -142,6 +151,7 @@ public class Mustache
             this.emptyStringIsFalse = emptyStringIsFalse;
             this.loader = loader;
             this.collector = collector;
+            this.delims = delims;
         }
     }
 
@@ -159,7 +169,7 @@ public class Mustache
         /** Executes this lambda on the supplied template fragment. The lambda should write its
          * results to {@code out}.
          *
-         * @param tmpl the fragment of the template that was passed to the lambda.
+         * @param frag the fragment of the template that was passed to the lambda.
          * @param out the writer to which the lambda should write its output.
          */
         void execute (Template.Fragment frag, Writer out) throws IOException;
@@ -195,7 +205,7 @@ public class Mustache
      */
     public static Compiler compiler ()
     {
-        return new Compiler(true, false, null, true, false, FAILING_LOADER, new DefaultCollector());
+        return new Compiler(true, false, null, true, false, FAILING_LOADER, new DefaultCollector(), new Delims());
     }
 
     /**
@@ -238,7 +248,7 @@ public class Mustache
 
     // a hand-rolled parser; whee!
     protected static class Parser {
-        final Delims delims = new Delims();
+        final Delims delims;
         final StringBuilder text = new StringBuilder();
 
         Reader source;
@@ -251,6 +261,7 @@ public class Mustache
 
         public Parser (Compiler compiler) {
             this.accum = new Accumulator(compiler);
+            this.delims = compiler.delims;
         }
 
         public Accumulator parse (Reader source) {
@@ -396,12 +407,28 @@ public class Mustache
 
     protected static class Delims {
         public char start1 = '{';
+        private final char defaultStart1;
         public char start2 = '{';
+        private final char defaultStart2;
         public char end1 = '}';
+        private final char defaultEnd1;
         public char end2 = '}';
+        private final char defaultEnd2;
+
+        public Delims () {
+            this("{{ }}");
+        }
+
+        public Delims (String s) {
+            updateDelims(s);
+            defaultStart1 = start1;
+            defaultStart2 = start2;
+            defaultEnd1 = end1;
+            defaultEnd2 = end2;
+        }
 
         public boolean isDefault () {
-            return start1 == '{' && start2 == '{' && end1 == '}' && end2 == '}';
+            return start1 == defaultStart1 && start2 == defaultStart2 && end1 == defaultEnd1 && end2 == defaultEnd2;
         }
 
         public void updateDelims (String dtext) {
