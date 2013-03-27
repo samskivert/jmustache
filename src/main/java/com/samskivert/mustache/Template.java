@@ -56,8 +56,7 @@ public class Template
      * Executes this template with the given context, returning the results as a string.
      * @throws MustacheException if an error occurs while executing or writing the template.
      */
-    public String execute (Object context) throws MustacheException
-    {
+    public String execute (Object context) throws MustacheException {
         StringWriter out = new StringWriter();
         execute(context, out);
         return out.toString();
@@ -67,8 +66,7 @@ public class Template
      * Executes this template with the given context, writing the results to the supplied writer.
      * @throws MustacheException if an error occurs while executing or writing the template.
      */
-    public void execute (Object context, Writer out) throws MustacheException
-    {
+    public void execute (Object context, Writer out) throws MustacheException {
         executeSegs(new Context(context, null, 0, false, false), out);
     }
 
@@ -79,28 +77,24 @@ public class Template
      * a block.
      * @throws MustacheException if an error occurs while executing or writing the template.
      */
-    public void execute (Object context, Object parentContext, Writer out) throws MustacheException
-    {
+    public void execute (Object context, Object parentContext, Writer out) throws MustacheException {
         Context pctx = new Context(parentContext, null, 0, false, false);
         executeSegs(new Context(context, pctx, 0, false, false), out);
     }
 
-    protected Template (Segment[] segs, Mustache.Compiler compiler)
-    {
+    protected Template (Segment[] segs, Mustache.Compiler compiler) {
         _segs = segs;
         _compiler = compiler;
         _fcache = compiler.collector.createFetcherCache();
     }
 
-    protected void executeSegs (Context ctx, Writer out) throws MustacheException
-    {
+    protected void executeSegs (Context ctx, Writer out) throws MustacheException {
         for (Segment seg : _segs) {
             seg.execute(this, ctx, out);
         }
     }
 
-    protected Fragment createFragment (final Segment[] segs, final Context ctx)
-    {
+    protected Fragment createFragment (final Segment[] segs, final Context ctx) {
         return new Fragment() {
             @Override public void execute (Writer out) {
                 for (Segment seg : segs) {
@@ -121,8 +115,7 @@ public class Template
      *
      * @return the value associated with the supplied name or null if no value could be resolved.
      */
-    protected Object getValue (Context ctx, String name, int line, boolean missingIsNull)
-    {
+    protected Object getValue (Context ctx, String name, int line, boolean missingIsNull) {
         if (!_compiler.standardsMode) {
             // if we're dealing with a compound key, resolve each component and use the result to
             // resolve the subsequent component and so forth
@@ -179,8 +172,7 @@ public class Template
      * will be the means by which we enact configured behavior for sections that reference null or
      * missing variables. Right now, all such variables result in a length 0 section.
      */
-    protected Object getSectionValue (Context ctx, String name, int line)
-    {
+    protected Object getSectionValue (Context ctx, String name, int line) {
         // TODO: configurable behavior on missing values
         Object value = getValue(ctx, name, line, _compiler.missingIsNull);
         // TODO: configurable behavior on null values
@@ -191,8 +183,7 @@ public class Template
      * Returns the value for the specified variable, or the configured default value if the
      * variable resolves to null. See {@link #getValue}.
      */
-    protected Object getValueOrDefault (Context ctx, String name, int line)
-    {
+    protected Object getValueOrDefault (Context ctx, String name, int line) {
         Object value = getValue(ctx, name, line, _compiler.missingIsNull);
         // getValue will raise MustacheException if a variable cannot be resolved and missingIsNull
         // is not configured; so we're safe to assume that any null that makes it up to this point
@@ -200,8 +191,7 @@ public class Template
         return (value == null) ? _compiler.computeNullValue(name) : value;
     }
 
-    protected Object getValueIn (Object data, String name, int line)
-    {
+    protected Object getValueIn (Object data, String name, int line) {
         if (data == null) {
             throw new NullPointerException(
                 "Null context for variable '" + name + "' on line " + line);
@@ -236,8 +226,7 @@ public class Template
         }
     }
 
-    protected Object checkForMissing (String name, int line, boolean missingIsNull, Object value)
-    {
+    protected Object checkForMissing (String name, int line, boolean missingIsNull, Object value) {
         if (value == NO_FETCHER_FOUND) {
             if (missingIsNull) return null;
             throw new MustacheException.Context(
@@ -251,8 +240,7 @@ public class Template
     protected final Mustache.Compiler _compiler;
     protected final Map<Key, Mustache.VariableFetcher> _fcache;
 
-    protected static class Context
-    {
+    protected static class Context {
         public final Object data;
         public final Context parent;
         public final int index;
@@ -273,8 +261,7 @@ public class Template
     }
 
     /** A template is broken into segments. */
-    protected static abstract class Segment
-    {
+    protected static abstract class Segment {
         abstract void execute (Template tmpl, Context ctx, Writer out);
 
         protected static void write (Writer out, String data) {
@@ -287,8 +274,7 @@ public class Template
     }
 
     /** Used to cache variable fetchers for a given context class, name combination. */
-    protected static class Key
-    {
+    protected static class Key {
         public final Class<?> cclass;
         public final String name;
 

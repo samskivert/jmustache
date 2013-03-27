@@ -8,13 +8,11 @@ package com.samskivert.mustache;
  */
 public class MustacheParseException extends MustacheException
 {
-    public MustacheParseException (String message)
-    {
+    public MustacheParseException (String message) {
         super(message);
     }
 
-    public MustacheParseException (String message, int lineNo)
-    {
+    public MustacheParseException (String message, int lineNo) {
         super(message + " @ line " + lineNo);
     }
 }

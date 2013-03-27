@@ -133,7 +133,7 @@ public class Mustache
         }
 
         /** Returns a compiler configured to use the supplied delims as default delimiters.
-         * @param delims a string of the form {@code {AB CD} or {@code {A D} where A and B are
+         * @param delims a string of the form {@code AB CD} or {@code A D} where A and B are
          * opening delims and C and D are closing delims. */
         public Compiler withDelims (String delims) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
@@ -209,8 +209,7 @@ public class Mustache
     /**
      * Returns a compiler that escapes HTML by default and does not use standards mode.
      */
-    public static Compiler compiler ()
-    {
+    public static Compiler compiler () {
         return new Compiler(true, false, null, true, false, FAILING_LOADER, new DefaultCollector(),
                             new Delims());
     }
@@ -218,32 +217,28 @@ public class Mustache
     /**
      * Compiles the supplied template into a repeatedly executable intermediate form.
      */
-    protected static Template compile (Reader source, Compiler compiler)
-    {
+    protected static Template compile (Reader source, Compiler compiler) {
         Accumulator accum = new Parser(compiler).parse(source);
         return new Template(accum.finish(), compiler);
     }
 
     private Mustache () {} // no instantiateski
 
-    protected static void restoreStartTag (StringBuilder text, Delims starts)
-    {
+    protected static void restoreStartTag (StringBuilder text, Delims starts) {
         text.insert(0, starts.start1);
         if (starts.start2 != NO_CHAR) {
             text.insert(1, starts.start2);
         }
     }
 
-    protected static String escapeHTML (String text)
-    {
+    protected static String escapeHTML (String text) {
         for (String[] escape : ATTR_ESCAPES) {
             text = text.replace(escape[0], escape[1]);
         }
         return text;
     }
 
-    protected static boolean allowsWhitespace (char typeChar)
-    {
+    protected static boolean allowsWhitespace (char typeChar) {
         return (typeChar == '=') || // change delimiters
             (typeChar == '!');      // comment
     }
