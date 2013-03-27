@@ -4,10 +4,6 @@
 
 package com.samskivert.mustache;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -18,6 +14,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Various unit tests.
@@ -517,23 +516,20 @@ public class MustacheTest
     }
 
     @Test public void testNonStandardDefaultDelims () {
-        test(Mustache.compiler().withDelims(new Mustache.Delims("<% %>")), "bar", "<%foo%>", new Object() {
+        test(Mustache.compiler().withDelims("<% %>"), "bar", "<%foo%>", new Object() {
             String foo = "bar";
         });
     }
 
-    protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx)
-    {
+    protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx) {
         assertEquals(expected, compiler.compile(template).execute(ctx));
     }
 
-    protected void test (String expected, String template, Object ctx)
-    {
+    protected void test (String expected, String template, Object ctx) {
         test(Mustache.compiler(), expected, template, ctx);
     }
 
-    protected Object context (Object... data)
-    {
+    protected Object context (Object... data) {
         Map<String, Object> ctx = new HashMap<String, Object>();
         for (int ii = 0; ii < data.length; ii += 2) {
             ctx.put(data[ii].toString(), data[ii+1]);

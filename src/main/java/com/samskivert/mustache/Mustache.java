@@ -60,7 +60,7 @@ public class Mustache
         /** The collector used by templates compiled with this compiler. */
         public final Collector collector;
 
-        /** The Delimiters used by default int he templates compiled with this compiler. */
+        /** The delimiters used by default in templates compiled with this compiler. */
         public final Delims delims;
 
         /** Compiles the supplied template into a repeatedly executable intermediate form. */
@@ -114,25 +114,31 @@ public class Mustache
         /** Returns a compiler that will treat empty string as a false value if parameter is true. */
         public Compiler emptyStringIsFalse (boolean emptyStringIsFalse) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                                this.missingIsNull, emptyStringIsFalse, this.loader, this.collector, this.delims);
+                                this.missingIsNull, emptyStringIsFalse, this.loader, this.collector,
+                                this.delims);
         }
 
         /** Returns a compiler configured to use the supplied template loader to handle partials. */
         public Compiler withLoader (TemplateLoader loader) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.emptyStringIsFalse, loader, this.collector, this.delims);
+                                this.missingIsNull, this.emptyStringIsFalse, loader, this.collector,
+                                this.delims);
         }
 
         /** Returns a compiler configured to use the supplied collector. */
         public Compiler withCollector (Collector collector) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.emptyStringIsFalse, this.loader, collector, this.delims);
+                                this.missingIsNull, this.emptyStringIsFalse, this.loader, collector,
+                                this.delims);
         }
 
-        /** Returns a compiler configured to use the supplied delims as default delimiters. */
-        public Compiler withDelims (Delims delims) {
+        /** Returns a compiler configured to use the supplied delims as default delimiters.
+         * @param delims a string of the form {@code {AB CD} or {@code {A D} where A and B are
+         * opening delims and C and D are closing delims. */
+        public Compiler withDelims (String delims) {
             return new Compiler(this.escapeHTML, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.emptyStringIsFalse, this.loader, this.collector, delims);
+                                this.missingIsNull, this.emptyStringIsFalse, this.loader,
+                                this.collector, new Delims().updateDelims(delims));
         }
 
         /** Returns the value to use in the template for the null-valued property {@code name}. See
@@ -205,7 +211,8 @@ public class Mustache
      */
     public static Compiler compiler ()
     {
-        return new Compiler(true, false, null, true, false, FAILING_LOADER, new DefaultCollector(), new Delims());
+        return new Compiler(true, false, null, true, false, FAILING_LOADER, new DefaultCollector(),
+                            new Delims());
     }
 
     /**
@@ -372,9 +379,9 @@ public class Mustache
                         delims.updateDelims(text.substring(1, text.length()-1));
                         text.setLength(0);
                     } else {
-                        // if we haven't remapped the delimiters, and the tag starts with {{{ then
+                        // if the delimiters are {{ and }}, and the tag starts with {{{ then
                         // require that it end with }}} and disable HTML escaping
-                        if (delims.isDefault() && text.charAt(0) == delims.start1) {
+                        if (delims.isStaches() && text.charAt(0) == delims.start1) {
                             try {
                                 // we've only parsed }} at this point, so we have to slurp in
                                 // another character from the input stream and check it
@@ -407,36 +414,17 @@ public class Mustache
 
     protected static class Delims {
         public char start1 = '{';
-        private final char defaultStart1;
         public char start2 = '{';
-        private final char defaultStart2;
         public char end1 = '}';
-        private final char defaultEnd1;
         public char end2 = '}';
-        private final char defaultEnd2;
 
-        public Delims () {
-            this("{{ }}");
+        public boolean isStaches () {
+            return start1 == '{' && start2 == '{' && end1 == '}' && end2 == '}';
         }
 
-        public Delims (String s) {
-            updateDelims(s);
-            defaultStart1 = start1;
-            defaultStart2 = start2;
-            defaultEnd1 = end1;
-            defaultEnd2 = end2;
-        }
-
-        public boolean isDefault () {
-            return start1 == defaultStart1 && start2 == defaultStart2 && end1 == defaultEnd1 && end2 == defaultEnd2;
-        }
-
-        public void updateDelims (String dtext) {
-            String errmsg = "Invalid delimiter configuration '" + dtext + "'. Must be of the " +
-                "form {{=1 2=}} or {{=12 34=}} where 1, 2, 3 and 4 are delimiter chars.";
-
+        public Delims updateDelims (String dtext) {
             String[] delims = dtext.split(" ");
-            if (delims.length != 2) throw new MustacheException(errmsg);
+            if (delims.length != 2) throw new MustacheException(errmsg(dtext));
 
             switch (delims[0].length()) {
             case 1:
@@ -448,7 +436,7 @@ public class Mustache
                 start2 = delims[0].charAt(1);
                 break;
             default:
-                throw new MustacheException(errmsg);
+                throw new MustacheException(errmsg(dtext));
             }
 
             switch (delims[1].length()) {
@@ -461,8 +449,14 @@ public class Mustache
                 end2 = delims[1].charAt(1);
                 break;
             default:
-                throw new MustacheException(errmsg);
+                throw new MustacheException(errmsg(dtext));
             }
+            return this;
+        }
+
+        private static String errmsg (String dtext) {
+            return "Invalid delimiter configuration '" + dtext + "'. Must be of the " +
+                "form {{=1 2=}} or {{=12 34=}} where 1, 2, 3 and 4 are delimiter chars.";
         }
     }
 
