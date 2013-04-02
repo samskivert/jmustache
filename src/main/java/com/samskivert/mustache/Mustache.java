@@ -286,6 +286,9 @@ public class Mustache
                     line++;
                     // skip this newline character if we're configured to do so; TODO: handle CR
                     if (skipNewline) {
+                        // if the preceding character is '\r', strip that off too
+                        int lastIdx = text.length()-1;
+                        if (lastIdx >= 0 && text.charAt(lastIdx) == '\r') text.setLength(lastIdx);
                         skipNewline = false;
                         continue;
                     }
