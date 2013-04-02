@@ -238,6 +238,7 @@ public class Mustache
         return text;
     }
 
+    // TODO: this method was never called, what was my intention here?
     protected static boolean allowsWhitespace (char typeChar) {
         return (typeChar == '=') || // change delimiters
             (typeChar == '!');      // comment
@@ -312,7 +313,8 @@ public class Mustache
             case MATCHING_START:
                 text.append(delims.start1);
                 break;
-                // case TEXT: // do nothing
+            case TEXT: // do nothing
+                break;
             }
             accum.addTextSegment(text);
 
