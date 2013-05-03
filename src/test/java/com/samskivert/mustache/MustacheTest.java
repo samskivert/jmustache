@@ -488,6 +488,18 @@ public class MustacheTest
                  String nullvar = null;
              });
     }
+    
+    @Test public void testCompilingDoesntChangeCompilersDelimiters() {
+        Mustache.Compiler compiler = Mustache.compiler();
+        test(compiler,
+             "value", "{{=<% %>=}}<% variable %>", new Object() {
+                 String variable = "value";
+             });
+        test(compiler,
+             "value", "{{=<% %>=}}<% variable %>", new Object() {
+                 String variable = "value";
+             });
+    }
 
     @Test public void testLambda1 () {
         test("<b>Willy is awesome.</b>", "{{#bold}}{{name}} is awesome.{{/bold}}",
