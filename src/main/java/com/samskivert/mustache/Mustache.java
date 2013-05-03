@@ -218,15 +218,13 @@ public class Mustache
      * Compiles the supplied template into a repeatedly executable intermediate form.
      */
     protected static Template compile (Reader source, Compiler compiler) {
-        String originalDelims = compiler.delims == null ? null : compiler.delims.toString();
-        //compiler.delims.start1
+        Delims orig = compiler.delims.save();
         try {
             Accumulator accum = new Parser(compiler).parse(source);
             return new Template(accum.finish(), compiler);
         } finally {
-            if (originalDelims != null) {
-                compiler.delims.updateDelims(originalDelims);
-            }
+            // restore the original delimiters
+            compiler.delims.restore(orig);
         }
     }
 
@@ -421,33 +419,11 @@ public class Mustache
     }
 
     protected static class Delims {
-        public char start1 = '{';
-        public char start2 = '{';
-        public char end1 = '}';
-        public char end2 = '}';
+        public char start1 = '{', end1 = '}';
+        public char start2 = '{', end2 = '}';
 
         public boolean isStaches () {
             return start1 == '{' && start2 == '{' && end1 == '}' && end2 == '}';
-        }
-        
-        /**
-         * Returns a String representation that is compatible with
-         * {@link #updateDelims(java.lang.String)}.
-         * @return 
-         */
-        @Override
-        public String toString() {
-            StringBuilder builder = new StringBuilder();
-            builder.append(start1);
-            if (start2 != NO_CHAR) {
-                builder.append(start2);
-            }
-            builder.append(" ");
-            builder.append(end1);
-            if (end2 != NO_CHAR) {
-                builder.append(end2);
-            }
-            return builder.toString();
         }
 
         public Delims updateDelims (String dtext) {
@@ -479,6 +455,18 @@ public class Mustache
             default:
                 throw new MustacheException(errmsg(dtext));
             }
+            return this;
+        }
+
+        Delims save () {
+            return new Delims().restore(this);
+        }
+
+        Delims restore (Delims delims) {
+            this.start1 = delims.start1;
+            this.start2 = delims.start2;
+            this.end1 = delims.end1;
+            this.end2 = delims.end2;
             return this;
         }
 

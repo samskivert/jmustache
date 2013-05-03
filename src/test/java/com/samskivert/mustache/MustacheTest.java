@@ -488,7 +488,7 @@ public class MustacheTest
                  String nullvar = null;
              });
     }
-    
+
     @Test public void testCompilingDoesntChangeCompilersDelimiters() {
         Mustache.Compiler compiler = Mustache.compiler();
         test(compiler,
