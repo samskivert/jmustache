@@ -218,8 +218,16 @@ public class Mustache
      * Compiles the supplied template into a repeatedly executable intermediate form.
      */
     protected static Template compile (Reader source, Compiler compiler) {
-        Accumulator accum = new Parser(compiler).parse(source);
-        return new Template(accum.finish(), compiler);
+        String originalDelims = compiler.delims == null ? null : compiler.delims.toString();
+        //compiler.delims.start1
+        try {
+            Accumulator accum = new Parser(compiler).parse(source);
+            return new Template(accum.finish(), compiler);
+        } finally {
+            if (originalDelims != null) {
+                compiler.delims.updateDelims(originalDelims);
+            }
+        }
     }
 
     private Mustache () {} // no instantiateski
@@ -420,6 +428,26 @@ public class Mustache
 
         public boolean isStaches () {
             return start1 == '{' && start2 == '{' && end1 == '}' && end2 == '}';
+        }
+        
+        /**
+         * Returns a String representation that is compatible with
+         * {@link #updateDelims(java.lang.String)}.
+         * @return 
+         */
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append(start1);
+            if (start2 != NO_CHAR) {
+                builder.append(start2);
+            }
+            builder.append(" ");
+            builder.append(end1);
+            if (end2 != NO_CHAR) {
+                builder.append(end2);
+            }
+            return builder.toString();
         }
 
         public Delims updateDelims (String dtext) {
