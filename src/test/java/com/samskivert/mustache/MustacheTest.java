@@ -145,6 +145,30 @@ public class MustacheTest
         });
     }
 
+    @Test public void testSectionWithLongValueZero () {
+        test(Mustache.compiler().zeroIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
+            Long foo = 0L;
+        });
+    }
+
+    @Test public void testSectionWithIntegerValueZero () {
+        test(Mustache.compiler().zeroIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
+            Integer foo = 0;
+        });
+    }
+
+    @Test public void testSectionWithFloatValueZero () {
+        test(Mustache.compiler().zeroIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
+            Float foo = 0F;
+        });
+    }
+
+    @Test public void testSectionWithDoubleValueZero () {
+        test(Mustache.compiler().zeroIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
+            Double foo = 0D;
+        });
+    }
+
     @Test public void testMissingSection () {
         test("", "{{#foo}}{{bar}}{{/foo}}", new Object() {
             // no foo
