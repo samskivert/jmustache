@@ -139,34 +139,44 @@ public class MustacheTest
         });
     }
 
-    @Test public void testSectionWithEmptyString () {
+    @Test public void testSectionWithNonFalseyEmptyString () {
+        test(Mustache.compiler(), "test", "{{#foo}}test{{/foo}}", new Object() {
+            String foo = "";
+        });
+    }
+
+    @Test public void testSectionWithFalseyEmptyString () {
         test(Mustache.compiler().emptyStringIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
             String foo = "";
         });
     }
 
-    @Test public void testSectionWithLongValueZero () {
-        test(Mustache.compiler().zeroIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
+    @Test public void testSectionWithNonFalseyZero () {
+        test(Mustache.compiler(), "test", "{{#foo}}test{{/foo}}", new Object() {
             Long foo = 0L;
         });
     }
 
-    @Test public void testSectionWithIntegerValueZero () {
-        test(Mustache.compiler().zeroIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
-            Integer foo = 0;
-        });
-    }
-
-    @Test public void testSectionWithFloatValueZero () {
-        test(Mustache.compiler().zeroIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
-            Float foo = 0F;
-        });
-    }
-
-    @Test public void testSectionWithDoubleValueZero () {
-        test(Mustache.compiler().zeroIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
-            Double foo = 0D;
-        });
+    @Test public void testSectionWithFalseyZero () {
+        test(Mustache.compiler().zeroIsFalse(true), "",
+             "{{#intv}}intv{{/intv}}" +
+             "{{#longv}}longv{{/longv}}" +
+             "{{#floatv}}floatv{{/floatv}}" +
+             "{{#doublev}}doublev{{/doublev}}" +
+             "{{#longm}}longm{{/longm}}" +
+             "{{#intm}}intm{{/intm}}" +
+             "{{#floatm}}floatm{{/floatm}}" +
+             "{{#doublem}}doublem{{/doublem}}",
+             new Object() {
+                 Integer intv = 0;
+                 Long longv = 0L;
+                 Float floatv = 0f;
+                 Double doublev = 0d;
+                 int intm () { return 0; }
+                 long longm () { return 0l; }
+                 float floatm () { return 0f; }
+                 double doublem () { return 0d; }
+             });
     }
 
     @Test public void testMissingSection () {
