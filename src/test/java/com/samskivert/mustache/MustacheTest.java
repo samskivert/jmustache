@@ -146,9 +146,17 @@ public class MustacheTest
     }
 
     @Test public void testSectionWithFalseyEmptyString () {
-        test(Mustache.compiler().emptyStringIsFalse(true), "", "{{#foo}}test{{/foo}}", new Object() {
+        Object ctx = new Object() {
             String foo = "";
-        });
+            String bar = "nonempty";
+        };
+        // test normal sections with falsey empty string
+        Mustache.Compiler compiler = Mustache.compiler().emptyStringIsFalse(true);
+        test(compiler, "",     "{{#foo}}test{{/foo}}", ctx);
+        test(compiler, "test", "{{#bar}}test{{/bar}}", ctx);
+        // test inverted sections with falsey empty string
+        test(compiler, "test", "{{^foo}}test{{/foo}}", ctx);
+        test(compiler, "",     "{{^bar}}test{{/bar}}", ctx);
     }
 
     @Test public void testSectionWithNonFalseyZero () {

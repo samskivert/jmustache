@@ -162,6 +162,14 @@ public class Mustache
             return (nullValue == null) ? null : nullValue.replace("{{name}}", name);
         }
 
+        /** Returns true if the supplied value is "falsey". If {@link #emptyStringIsFalse} is true,
+         * then empty strings are considered falsey. If {@link #zeroIsFalse} is true, then zero
+         * values are considered falsey. */
+        public boolean isFalsey (Object value) {
+            return (emptyStringIsFalse && "".equals(value)) ||
+                (zeroIsFalse && (value instanceof Number) && ((Number)value).longValue() == 0);
+        }
+
         protected Compiler (boolean escapeHTML, boolean standardsMode, String nullValue,
                             boolean missingIsNull, boolean emptyStringIsFalse, boolean zeroIsFalse,
                             TemplateLoader loader, Collector collector, Delims delims) {
@@ -494,7 +502,7 @@ public class Mustache
 
     protected static class Accumulator {
         public Accumulator (Compiler compiler) {
-            _compiler = compiler;
+            _comp = compiler;
         }
 
         public boolean justOpenedOrClosedBlock () {
@@ -518,7 +526,7 @@ public class Mustache
             switch (tag.charAt(0)) {
             case '#':
                 requireNoNewlines(tag, tagLine);
-                return new Accumulator(_compiler) {
+                return new Accumulator(_comp) {
                     @Override public boolean justOpenedOrClosedBlock () {
                         // if we just opened this section, we'll have no segments
                         return (_segs.isEmpty()) || super.justOpenedOrClosedBlock();
@@ -529,19 +537,18 @@ public class Mustache
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
-                        outer._segs.add(
-                            new SectionSegment(itag, super.finish(), tagLine, _compiler));
+                        outer._segs.add(new SectionSegment(_comp, itag, super.finish(), tagLine));
                         return outer;
                     }
                 };
 
             case '>':
-                _segs.add(new IncludedTemplateSegment(tag1, _compiler));
+                _segs.add(new IncludedTemplateSegment(_comp, tag1));
                 return this;
 
             case '^':
                 requireNoNewlines(tag, tagLine);
-                return new Accumulator(_compiler) {
+                return new Accumulator(_comp) {
                     @Override public boolean justOpenedOrClosedBlock () {
                         // if we just opened this section, we'll have no segments
                         return (_segs.isEmpty()) || super.justOpenedOrClosedBlock();
@@ -552,7 +559,7 @@ public class Mustache
                     }
                     @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
                         requireSameName(tag1, itag, line);
-                        outer._segs.add(new InvertedSectionSegment(itag, super.finish(), tagLine));
+                        outer._segs.add(new InvertedSegment(_comp, itag, super.finish(), tagLine));
                         return outer;
                     }
                 };
@@ -572,7 +579,7 @@ public class Mustache
 
             default:
                 requireNoNewlines(tag, tagLine);
-                _segs.add(new VariableSegment(tag, _compiler.escapeHTML, tagLine));
+                _segs.add(new VariableSegment(tag, _comp.escapeHTML, tagLine));
                 return this;
             }
         }
@@ -601,7 +608,7 @@ public class Mustache
             }
         }
 
-        protected final Compiler _compiler;
+        protected final Compiler _comp;
         protected final List<Template.Segment> _segs = new ArrayList<Template.Segment>();
     }
 
@@ -617,16 +624,16 @@ public class Mustache
     }
 
     protected static class IncludedTemplateSegment extends Template.Segment {
-        public IncludedTemplateSegment (String name, Compiler compiler) {
+        public IncludedTemplateSegment (Compiler compiler, String name) {
+            _comp = compiler;
             _name = name;
-            _compiler = compiler;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             // we compile our template lazily to avoid infinie recursion if a template includes
             // itself (see issue #13)
             if (_template == null) {
                 try {
-                    _template = _compiler.compile(_compiler.loader.getTemplate(_name));
+                    _template = _comp.compile(_comp.loader.getTemplate(_name));
                 } catch (Exception e) {
                     if (e instanceof RuntimeException) {
                         throw (RuntimeException)e;
@@ -639,8 +646,8 @@ public class Mustache
             // would happen if we just called execute() with ctx.data
             _template.executeSegs(ctx, out);
         }
+        protected final Compiler _comp;
         protected final String _name;
-        protected final Compiler _compiler;
         protected Template _template;
     }
 
@@ -688,13 +695,13 @@ public class Mustache
 
     /** A segment that represents a section. */
     protected static class SectionSegment extends BlockSegment {
-        public SectionSegment (String name, Template.Segment[] segs, int line, Compiler compiler) {
+        public SectionSegment (Compiler compiler, String name, Template.Segment[] segs, int line) {
             super(name, segs, line);
-            _compiler = compiler;
+            _comp = compiler;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
-            Iterator<?> iter = tmpl._compiler.collector.toIterator(value);
+            Iterator<?> iter = _comp.collector.toIterator(value);
             if (iter != null) {
                 int index = 0;
                 while (iter.hasNext()) {
@@ -712,26 +719,24 @@ public class Mustache
                 } catch (IOException ioe) {
                     throw new MustacheException(ioe);
                 }
-            } else if (_compiler.emptyStringIsFalse && "".equals(value)) {
-                // omit the section
-            } else if (_compiler.zeroIsFalse && (value instanceof Number) &&
-                       ((Number)value).longValue() == 0) {
+            } else if (_comp.isFalsey(value)) {
                 // omit the section
             } else {
                 executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
             }
         }
-        protected final Compiler _compiler;
+        protected final Compiler _comp;
     }
 
     /** A segment that represents an inverted section. */
-    protected static class InvertedSectionSegment extends BlockSegment {
-        public InvertedSectionSegment (String name, Template.Segment[] segs, int line) {
+    protected static class InvertedSegment extends BlockSegment {
+        public InvertedSegment (Compiler compiler, String name, Template.Segment[] segs, int line) {
             super(name, segs, line);
+            _comp = compiler;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
-            Iterator<?> iter = tmpl._compiler.collector.toIterator(value);
+            Iterator<?> iter = _comp.collector.toIterator(value);
             if (iter != null) {
                 if (!iter.hasNext()) {
                     executeSegs(tmpl, ctx, out);
@@ -740,8 +745,11 @@ public class Mustache
                 if (!(Boolean)value) {
                     executeSegs(tmpl, ctx, out);
                 }
+            } else if (_comp.isFalsey(value)) {
+                executeSegs(tmpl, ctx, out);
             } // TODO: fail?
         }
+        protected final Compiler _comp;
     }
 
     /** Map of strings that must be replaced inside html attributes and their replacements. (They
