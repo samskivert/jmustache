@@ -240,13 +240,13 @@ You can change the escaping behavior when obtaining a compiler, to support file 
 
 Implement the Escaping interface.  If you only need to replace fixed strings in the text, you can subclass SimpleEscaping:
 
-        public class StrangeFormatEscaping extends SimpleEscaping {
-            public StrangeFormatEscaping() {
-                super(new String[][] {
-                    {"[", "[["},
-                    {"]", "]]"}
-            });
-        }
+    public class StrangeFormatEscaping extends SimpleEscaping {
+        public StrangeFormatEscaping() {
+            super(new String[][] {
+                {"[", "[["},
+                {"]", "]]"}
+        });
+    }
 
 Pass an instance of your Escaping implementation when obtaining a compiler:
 
