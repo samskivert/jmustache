@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.samskivert.mustache.formats.SimpleEscaping;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -293,6 +294,16 @@ public class MustacheTest
                      execute(context("a", "<b>")));
         assertEquals("<b>", Mustache.compiler().escapeHTML(false).compile("{{a}}").
                      execute(context("a", "<b>")));
+    }
+
+    @Test public void testUserDefinedEscaping() {
+        Escaping escaping = new SimpleEscaping(new String[][] {
+                {"[", ":BEGIN:"},
+                {"]", ":END:"}
+        });
+
+        assertEquals(":BEGIN:b:END:", Mustache.compiler().escaping(escaping).compile("{{a}}").
+                     execute(context("a", "[b]")));
     }
 
     @Test public void testPartialDelimiterMatch () {
