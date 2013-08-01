@@ -4,9 +4,6 @@
 
 package com.samskivert.mustache;
 
-import com.samskivert.mustache.formats.HtmlEscaping;
-import com.samskivert.mustache.formats.NoEscaping;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -33,9 +30,6 @@ public class Mustache
     /** An interface to the Mustache compilation process. See {@link Mustache}. */
     public static class Compiler
     {
-        /** How characters are escaped by default. */
-        public final Escaping escaping;
-
         /** Whether or not standards mode is enabled. */
         public final boolean standardsMode;
 
@@ -61,6 +55,9 @@ public class Mustache
          * mustache implementation. Default is false. */
         public final boolean zeroIsFalse;
 
+        /** Handles escaping characters in substituted text. */
+        public final Escaper escaper;
+
         /** The template loader in use during this compilation. */
         public final TemplateLoader loader;
 
@@ -80,33 +77,28 @@ public class Mustache
             return Mustache.compile(source, this);
         }
 
-        /** Returns a compiler that either does or does not escape HTML by default. */
+        /** Returns a compiler that either does or does not escape HTML by default. Note: this
+         * overrides any escaper set via {@link #withEscaper}. */
         public Compiler escapeHTML (boolean escapeHTML) {
-            return escaping(escapeHTML ? new HtmlEscaping() : new NoEscaping());
-        }
-
-        public Compiler escaping(Escaping escaping) {
-            return new Compiler(escaping, this.standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.zeroIsFalse, this.loader,
-                                this.collector, this.delims);
+            return withEscaper(escapeHTML ? Escapers.HTML : Escapers.NONE);
         }
 
         /** Returns a compiler that either does or does not use standards mode. Standards mode
          * disables the non-standard JMustache extensions like looking up missing names in a parent
          * context. */
         public Compiler standardsMode (boolean standardsMode) {
-            return new Compiler(this.escaping, standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.zeroIsFalse, this.loader,
-                                this.collector, this.delims);
+            return new Compiler(standardsMode, this.nullValue, this.missingIsNull,
+                                this.emptyStringIsFalse, this.zeroIsFalse, this.escaper,
+                                this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler that will use the given value for any variable that is missing, or
          * otherwise resolves to null. This is like {@link #nullValue} except that it returns the
          * supplied default for missing keys and existing keys that return null values. */
         public Compiler defaultValue (String defaultValue) {
-            return new Compiler(this.escaping, this.standardsMode, defaultValue, true,
-                                this.emptyStringIsFalse, this.zeroIsFalse, this.loader,
-                                this.collector, this.delims);
+            return new Compiler(this.standardsMode, defaultValue, true,
+                                this.emptyStringIsFalse, this.zeroIsFalse, this.escaper,
+                                this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler that will use the given value for any variable that resolves to
@@ -121,36 +113,43 @@ public class Mustache
          * raised.</li>
          * </ul> */
         public Compiler nullValue (String nullValue) {
-            return new Compiler(this.escaping, this.standardsMode, nullValue, false,
-                                this.emptyStringIsFalse, this.zeroIsFalse, this.loader,
-                                this.collector, this.delims);
+            return new Compiler(this.standardsMode, nullValue, false,
+                                this.emptyStringIsFalse, this.zeroIsFalse, this.escaper,
+                                this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler that will treat empty string as a false value if parameter is true. */
         public Compiler emptyStringIsFalse (boolean emptyStringIsFalse) {
-            return new Compiler(this.escaping, this.standardsMode, this.nullValue,
-                                this.missingIsNull, emptyStringIsFalse, this.zeroIsFalse,
+            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
+                                emptyStringIsFalse, this.zeroIsFalse, this.escaper,
                                 this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler that will treat zero as a false value if parameter is true. */
         public Compiler zeroIsFalse (boolean zeroIsFalse) {
-            return new Compiler(this.escaping, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.emptyStringIsFalse, zeroIsFalse,
+            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
+                                this.emptyStringIsFalse, zeroIsFalse, this.escaper,
+                                this.loader, this.collector, this.delims);
+        }
+
+        /** Configures the {@link Escaper} used to escape substituted text. */
+        public Compiler withEscaper (Escaper escaper) {
+            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
+                                this.emptyStringIsFalse, this.zeroIsFalse, escaper,
                                 this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler configured to use the supplied template loader to handle partials. */
         public Compiler withLoader (TemplateLoader loader) {
-            return new Compiler(this.escaping, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
+                                this.emptyStringIsFalse, this.zeroIsFalse, this.escaper,
                                 loader, this.collector, this.delims);
         }
 
         /** Returns a compiler configured to use the supplied collector. */
         public Compiler withCollector (Collector collector) {
-            return new Compiler(this.escaping, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
+                                this.emptyStringIsFalse, this.zeroIsFalse, this.escaper,
                                 this.loader, collector, this.delims);
         }
 
@@ -158,8 +157,8 @@ public class Mustache
          * @param delims a string of the form {@code AB CD} or {@code A D} where A and B are
          * opening delims and C and D are closing delims. */
         public Compiler withDelims (String delims) {
-            return new Compiler(this.escaping, this.standardsMode, this.nullValue,
-                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
+                                this.emptyStringIsFalse, this.zeroIsFalse, this.escaper,
                                 this.loader, this.collector, new Delims().updateDelims(delims));
         }
 
@@ -177,27 +176,19 @@ public class Mustache
                 (zeroIsFalse && (value instanceof Number) && ((Number)value).longValue() == 0);
         }
 
-        protected Compiler (Escaping escaping, boolean standardsMode, String nullValue,
-                            boolean missingIsNull, boolean emptyStringIsFalse, boolean zeroIsFalse,
+        protected Compiler (boolean standardsMode, String nullValue, boolean missingIsNull,
+                            boolean emptyStringIsFalse, boolean zeroIsFalse, Escaper escaper,
                             TemplateLoader loader, Collector collector, Delims delims) {
-            this.escaping = escaping;
             this.standardsMode = standardsMode;
             this.nullValue = nullValue;
             this.missingIsNull = missingIsNull;
             this.emptyStringIsFalse = emptyStringIsFalse;
             this.zeroIsFalse = zeroIsFalse;
+            this.escaper = escaper;
             this.loader = loader;
             this.collector = collector;
             this.delims = delims;
         }
-    }
-
-    /** Used to handle partials. */
-    public interface TemplateLoader
-    {
-        /** Returns a reader for the template with the supplied name.
-         * @throws Exception if the template could not be loaded for any reason. */
-        Reader getTemplate (String name) throws Exception;
     }
 
     /** Used to handle lambdas. */
@@ -217,6 +208,21 @@ public class Mustache
     {
         /** Reads the so-named variable from the supplied context object. */
         Object get (Object ctx, String name) throws Exception;
+    }
+
+    /** Handles escaper characters in substituted text. */
+    public interface Escaper
+    {
+        /** Returns {@code raw} with the appropriate characters replaced with escape sequences. */
+        String escape (String raw);
+    }
+
+    /** Used to handle partials. */
+    public interface TemplateLoader
+    {
+        /** Returns a reader for the template with the supplied name.
+         * @throws Exception if the template could not be loaded for any reason. */
+        Reader getTemplate (String name) throws Exception;
     }
 
     /** Handles interpreting objects as collections. */
@@ -241,8 +247,8 @@ public class Mustache
      * Returns a compiler that escapes HTML by default and does not use standards mode.
      */
     public static Compiler compiler () {
-        return new Compiler(new HtmlEscaping(), false, null, true, false, false, FAILING_LOADER,
-                            new DefaultCollector(), new Delims());
+        return new Compiler(false, null, true, false, false, Escapers.HTML,
+                            FAILING_LOADER, new DefaultCollector(), new Delims());
     }
 
     /**
@@ -267,12 +273,6 @@ public class Mustache
             text.insert(1, starts.start2);
         }
     }
-
-    protected static String escapeHTML (String text) {
-        return htmlEscaping.escape(text);
-    }
-
-    public static Escaping htmlEscaping = new HtmlEscaping();
 
     // TODO: this method was never called, what was my intention here?
     protected static boolean allowsWhitespace (char typeChar) {
@@ -416,7 +416,7 @@ public class Mustache
                         text.setLength(0);
                     } else {
                         // if the delimiters are {{ and }}, and the tag starts with {{{ then
-                        // require that it end with }}} and disable HTML escaping
+                        // require that it end with }}} and disable escaping
                         if (delims.isStaches() && text.charAt(0) == delims.start1) {
                             try {
                                 // we've only parsed }} at this point, so we have to slurp in
@@ -580,12 +580,12 @@ public class Mustache
 
             case '&':
                 requireNoNewlines(tag, tagLine);
-                _segs.add(new VariableSegment(tag1, tagLine, new NoEscaping()));
+                _segs.add(new VariableSegment(tag1, tagLine, Escapers.NONE));
                 return this;
 
             default:
                 requireNoNewlines(tag, tagLine);
-                _segs.add(new VariableSegment(tag, tagLine, _comp.escaping));
+                _segs.add(new VariableSegment(tag, tagLine, _comp.escaper));
                 return this;
             }
         }
@@ -669,9 +669,9 @@ public class Mustache
 
     /** A segment that substitutes the contents of a variable. */
     protected static class VariableSegment extends NamedSegment {
-        public VariableSegment(String name, int line, Escaping escaping) {
+        public VariableSegment (String name, int line, Escaper escaper) {
             super(name, line);
-            _escaping = escaping;
+            _escaper = escaper;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
             Object value = tmpl.getValueOrDefault(ctx, _name, _line);
@@ -680,9 +680,9 @@ public class Mustache
                                                     "' on line " + _line, _name, _line);
             }
             String text = String.valueOf(value);
-            write(out, _escaping.escape(text));
+            write(out, _escaper.escape(text));
         }
-        protected Escaping _escaping;
+        protected Escaper _escaper;
     }
 
     /** A helper class for block segments. */
@@ -766,5 +766,4 @@ public class Mustache
             throw new UnsupportedOperationException("Template loading not configured");
         }
     };
-
 }
