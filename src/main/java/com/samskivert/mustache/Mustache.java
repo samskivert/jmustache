@@ -27,7 +27,7 @@ import java.util.Map;
  */
 public class Mustache
 {
-    /** An interface to the Mustache compilation process. See {@link Mustache}. */
+    /** Compiles templates into executable form. See {@link Mustache}. */
     public static class Compiler
     {
         /** Whether or not standards mode is enabled. */
@@ -191,7 +191,7 @@ public class Mustache
         }
     }
 
-    /** Used to handle lambdas. */
+    /** Handles lambdas. */
     public interface Lambda
     {
         /** Executes this lambda on the supplied template fragment. The lambda should write its
@@ -203,21 +203,21 @@ public class Mustache
         void execute (Template.Fragment frag, Writer out) throws IOException;
     }
 
-    /** Used to read variables from values. */
+    /** Reads variables from context objects. */
     public interface VariableFetcher
     {
         /** Reads the so-named variable from the supplied context object. */
         Object get (Object ctx, String name) throws Exception;
     }
 
-    /** Handles escaper characters in substituted text. */
+    /** Handles escaping characters in substituted text. */
     public interface Escaper
     {
         /** Returns {@code raw} with the appropriate characters replaced with escape sequences. */
         String escape (String raw);
     }
 
-    /** Used to handle partials. */
+    /** Handles loading partial templates. */
     public interface TemplateLoader
     {
         /** Returns a reader for the template with the supplied name.

@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * A collector that does not use reflection and can be used in GWT.
+ * A collector that does not use reflection and can be used with GWT.
  */
 public abstract class BasicCollector implements Mustache.Collector
 {

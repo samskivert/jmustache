@@ -139,10 +139,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.7</version>
+        <version>2.9.1</version>
         <configuration>
           <quiet>true</quiet>
           <show>public</show>
+          <sourceFileExcludes>
+            <exclude>com/samskivert/gwt/**</exclude>
+          </sourceFileExcludes>
         </configuration>
       </plugin>
       <plugin>
