@@ -87,16 +87,50 @@ public class MustacheTest
                  "foo", Arrays.asList(context("bar", "baz"), context("bar", "bif"))));
     }
 
+    @Test public void testListIndexSection() {
+        test("baz", "{{#foo.0}}{{bar}}{{/foo.0}}", context(
+            "foo", Arrays.asList(context("bar", "baz"), context("bar", "bif"))));
+    }
+
+    @Test public void testListItemSection() {
+        test("baz", "{{foo.0.bar}}", context(
+            "foo", Arrays.asList(context("bar", "baz"), context("bar", "bif"))));
+    }
+
     @Test public void testArraySection () {
         test("bazbif", "{{#foo}}{{bar}}{{/foo}}",
              context("foo", new Object[] {
                      context("bar", "baz"), context("bar", "bif") }));
     }
 
+    @Test public void testArrayIndexSection () {
+        test("baz", "{{#foo.0}}{{bar}}{{/foo.0}}",
+            context("foo", new Object[] {
+                context("bar", "baz"), context("bar", "bif") }));
+    }
+
+    @Test public void testArrayItemSection () {
+        test("baz", "{{foo.0.bar}}",
+            context("foo", new Object[] {
+                context("bar", "baz"), context("bar", "bif") }));
+    }
+
     @Test public void testIteratorSection () {
         test("bazbif", "{{#foo}}{{bar}}{{/foo}}",
              context("foo", Arrays.asList(context("bar", "baz"),
                                           context("bar", "bif")).iterator()));
+    }
+
+    @Test public void testIteratorIndexSection () {
+        test("baz", "{{#foo.0}}{{bar}}{{/foo.0}}",
+            context("foo", Arrays.asList(context("bar", "baz"),
+                context("bar", "bif")).iterator()));
+    }
+
+    @Test public void testIteratorItemSection () {
+        test("baz", "{{foo.0.bar}}",
+            context("foo", Arrays.asList(context("bar", "baz"),
+                context("bar", "bif")).iterator()));
     }
 
     @Test public void testEmptyListSection () {
