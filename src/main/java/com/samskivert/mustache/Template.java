@@ -7,12 +7,8 @@ package com.samskivert.mustache;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -143,18 +139,7 @@ public class Template
                     }
                     // once we step into a composite key, we drop the ability to query our parent
                     // contexts; that would be weird and confusing
-                    String next = comps[ii].intern();
-                    Integer idx = toNumber(next);
-                    if (idx != null) {
-                        Object nextData = null;
-                        List<Object> c = toList(data);
-                        if (c != null && idx >= 0 && idx < c.size()) {
-                            nextData = c.get(idx);
-                        }
-                        data = nextData;
-                    } else {
-                        data = getValueIn(data, next, line);
-                    }
+                    data = getValueIn(data, comps[ii].intern(), line);
                 }
                 return checkForMissing(name, line, missingIsNull, data);
             }
@@ -182,30 +167,6 @@ public class Template
         // we've popped off the top of our stack of contexts; we never found a fetcher for our
         // variable, so let checkForMissing() decide what to do
         return checkForMissing(name, line, missingIsNull, NO_FETCHER_FOUND);
-    }
-
-    protected static List<Object> toList(Object obj) {
-        if (obj instanceof Collection) {
-            return new ArrayList<Object>((Collection) obj);
-        } else if (obj instanceof Iterator) {
-            Iterator<Object> it = (Iterator<Object>) obj;
-            List<Object> lst = new ArrayList<Object>();
-            while (it.hasNext()) {
-                lst.add(it.next());
-            }
-            return lst;
-        } else if (obj instanceof Object[]) {
-            return Arrays.asList((Object[]) obj);
-        }
-        return null;
-    }
-
-    protected static Integer toNumber(String value) {
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException ex) {
-            return null;
-        }
     }
 
     /**
