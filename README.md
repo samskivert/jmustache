@@ -202,10 +202,17 @@ use `nullValue()`:
     });
     // throws MustacheException when executing the template because doesNotExist cannot be resolved
 
-Note that any variable resolved against a `Map` context will be resolvable, but
-will be treated as having the value null if the map contains no mapping for the
-variable. Only variables resolved against Java object fields or methods risk
-being unresolvable.
+When using a `Map` as a context, `nullValue()` will only be used when the map
+contains a mapping to `null`. If the map lacks a mapping for a given variable,
+then it is considered unresolvable and throws an exception.
+
+    Map<String,String> map = new HashMap<String,String>();
+    map.put("exists", "Say");
+    map.put("nullValued", null);
+    // no mapping exists for "doesNotExist"
+    String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
+    Mustache.compiler().nullValue("what").compile(tmpl).execute(map);
+    // throws MustacheException when executing the template because doesNotExist cannot be resolved
 
 Note that section behavior deviates from the above specification (for
 historical reasons and because it's kind of useful). By default, a section that
