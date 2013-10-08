@@ -108,9 +108,9 @@ public class Mustache
          * <ul>
          * <li>In the case of a Java object being used as a context, if no field or method can be
          * found for a variable, an exception will be raised.</li>
-         * <li>In the case of a {@link Map} being used as a context, all possible accessors are
-         * assumed to exist (but potentially return null), and no exception will ever be
-         * raised.</li>
+         * <li>In the case of a {@link Map} being used as a context, if the map does not contain
+         * a mapping for a variable, an exception will be raised. If the map contains a mapping
+         * which maps to {@code null}, then {@code nullValue} is used.</li>
          * </ul> */
         public Compiler nullValue (String nullValue) {
             return new Compiler(this.standardsMode, nullValue, false,
