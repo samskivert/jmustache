@@ -1,8 +1,4 @@
-name := "jmustache"
-
-version := "1.5-SNAPSHOT"
-
-organization := "com.samskivert"
+seq(samskivert.POMUtil.pomToSettings("pom.xml") :_*)
 
 crossPaths := false
 
@@ -12,10 +8,7 @@ javacOptions ++= Seq(
 
 autoScalaLibrary := false // no scala-library dependency
 
-libraryDependencies ++= Seq(
-  "junit" % "junit" % "4.+" % "test",
-  "com.novocode" % "junit-interface" % "0.7" % "test->default"
-)
+libraryDependencies += "com.novocode" % "junit-interface" % "0.7" % "test->default"
 
 // filter the super-source directory from the build
 unmanagedSources in Compile ~= (_.filterNot(_.getPath.indexOf("com/samskivert/gwt") != -1))
