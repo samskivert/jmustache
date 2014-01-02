@@ -51,10 +51,6 @@ public class Template
         }
     }
 
-    /** A sentinel object that can be returned by a {@link Mustache.Collector} to indicate that a
-     * variable does not exist in a particular context. */
-    public static final Object NO_FETCHER_FOUND = new Object();
-
     /**
      * Executes this template with the given context, returning the results as a string.
      * @throws MustacheException if an error occurs while executing or writing the template.
@@ -213,10 +209,12 @@ public class Template
             fetcher = _compiler.collector.createFetcher(data, key.name);
         }
 
-        // if we were unable to create a fetcher, just return null and our caller can either try
-        // the parent context, or do le freak out
+        // if we were unable to create a fetcher, use the NOT_FOUND_FETCHER which will return
+        // NO_FETCHER_FOUND to let the caller know that they can try the parent context or do le
+        // freak out; we still cache this fetcher to avoid repeatedly looking up and failing to
+        // find a fetcher in the same context (which can be expensive)
         if (fetcher == null) {
-            return NO_FETCHER_FOUND;
+            fetcher = NOT_FOUND_FETCHER;
         }
 
         try {
@@ -296,9 +294,20 @@ public class Template
         }
     }
 
+    /** A sentinel object that can be returned by a {@link Mustache.Collector} to indicate that a
+     * variable does not exist in a particular context. */
+    static final Object NO_FETCHER_FOUND = new Object();
+
     protected static final String DOT_NAME = ".".intern();
     protected static final String THIS_NAME = "this".intern();
     protected static final String FIRST_NAME = "-first".intern();
     protected static final String LAST_NAME = "-last".intern();
     protected static final String INDEX_NAME = "-index".intern();
+
+    /** A fetcher cached for lookups that failed to find a fetcher. */
+    protected static Mustache.VariableFetcher NOT_FOUND_FETCHER = new Mustache.VariableFetcher() {
+        public Object get (Object ctx, String name) throws Exception {
+            return NO_FETCHER_FOUND;
+        }
+    };
 }
