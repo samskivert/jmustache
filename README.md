@@ -240,28 +240,41 @@ You can change the default HTML escaping behavior when obtaining a compiler:
     // result: <bar>
     // not: &lt;bar&gt;
 
+User-defined object formatting
+------------------------------
+
+By default, JMustache uses `String.valueOf` to convert objects to strings when rendering a
+template. You can customize this formatting by implementing the `Mustache.Formatter` interface:
+
+  Mustache.compiler().withFormatter(new Mustache.Formatter() {
+      public String format (Object value) {
+        if (value instanceof Date) return _fmt.format((Date)value);
+        else return String.valueOf(value);
+      }
+      protected DateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
+  }).compile("{{msg}}: {{today}}").execute(new Object() {
+      String msg = Date: ";
+      Date today = new Date();
+  })
+  // result: Date: 2013/01/08
+
 User-defined escaping rules
 ---------------------------
 
-You can change the escaping behavior when obtaining a compiler, to support file formats other than HTML and plain text.
+You can change the escaping behavior when obtaining a compiler, to support file formats other than
+HTML and plain text.
 
-Implement the Escaping interface.  If you only need to replace fixed strings in the text, you can subclass SimpleEscaping:
+If you only need to replace fixed strings in the text, you can use `Escapers.simple`:
 
-    public class StrangeFormatEscaping extends SimpleEscaping {
-        public StrangeFormatEscaping() {
-            super(new String[][] {
-                {"[", "[["},
-                {"]", "]]"}
-        });
-    }
-
-Pass an instance of your Escaping implementation when obtaining a compiler:
-
-    Mustache.compiler().escape(new StrangeFormatEscaping()).compile("{{foo}}").execute(new Object() {
-        String foo = "[bar]";
-    });
+    String[][] escapes = {{ "[", "[[" }, { "]", "]]" }};
+    Mustache.compiler().withEscaper(Escapers.simple(escapes)).
+      compile("{{foo}}").execute(new Object() {
+          String foo = "[bar]";
+      });
     // result: [[bar]]
 
+Or you can implement the `Mustache.Escaper` interface directly for more control over the escaping
+process.
 
 Special variables
 -----------------
