@@ -253,7 +253,7 @@ template. You can customize this formatting by implementing the `Mustache.Format
         }
         protected DateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
     }).compile("{{msg}}: {{today}}").execute(new Object() {
-        String msg = Date: ";
+        String msg = "Date";
         Date today = new Date();
     })
     // result: Date: 2013/01/08
