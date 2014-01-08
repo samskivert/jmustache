@@ -8,8 +8,10 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -320,6 +322,21 @@ public class MustacheTest
     @Test(expected=MustacheParseException.class)
     public void testInvalidUnescapeHTML () {
         Mustache.compiler().escapeHTML(true).compile("{{{a}}").execute(context("a", "<b>"));
+    }
+
+    @Test public void testCustomFormatter () {
+        Mustache.Formatter fmt = new Mustache.Formatter() {
+            public String format (Object value) {
+                if (value instanceof Date) return _fmt.format((Date)value);
+                else return String.valueOf(value);
+            }
+            protected SimpleDateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
+        };
+        assertEquals("Date: 2014/01/08", Mustache.compiler().withFormatter(fmt).
+                     compile("{{msg}}: {{today}}").execute(new Object() {
+                         String msg = "Date";
+                         Date today = new Date(1389208567874L);
+                     }));
     }
 
     @Test public void testEscapeHTML () {
