@@ -246,17 +246,17 @@ User-defined object formatting
 By default, JMustache uses `String.valueOf` to convert objects to strings when rendering a
 template. You can customize this formatting by implementing the `Mustache.Formatter` interface:
 
-  Mustache.compiler().withFormatter(new Mustache.Formatter() {
-      public String format (Object value) {
-        if (value instanceof Date) return _fmt.format((Date)value);
-        else return String.valueOf(value);
-      }
-      protected DateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
-  }).compile("{{msg}}: {{today}}").execute(new Object() {
-      String msg = Date: ";
-      Date today = new Date();
-  })
-  // result: Date: 2013/01/08
+    Mustache.compiler().withFormatter(new Mustache.Formatter() {
+        public String format (Object value) {
+          if (value instanceof Date) return _fmt.format((Date)value);
+          else return String.valueOf(value);
+        }
+        protected DateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
+    }).compile("{{msg}}: {{today}}").execute(new Object() {
+        String msg = Date: ";
+        Date today = new Date();
+    })
+    // result: Date: 2013/01/08
 
 User-defined escaping rules
 ---------------------------
