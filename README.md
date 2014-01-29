@@ -312,7 +312,7 @@ times.
 One will often make use of these special variables in an inverted section, as
 follows:
 
-    String tmpl = "{{#things}}{{^-first}}, {{/-first}}{{self}}{{/things}}";
+    String tmpl = "{{#things}}{{^-first}}, {{/-first}}{{this}}{{/things}}";
     Mustache.compiler().compile(tmpl).execute(new Object() {
         List<String> things = Arrays.asList("one", "two", "three");
     });
@@ -329,7 +329,7 @@ section, 2 for the second, 3 for the third and so forth. It contains 0 at all
 other times. Note that it also contains 0 for a section that is populated by a
 singleton value rather than a list.
 
-    String tmpl = "My favorite things:\n{{#things}}{{-index}}. {{self}}\n{{/things}}";
+    String tmpl = "My favorite things:\n{{#things}}{{-index}}. {{this}}\n{{/things}}";
     Mustache.compiler().compile(tmpl).execute(new Object() {
         List<String> things = Arrays.asList("Peanut butter", "Pen spinning", "Handstands");
     });
