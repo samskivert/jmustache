@@ -629,6 +629,32 @@ public class MustacheTest
              }));
     }
 
+    @Test public void testInvertableLambda () {
+        test("positive = positive, negative = negative, simple lambdas do still work",
+            "{{#invertable}}positive{{/invertable}}, {{^invertable}}negative{{/invertable}}, simple lambdas do {{^simple}}NOT {{/simple}}still work",
+            context("invertable", new Mustache.InvertableLambda() {
+                @Override
+                public void execute(Template.Fragment frag, Writer out)
+                        throws IOException {
+                    out.write("positive = ");
+                    frag.execute(out);
+                }
+
+                @Override
+                public void executeInverse(Template.Fragment frag, Writer out)
+                        throws IOException {
+                    out.write("negative = ");
+                    frag.execute(out);
+                }
+            }, "simple", new Mustache.Lambda() {
+                @Override
+                public void execute(Template.Fragment frag, Writer out)
+                        throws IOException {
+                    frag.execute(out);
+                }
+            }));
+    }
+
     @Test public void testNonStandardDefaultDelims () {
         test(Mustache.compiler().withDelims("<% %>"), "bar", "<%foo%>", new Object() {
             String foo = "bar";

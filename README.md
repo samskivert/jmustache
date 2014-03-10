@@ -420,6 +420,48 @@ Note that if a variable _is_ defined in an inner context, it shadows the same
 name in the outer context. There is presently no way to access the variable
 from the outer context.
 
+Invertable Lambdas
+------------------
+
+For some applications, it may be useful for lambdas to be executed for an
+inverse section rather than having the section omitted altogether. This allows
+for proper conditional substitution when statically translating templates into
+other languages or contexts:
+
+    String template = "{{#condition}}result if true{{/condition}}\n{{^condition}}result if false{{/condition}}";
+    Mustache.compiler().compile(template).execute(new Object() {
+        Mustache.InvertableLambda condition = new Mustache.InvertableLambda() {
+            @Override
+            public void execute(Template.Fragment frag, Writer out)
+                    throws IOException {
+                // this method is executed when the lambda is referenced in a normal section
+                out.write("if (condition) {console.log(\"");
+                out.write(toJavaScriptLiteral(frag.execute()));
+                out.write("\")}");
+            }
+
+            @Override
+            public void executeInverse(Template.Fragment frag, Writer out)
+                    throws IOException {
+                // this method is executed when the lambda is referenced in an inverse section
+                out.write("if (!condition) {console.log(\"");
+                out.write(toJavaScriptLiteral(frag.execute()));
+                out.write("\")}");
+            }
+
+            private String toJavaScriptLiteral(String execute) {
+                // note: this is NOT a complete implementation of JavaScript string literal escaping
+                return execute.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"");
+            }
+        };
+    });
+    // results:
+    // if (condition) {console.log("result if true")}
+    // if (!condition) {console.log("result if false")}
+
+Of course, you are not limited strictly to conditional substitution -- you can use an
+InvertableLambda whenever you need a single function with two modes of operation.
+
 Standards Mode
 --------------
 

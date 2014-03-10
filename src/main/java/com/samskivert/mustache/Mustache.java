@@ -224,6 +224,17 @@ public class Mustache
         void execute (Template.Fragment frag, Writer out) throws IOException;
     }
 
+    public interface InvertableLambda extends Lambda
+    {
+        /** Executes this lambda on the supplied template fragment, when the lambda is used in an
+         * inverse section. The lambda should write its results to {@code out}.
+         *
+         * @param frag the fragment of the template that was passed to the lambda.
+         * @param out the writer to which the lambda should write its output.
+         */
+        void executeInverse (Template.Fragment frag, Writer out) throws IOException;
+    }
+
     /** Reads variables from context objects. */
     public interface VariableFetcher
     {
@@ -772,6 +783,12 @@ public class Mustache
             } else if (value instanceof Boolean) {
                 if (!(Boolean)value) {
                     executeSegs(tmpl, ctx, out);
+                }
+            } else if (value instanceof InvertableLambda) {
+                try {
+                    ((InvertableLambda)value).executeInverse(tmpl.createFragment(_segs, ctx), out);
+                } catch (IOException ioe) {
+                    throw new MustacheException(ioe);
                 }
             } else if (_comp.isFalsey(value)) {
                 executeSegs(tmpl, ctx, out);
