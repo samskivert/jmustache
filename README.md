@@ -432,23 +432,19 @@ other languages or contexts:
       "{{^condition}}result if false{{/condition}}";
     Mustache.compiler().compile(template).execute(new Object() {
         Mustache.InvertibleLambda condition = new Mustache.InvertibleLambda() {
-            @Override
-            public void execute(Template.Fragment frag, Writer out) throws IOException {
+            public void execute (Template.Fragment frag, Writer out) throws IOException {
                 // this method is executed when the lambda is referenced in a normal section
                 out.write("if (condition) {console.log(\"");
                 out.write(toJavaScriptLiteral(frag.execute()));
                 out.write("\")}");
             }
-
-            @Override
-            public void executeInverse(Template.Fragment frag, Writer out) throws IOException {
+            public void executeInverse (Template.Fragment frag, Writer out) throws IOException {
                 // this method is executed when the lambda is referenced in an inverse section
                 out.write("if (!condition) {console.log(\"");
                 out.write(toJavaScriptLiteral(frag.execute()));
                 out.write("\")}");
             }
-
-            private String toJavaScriptLiteral(String execute) {
+            private String toJavaScriptLiteral (String execute) {
                 // note: this is NOT a complete implementation of JavaScript string literal escaping
                 return execute.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"");
             }
