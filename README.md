@@ -428,12 +428,12 @@ inverse section rather than having the section omitted altogether. This allows
 for proper conditional substitution when statically translating templates into
 other languages or contexts:
 
-    String template = "{{#condition}}result if true{{/condition}}\n{{^condition}}result if false{{/condition}}";
+    String template = "{{#condition}}result if true{{/condition}}\n" +
+      "{{^condition}}result if false{{/condition}}";
     Mustache.compiler().compile(template).execute(new Object() {
         Mustache.InvertableLambda condition = new Mustache.InvertableLambda() {
             @Override
-            public void execute(Template.Fragment frag, Writer out)
-                    throws IOException {
+            public void execute(Template.Fragment frag, Writer out) throws IOException {
                 // this method is executed when the lambda is referenced in a normal section
                 out.write("if (condition) {console.log(\"");
                 out.write(toJavaScriptLiteral(frag.execute()));
@@ -441,8 +441,7 @@ other languages or contexts:
             }
 
             @Override
-            public void executeInverse(Template.Fragment frag, Writer out)
-                    throws IOException {
+            public void executeInverse(Template.Fragment frag, Writer out) throws IOException {
                 // this method is executed when the lambda is referenced in an inverse section
                 out.write("if (!condition) {console.log(\"");
                 out.write(toJavaScriptLiteral(frag.execute()));
