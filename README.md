@@ -420,7 +420,7 @@ Note that if a variable _is_ defined in an inner context, it shadows the same
 name in the outer context. There is presently no way to access the variable
 from the outer context.
 
-Invertable Lambdas
+Invertible Lambdas
 ------------------
 
 For some applications, it may be useful for lambdas to be executed for an
@@ -431,7 +431,7 @@ other languages or contexts:
     String template = "{{#condition}}result if true{{/condition}}\n" +
       "{{^condition}}result if false{{/condition}}";
     Mustache.compiler().compile(template).execute(new Object() {
-        Mustache.InvertableLambda condition = new Mustache.InvertableLambda() {
+        Mustache.InvertibleLambda condition = new Mustache.InvertibleLambda() {
             @Override
             public void execute(Template.Fragment frag, Writer out) throws IOException {
                 // this method is executed when the lambda is referenced in a normal section
@@ -459,7 +459,7 @@ other languages or contexts:
     // if (!condition) {console.log("result if false")}
 
 Of course, you are not limited strictly to conditional substitution -- you can use an
-InvertableLambda whenever you need a single function with two modes of operation.
+InvertibleLambda whenever you need a single function with two modes of operation.
 
 Standards Mode
 --------------
