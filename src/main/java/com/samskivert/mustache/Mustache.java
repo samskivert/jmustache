@@ -224,7 +224,8 @@ public class Mustache
         void execute (Template.Fragment frag, Writer out) throws IOException;
     }
 
-    public interface InvertableLambda extends Lambda
+    /** Handles lambdas that are also invoked for inverse sections.. */
+    public interface InvertibleLambda extends Lambda
     {
         /** Executes this lambda on the supplied template fragment, when the lambda is used in an
          * inverse section. The lambda should write its results to {@code out}.
@@ -784,9 +785,9 @@ public class Mustache
                 if (!(Boolean)value) {
                     executeSegs(tmpl, ctx, out);
                 }
-            } else if (value instanceof InvertableLambda) {
+            } else if (value instanceof InvertibleLambda) {
                 try {
-                    ((InvertableLambda)value).executeInverse(tmpl.createFragment(_segs, ctx), out);
+                    ((InvertibleLambda)value).executeInverse(tmpl.createFragment(_segs, ctx), out);
                 } catch (IOException ioe) {
                     throw new MustacheException(ioe);
                 }

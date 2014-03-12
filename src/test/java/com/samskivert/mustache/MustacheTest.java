@@ -629,30 +629,24 @@ public class MustacheTest
              }));
     }
 
-    @Test public void testInvertableLambda () {
+    @Test public void testInvertibleLambda () {
         test("positive = positive, negative = negative, simple lambdas do still work",
-            "{{#invertable}}positive{{/invertable}}, {{^invertable}}negative{{/invertable}}, simple lambdas do {{^simple}}NOT {{/simple}}still work",
-            context("invertable", new Mustache.InvertableLambda() {
-                @Override
-                public void execute(Template.Fragment frag, Writer out)
-                        throws IOException {
-                    out.write("positive = ");
-                    frag.execute(out);
-                }
-
-                @Override
-                public void executeInverse(Template.Fragment frag, Writer out)
-                        throws IOException {
-                    out.write("negative = ");
-                    frag.execute(out);
-                }
-            }, "simple", new Mustache.Lambda() {
-                @Override
-                public void execute(Template.Fragment frag, Writer out)
-                        throws IOException {
-                    frag.execute(out);
-                }
-            }));
+             "{{#invertible}}positive{{/invertible}}, {{^invertible}}negative{{/invertible}}, " +
+             "simple lambdas do {{^simple}}NOT {{/simple}}still work",
+             context("invertible", new Mustache.InvertibleLambda() {
+                 public void execute (Template.Fragment frag, Writer out) throws IOException {
+                     out.write("positive = ");
+                     frag.execute(out);
+                 }
+                 public void executeInverse (Template.Fragment frag, Writer out) throws IOException {
+                     out.write("negative = ");
+                     frag.execute(out);
+                 }
+             }, "simple", new Mustache.Lambda() {
+                 public void execute (Template.Fragment frag, Writer out) throws IOException {
+                     frag.execute(out);
+                 }
+             }));
     }
 
     @Test public void testNonStandardDefaultDelims () {
