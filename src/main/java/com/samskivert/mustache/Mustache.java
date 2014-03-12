@@ -451,16 +451,17 @@ public class Mustache
                         // if the delimiters are {{ and }}, and the tag starts with {{{ then
                         // require that it end with }}} and disable escaping
                         if (delims.isStaches() && text.charAt(0) == delims.start1) {
-                            try {
-                                // we've only parsed }} at this point, so we have to slurp in
-                                // another character from the input stream and check it
-                                int end3 = (char)source.read();
-                                if (end3 != '}') {
-                                    throw new MustacheParseException(
-                                        "Invalid triple-mustache tag: {{" + text + "}}", line);
-                                }
-                            } catch (IOException e) {
+                            // we've only parsed }} at this point, so we have to slurp in another
+                            // character from the input stream and check it
+                            int end3;
+                            try { end3 = source.read(); }
+                            catch (IOException e) {
                                 throw new MustacheException(e);
+                            }
+                            if (end3 != '}') {
+                                String got = (end3 == -1) ? "" : String.valueOf((char)end3);
+                                throw new MustacheParseException(
+                                    "Invalid triple-mustache tag: {{" + text + "}}" + got, line);
                             }
                             // convert it into (equivalent) {{&text}} which addTagSegment handles
                             text.replace(0, 1, "&");

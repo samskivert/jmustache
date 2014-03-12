@@ -590,6 +590,12 @@ public class MustacheTest
         } catch (MustacheParseException e) {
             assertEquals("Invalid triple-mustache tag: {{{foo}} @ line 1", e.getMessage());
         }
+        try {
+            Mustache.compiler().compile("{{{foo}}]");
+            fail("Expected MustacheParseException");
+        } catch (MustacheParseException e) {
+            assertEquals("Invalid triple-mustache tag: {{{foo}}] @ line 1", e.getMessage());
+        }
     }
 
     @Test public void testNullValueGetsNullDefault () {
