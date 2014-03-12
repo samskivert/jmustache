@@ -457,7 +457,7 @@ public class Mustache
                                 int end3 = (char)source.read();
                                 if (end3 != '}') {
                                     throw new MustacheParseException(
-                                        "Invalid triple-mustache tag: {{{" + text.substring(1) + "}}", line);
+                                        "Invalid triple-mustache tag: {{" + text + "}}", line);
                                 }
                             } catch (IOException e) {
                                 throw new MustacheException(e);
