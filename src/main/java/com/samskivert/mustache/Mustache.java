@@ -339,18 +339,9 @@ public class Mustache
         public Accumulator parse (Reader source) {
             this.source = source;
 
-            while (true) {
-                char c;
-                try {
-                    int v = source.read();
-                    if (v == -1) {
-                        break;
-                    }
-                    c = (char)v;
-                } catch (IOException e) {
-                    throw new MustacheException(e);
-                }
-
+            int v;
+            while ((v = nextChar()) != -1) {
+                char c = (char)v;
                 if (c == '\n') {
                     column = 0;
                     line++;
@@ -366,7 +357,6 @@ public class Mustache
                     column++;
                     skipNewline = false;
                 }
-
                 parseChar(c);
             }
 
@@ -453,11 +443,7 @@ public class Mustache
                         if (delims.isStaches() && text.charAt(0) == delims.start1) {
                             // we've only parsed }} at this point, so we have to slurp in another
                             // character from the input stream and check it
-                            int end3;
-                            try { end3 = source.read(); }
-                            catch (IOException e) {
-                                throw new MustacheException(e);
-                            }
+                            int end3 = nextChar();
                             if (end3 != '}') {
                                 String got = (end3 == -1) ? "" : String.valueOf((char)end3);
                                 throw new MustacheParseException(
@@ -478,6 +464,14 @@ public class Mustache
                     parseChar(c);
                 }
                 break;
+            }
+        }
+
+        protected int nextChar () {
+            try {
+                return source.read();
+            } catch (IOException ioe) {
+                throw new MustacheException(ioe);
             }
         }
     }
