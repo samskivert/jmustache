@@ -43,10 +43,20 @@ public class Template
         /** Executes this template fragment, writing its result to {@code out}. */
         public abstract void execute (Writer out);
 
-        /** Executes this template fragment and returns is result as a string. */
+        /** Executes this template fragment with the provided context, writing its result to {@code out}. */
+        public abstract void execute (Object context, Writer out);
+
+        /** Executes this template fragment and returns its result as a string. */
         public String execute () {
             StringWriter out = new StringWriter();
             execute(out);
+            return out.toString();
+        }
+
+        /** Executes this template fragment with the provided context, and returns its result as a string. */
+        public String execute (Object context) {
+            StringWriter out = new StringWriter();
+            execute(context, out);
             return out.toString();
         }
     }
@@ -93,9 +103,17 @@ public class Template
         }
     }
 
-    protected Fragment createFragment (final Segment[] segs, final Context ctx) {
+    protected Fragment createFragment (final Segment[] segs, final Context currentCtx) {
         return new Fragment() {
-            @Override public void execute (Writer out) {
+            @Override public void execute(Writer out) {
+                execute(currentCtx, out);
+            }
+
+            @Override public void execute(Object context, Writer out) {
+                execute(currentCtx.nest(context, 0, false, false), out);
+            }
+
+            private void execute(Context ctx, Writer out) {
                 for (Segment seg : segs) {
                     seg.execute(Template.this, ctx, out);
                 }
