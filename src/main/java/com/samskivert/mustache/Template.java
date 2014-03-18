@@ -40,20 +40,22 @@ public class Template
      * the variable context that was in effect at the time the lambda was called.
      */
     public abstract class Fragment {
-        /** Executes this template fragment, writing its result to {@code out}. */
+        /** Executes this fragment; writes its result to {@code out}. */
         public abstract void execute (Writer out);
 
-        /** Executes this template fragment with the provided context, writing its result to {@code out}. */
+        /** Executes this fragment with the provided context; writes its result to {@code out}. The
+         * provided context will be nested in the fragment's bound context. */
         public abstract void execute (Object context, Writer out);
 
-        /** Executes this template fragment and returns its result as a string. */
+        /** Executes this fragment and returns its result as a string. */
         public String execute () {
             StringWriter out = new StringWriter();
             execute(out);
             return out.toString();
         }
 
-        /** Executes this template fragment with the provided context, and returns its result as a string. */
+        /** Executes this fragment with the provided context; returns its result as a string. The
+         * provided context will be nested in the fragment's bound context. */
         public String execute (Object context) {
             StringWriter out = new StringWriter();
             execute(context, out);
@@ -105,15 +107,15 @@ public class Template
 
     protected Fragment createFragment (final Segment[] segs, final Context currentCtx) {
         return new Fragment() {
-            @Override public void execute(Writer out) {
+            @Override public void execute (Writer out) {
                 execute(currentCtx, out);
             }
 
-            @Override public void execute(Object context, Writer out) {
+            @Override public void execute (Object context, Writer out) {
                 execute(currentCtx.nest(context, 0, false, false), out);
             }
 
-            private void execute(Context ctx, Writer out) {
+            private void execute (Context ctx, Writer out) {
                 for (Segment seg : segs) {
                     seg.execute(Template.this, ctx, out);
                 }

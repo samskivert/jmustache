@@ -667,15 +667,14 @@ public class MustacheTest
     @Test public void testLambdaWithContext () {
         test("a in l1, a in l2", "{{#l1}}{{a}}{{/l1}}, {{#l2}}{{a}}{{/l2}}",
              context("l1", new Mustache.Lambda() {
-                     public void execute(Template.Fragment frag, Writer out) throws IOException {
-                         frag.execute(context("a", "a in l1"), out);
-                     }
-                 }, "l2", new Mustache.Lambda() {
-                     public void execute(Template.Fragment frag, Writer out) throws IOException {
-                         frag.execute(context("a", "a in l2"), out);
-                     }
+                 public void execute (Template.Fragment frag, Writer out) throws IOException {
+                     frag.execute(context("a", "a in l1"), out);
                  }
-             ));
+             }, "l2", new Mustache.Lambda() {
+                 public void execute (Template.Fragment frag, Writer out) throws IOException {
+                     frag.execute(context("a", "a in l2"), out);
+                 }
+             }));
     }
 
     @Test public void testNonStandardDefaultDelims () {
