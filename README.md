@@ -465,7 +465,7 @@ JMustache is internally thread safe with the following caveats:
 
   * Context data: if you mutate the context data passed to template execution while the template is
     being executed, then you subject yourself to race conditions. It is in theory possible to use a
-    thread-safe Map (`ConcurrentHashMap` or `Collections.synchronizedMap`) for your context data,
+    thread-safe map (`ConcurrentHashMap` or `Collections.synchronizedMap`) for your context data,
     which would allow you to mutate the data while templates were being rendered based on that
     data, but you're playing with fire by doing that. I don't recommend it. If your data is
     supplied as POJOs where fields or methods are called via reflection to populate your templates,
@@ -482,9 +482,9 @@ JMustache is internally thread safe with the following caveats:
     one another, they'll simply both resolve the variable instead of one resolving the variable and
     the other using the cached resolution.
 
-So the executive summary is: if you pass immutable data to your templates when executing and any
-helper classes you supply are thread-safe, then it is safe to share a `Mustache.Compiler` instance
-across threads to compile templates and it is safe to share a `Template` instance across threads,
+So the executive summary is: it is safe to share a `Mustache.Compiler` instance across threads to
+compile templates, and if you pass immutable data to your templates when executing and any helper
+classes you supply are thread-safe, then it is safe to share a `Template` instance across threads,
 with multiple threads executing the template simultaneously.
 
 Limitations
