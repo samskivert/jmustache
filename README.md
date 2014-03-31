@@ -482,9 +482,9 @@ JMustache is internally thread safe with the following caveats:
     one another, they'll simply both resolve the variable instead of one resolving the variable and
     the other using the cached resolution.
 
-So the executive summary is: it is safe to share a `Mustache.Compiler` instance across threads to
-compile templates, and if you pass immutable data to your templates when executing and any helper
-classes you supply are thread-safe, then it is safe to share a `Template` instance across threads,
+So the executive summary is: as long as all helper classes you supply are thread-safe, it is safe
+to share a `Mustache.Compiler` instance across threads to compile templates. If you pass immutable
+data to your templates when executing, it is safe to share a `Template` instance across threads,
 with multiple threads executing the template simultaneously.
 
 Limitations
