@@ -288,14 +288,8 @@ public class Mustache
      * Compiles the supplied template into a repeatedly executable intermediate form.
      */
     protected static Template compile (Reader source, Compiler compiler) {
-        Delims orig = compiler.delims.save();
-        try {
-            Accumulator accum = new Parser(compiler).parse(source);
-            return new Template(accum.finish(), compiler);
-        } finally {
-            // restore the original delimiters
-            compiler.delims.restore(orig);
-        }
+        Accumulator accum = new Parser(compiler).parse(source);
+        return new Template(accum.finish(), compiler);
     }
 
     private Mustache () {} // no instantiateski
@@ -333,7 +327,7 @@ public class Mustache
 
         public Parser (Compiler compiler) {
             this.accum = new Accumulator(compiler);
-            this.delims = compiler.delims;
+            this.delims = compiler.delims.copy();
         }
 
         public Accumulator parse (Reader source) {
@@ -516,16 +510,13 @@ public class Mustache
             return this;
         }
 
-        Delims save () {
-            return new Delims().restore(this);
-        }
-
-        Delims restore (Delims delims) {
-            this.start1 = delims.start1;
-            this.start2 = delims.start2;
-            this.end1 = delims.end1;
-            this.end2 = delims.end2;
-            return this;
+        Delims copy () {
+            Delims d = new Delims();
+            d.start1 = start1;
+            d.start2 = start2;
+            d.end1 = end1;
+            d.end2 = end2;
+            return d;
         }
 
         private static String errmsg (String dtext) {
