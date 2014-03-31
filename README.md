@@ -448,6 +448,45 @@ of compound varables, can be disabled when creating a compiler, like so:
     Mustache.compiler().standardsMode(true).compile("{{foo.bar}}").execute(ctx);
     // result: baz
 
+Thread Safety
+=============
+
+JMustache is internally thread safe with the following caveats:
+
+  * Compilation: compiling templates calls out to a variety of helper classes:
+    `Mustache.Formatter`, `Mustache.Escaper`, `Mustache.TemplateLoader`, `Mustache.Collector`. The
+    default implementations of these classes are thread-safe, but if you supply custom instances,
+    then you have to ensure that your custom instances are thread-safe.
+
+  * Execution: executing templates can call out to some helper classes: `Mustache.Lambda`,
+    `Mustache.VariableFetcher`. The default implementations of these classes are thread-safe, but
+    if you supply custom instances, then you have to ensure that your custom instances are
+    thread-safe.
+
+  * Context data: if you mutate the context data passed to template execution while the template is
+    being executed, then you subject yourself to race conditions. It is in theory possible to use a
+    thread-safe Map (`ConcurrentHashMap` or `Collections.synchronizedMap`) for your context data,
+    which would allow you to mutate the data while templates were being rendered based on that
+    data, but you're playing with fire by doing that. I don't recommend it. If your data is
+    supplied as POJOs where fields or methods are called via reflection to populate your templates,
+    volatile fields and synchronized methods could similarly be used to support simultaneous
+    reading and mutating, but again you could easily make a mistake that introduces race conditions
+    or cause weirdness when executing your templates. The safest approach when rendering the same
+    template via simultaneous threads is to pass immutable/unchanging data as the context for each
+    execution.
+
+  * `VariableFetcher` cache: template execution uses one internal cache to store resolved
+    `VariableFetcher` instances (because resolving a variable fetcher is expensive). This cache is
+    thread-safe by virtue of using a `ConcurrentHashMap`. It's possible for a bit of extra work to
+    be done if two threads resolve the same variable at the same time, but they won't conflict with
+    one another, they'll simply both resolve the variable instead of one resolving the variable and
+    the other using the cached resolution.
+
+So the executive summary is: if you pass immutable data to your templates when executing and any
+helper classes you supply are thread-safe, then it is safe to share a `Mustache.Compiler` instance
+across threads to compile templates and it is safe to share a `Template` instance across threads,
+with multiple threads executing the template simultaneously.
+
 Limitations
 ===========
 
