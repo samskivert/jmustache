@@ -40,6 +40,12 @@ public class Template
      * the variable context that was in effect at the time the lambda was called.
      */
     public abstract class Fragment {
+        /** Returns the context object in effect for this fragment. The actual type of the object
+         * depends on the structure of the data passed to the top-level template. You know where
+         * your lambdas are executed, so you know what type to which to cast the context in order
+         * to inspect it (be that a {@code Map} or a POJO or something else). */
+        public abstract Object context ();
+
         /** Executes this fragment; writes its result to {@code out}. */
         public abstract void execute (Writer out);
 
@@ -107,14 +113,15 @@ public class Template
 
     protected Fragment createFragment (final Segment[] segs, final Context currentCtx) {
         return new Fragment() {
+            @Override public Object context () {
+                return currentCtx.data;
+            }
             @Override public void execute (Writer out) {
                 execute(currentCtx, out);
             }
-
             @Override public void execute (Object context, Writer out) {
                 execute(currentCtx.nest(context, 0, false, false), out);
             }
-
             private void execute (Context ctx, Writer out) {
                 for (Segment seg : segs) {
                     seg.execute(Template.this, ctx, out);
