@@ -69,6 +69,10 @@ public class Template
         }
     }
 
+    /** A sentinel object that can be returned by a {@link Mustache.Collector} to indicate that a
+     * variable does not exist in a particular context. */
+    public static final Object NO_FETCHER_FOUND = new Object();
+
     /**
      * Executes this template with the given context, returning the results as a string.
      * @throws MustacheException if an error occurs while executing or writing the template.
@@ -320,10 +324,6 @@ public class Template
             return okey.cclass == cclass && okey.name == name;
         }
     }
-
-    /** A sentinel object that can be returned by a {@link Mustache.Collector} to indicate that a
-     * variable does not exist in a particular context. */
-    static final Object NO_FETCHER_FOUND = new Object();
 
     protected static final String DOT_NAME = ".".intern();
     protected static final String THIS_NAME = "this".intern();
