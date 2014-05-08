@@ -146,32 +146,6 @@ public class Template
      * @return the value associated with the supplied name or null if no value could be resolved.
      */
     protected Object getValue (Context ctx, String name, int line, boolean missingIsNull) {
-        if (!_compiler.standardsMode) {
-            // if we're dealing with a compound key, resolve each component and use the result to
-            // resolve the subsequent component and so forth
-            if (name != DOT_NAME && name.indexOf(DOT_NAME) != -1) {
-                String[] comps = name.split("\\.");
-                // we want to allow the first component of a compound key to be located in a parent
-                // context, but once we're selecting sub-components, they must only be resolved in
-                // the object that represents that component
-                Object data = getValue(ctx, comps[0].intern(), line, missingIsNull);
-                for (int ii = 1; ii < comps.length; ii++) {
-                    if (data == NO_FETCHER_FOUND) {
-                        if (!missingIsNull) throw new MustacheException.Context(
-                            "Missing context for compound variable '" + name + "' on line " + line +
-                            ". '" + comps[ii - 1] + "' was not found.", name, line);
-                        return null;
-                    } else if (data == null) {
-                        return null;
-                    }
-                    // once we step into a composite key, we drop the ability to query our parent
-                    // contexts; that would be weird and confusing
-                    data = getValueIn(data, comps[ii].intern(), line);
-                }
-                return checkForMissing(name, line, missingIsNull, data);
-            }
-        }
-
         // handle our special variables
         if (name == FIRST_NAME) {
             return ctx.onFirst;
@@ -181,19 +155,54 @@ public class Template
             return ctx.index;
         }
 
-        // if we're in standards mode, we don't search our parent contexts
+        // if we're in standards mode, restrict ourselves to simple direct resolution (no compound
+        // keys, no resolving values in parent contexts)
         if (_compiler.standardsMode) {
-            return checkForMissing(name, line, missingIsNull, getValueIn(ctx.data, name, line));
+            Object value = getValueIn(ctx.data, name, line);
+            return checkForMissing(name, line, missingIsNull, value);
         }
 
-        while (ctx != null) {
-            Object value = getValueIn(ctx.data, name, line);
+        // first search our parent contexts for the key (even if the key is a compound key, we will
+        // first try to find it "whole" and only if that fails do we resolve it in parts)
+        for (Context pctx = ctx; pctx != null; pctx = pctx.parent) {
+            Object value = getValueIn(pctx.data, name, line);
             if (value != NO_FETCHER_FOUND) return value;
-            ctx = ctx.parent;
         }
-        // we've popped off the top of our stack of contexts; we never found a fetcher for our
-        // variable, so let checkForMissing() decide what to do
-        return checkForMissing(name, line, missingIsNull, NO_FETCHER_FOUND);
+        // if we reach here, we found nothing in this or our parent contexts...
+
+        // if we have a compound key, decompose the value and resolve it step by step
+        if (name != DOT_NAME && name.indexOf(DOT_NAME) != -1) {
+            return getCompoundValue(ctx, name, line, missingIsNull);
+        } else {
+            // otherwise let checkForMissing() decide what to do
+            return checkForMissing(name, line, missingIsNull, NO_FETCHER_FOUND);
+        }
+    }
+
+    /**
+     * Decomposes the compound key {@code name} into components and resolves the value they
+     * reference.
+     */
+    protected Object getCompoundValue (Context ctx, String name, int line, boolean missingIsNull) {
+        String[] comps = name.split("\\.");
+        // we want to allow the first component of a compound key to be located in a parent
+        // context, but once we're selecting sub-components, they must only be resolved in the
+        // object that represents that component
+        Object data = getValue(ctx, comps[0].intern(), line, missingIsNull);
+        for (int ii = 1; ii < comps.length; ii++) {
+            if (data == NO_FETCHER_FOUND) {
+                if (!missingIsNull) throw new MustacheException.Context(
+                    "Missing context for compound variable '" + name + "' on line " + line +
+                    ". '" + comps[ii - 1] + "' was not found.", name, line);
+                return null;
+            } else if (data == null) {
+                return null;
+            }
+            // once we step into a composite key, we drop the ability to query our parent contexts;
+            // that would be weird and confusing
+            data = getValueIn(data, comps[ii].intern(), line);
+        }
+        return checkForMissing(name, line, missingIsNull, data);
     }
 
     /**

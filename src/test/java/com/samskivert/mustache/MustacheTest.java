@@ -421,6 +421,13 @@ public class MustacheTest
         });
     }
 
+    @Test public void testCompoundVariableAsPlain () {
+        // if a compound variable is found without decomposition, we use that first
+        test("wholekey", "{{foo.bar}}", context(
+                 "foo.bar", "wholekey",
+                 "foo", new Object() { String bar = "hello"; }));
+    }
+
     @Test public void testNewlineSkipping () {
         String tmpl = "list:\n" +
             "{{#items}}\n" +
