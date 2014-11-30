@@ -394,22 +394,47 @@ public class Mustache
          * that's the case it clears the current buffer and adjust any TextSegment before the section tag
          */
         private void removeLineJustTerminatedIfItContainedOnlySectionTags() {
-            if (numberOfSectionTagsInCurrentLine == 1 && lastTextBufferSpanningCurrentLine != null) {
+            if (numberOfSectionTagsInCurrentLine == 1) {
 
-                String orig = lastTextBufferSpanningCurrentLine.getString();
-                int lineEndingIdx = orig.lastIndexOf(lineEndingStringInCurrentLineEndingMode());
-                String lastLine;
+                TextSegmentSpanningCurrentLineBeforeSectionTag textBeforeSectionTag
+                        = new TextSegmentSpanningCurrentLineBeforeSectionTag();
 
-                if (lineEndingIdx == -1) {
-                    lastLine = orig;
-                } else {
-                    lastLine = orig.substring(lineEndingIdx + lineEndingStringInCurrentLineEndingMode().length());
-                }
-
-                if (isAllWhitespace(lastLine) && isAllWhitespace(text.toString())) {
-                    String adjusted = lineEndingIdx > -1 ? orig.substring(0, lineEndingIdx + lineEndingStringInCurrentLineEndingMode().length()) : "";
-                    lastTextBufferSpanningCurrentLine.setString(adjusted);
+                if (textBeforeSectionTag.isLastLineAllWhitespace() && isAllWhitespace(text.toString())) {
+                    textBeforeSectionTag.truncateWhitespaceAfterLastLineEnding();
                     text.setLength(0);
+                }
+            }
+        }
+
+        private class TextSegmentSpanningCurrentLineBeforeSectionTag {
+
+            public boolean isLastLineAllWhitespace() {
+                return lastTextBufferSpanningCurrentLine == null || isAllWhitespace(lastLine());
+            }
+
+            private String lastLine() {
+                return textSpansMultipleLines()
+                        ? text().substring(lastLineStartIndex())
+                        : text();
+            }
+
+            private int lastLineStartIndex() {
+                return text().lastIndexOf(lineEndingStringInCurrentLineEndingMode()) + lineEndingStringInCurrentLineEndingMode().length();
+            }
+
+            private String text() {
+                return lastTextBufferSpanningCurrentLine.getString();
+            }
+
+            private boolean textSpansMultipleLines() {
+                return text().lastIndexOf(lineEndingStringInCurrentLineEndingMode()) > -1;
+            }
+
+            public void truncateWhitespaceAfterLastLineEnding() {
+                if (lastTextBufferSpanningCurrentLine != null) {
+                    lastTextBufferSpanningCurrentLine.setString(textSpansMultipleLines()
+                            ? text().substring(0, lastLineStartIndex())
+                            : "");
                 }
             }
         }
