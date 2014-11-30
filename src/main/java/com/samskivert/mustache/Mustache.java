@@ -326,7 +326,7 @@ public class Mustache
         int line = 1, column = 0;
         int lineEndingMode = LineEndingMode.LF;
         int numberOfSectionTagsInCurrentLine = 0;
-        StringWrapper lastTextBufferSpanningCurrentLine = null;
+        StringWrapper textBlockSpanningCurrentLine = null;
 
         public Parser (Compiler compiler) {
             this.accum = new Accumulator(compiler);
@@ -350,7 +350,7 @@ public class Mustache
                     column = 0;
                     line++;
                     numberOfSectionTagsInCurrentLine = 0;
-                    lastTextBufferSpanningCurrentLine = null;
+                    textBlockSpanningCurrentLine = null;
                 } else {
                     column++;
                 }
@@ -396,8 +396,8 @@ public class Mustache
         private void removeLineJustTerminatedIfItContainedOnlySectionTags() {
             if (numberOfSectionTagsInCurrentLine == 1) {
 
-                TextSegmentSpanningCurrentLineBeforeSectionTag textBeforeSectionTag
-                        = new TextSegmentSpanningCurrentLineBeforeSectionTag();
+                TextBlockSpanningCurrentLineBeforeSectionTag textBeforeSectionTag
+                        = new TextBlockSpanningCurrentLineBeforeSectionTag();
 
                 if (textBeforeSectionTag.isLastLineAllWhitespace() && isAllWhitespace(text.toString())) {
                     textBeforeSectionTag.truncateWhitespaceAfterLastLineEnding();
@@ -406,10 +406,10 @@ public class Mustache
             }
         }
 
-        private class TextSegmentSpanningCurrentLineBeforeSectionTag {
+        private class TextBlockSpanningCurrentLineBeforeSectionTag {
 
             public boolean isLastLineAllWhitespace() {
-                return lastTextBufferSpanningCurrentLine == null || isAllWhitespace(lastLine());
+                return textBlockSpanningCurrentLine == null || isAllWhitespace(lastLine());
             }
 
             private String lastLine() {
@@ -423,7 +423,7 @@ public class Mustache
             }
 
             private String text() {
-                return lastTextBufferSpanningCurrentLine.getString();
+                return textBlockSpanningCurrentLine.getString();
             }
 
             private boolean textSpansMultipleLines() {
@@ -431,8 +431,8 @@ public class Mustache
             }
 
             public void truncateWhitespaceAfterLastLineEnding() {
-                if (lastTextBufferSpanningCurrentLine != null) {
-                    lastTextBufferSpanningCurrentLine.setString(textSpansMultipleLines()
+                if (textBlockSpanningCurrentLine != null) {
+                    textBlockSpanningCurrentLine.setString(textSpansMultipleLines()
                             ? text().substring(0, lastLineStartIndex())
                             : "");
                 }
@@ -507,7 +507,7 @@ public class Mustache
 
         private StringWrapper flushBufferIntoTextSegment() {
             StringWrapper content = new StringWrapper(text.toString());
-            lastTextBufferSpanningCurrentLine = content;
+            textBlockSpanningCurrentLine = content;
             accum.addTextSegment(content);
             text.setLength(0);
             return content;
