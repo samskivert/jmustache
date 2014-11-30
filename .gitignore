@@ -3,3 +3,7 @@
 .settings
 target
 .metadata
+.idea/vcs.xml
+.idea/misc.xml
+.idea/uiDesigner.xml
+
