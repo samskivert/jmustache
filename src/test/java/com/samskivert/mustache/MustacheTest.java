@@ -428,23 +428,61 @@ public class MustacheTest
                  "foo", new Object() { String bar = "hello"; }));
     }
 
-    @Test public void testNewlineSkipping () {
-        String tmpl = "list:\n" +
-            "{{#items}}\n" +
-            "{{this}}\n" +
-            "{{/items}}\n" +
-            "{{^items}}\n" +
-            "no items\n" +
-            "{{/items}}\n" +
-            "endlist";
-        test("list:\n" +
-             "one\n" +
-             "two\n" +
-             "three\n" +
+    @Test public void testNewlineSkipping_CRLF () {
+        String tmpl = "list:\r\n" +
+                "  {{#items}}\r\n" +
+                "  {{this}}\r\n" +
+                "  {{/items}}\r\n" +
+                "  {{^items}}\r\n" +
+                "  no items\r\n" +
+                "  {{/items}}\r\n" +
+                "endlist";
+        test("list:\r\n" +
+             "  one\r\n" +
+             "  two\r\n" +
+             "  three\r\n" +
              "endlist", tmpl, context("items", Arrays.asList("one", "two", "three")));
-        test("list:\n" +
-             "no items\n" +
+        test("list:\r\n" +
+             "  no items\r\n" +
              "endlist", tmpl, context("items", Collections.emptyList()));
+    }
+
+    @Test public void testNewlineSkipping_LF () {
+        String tmpl = "list:\n" +
+                "  {{#items}}\n" +
+                "  {{this}}\n" +
+                "  {{/items}}\n" +
+                "  {{^items}}\n" +
+                "  no items\n" +
+                "  {{/items}}\n" +
+                "endlist";
+        test("list:\n" +
+                "  one\n" +
+                "  two\n" +
+                "  three\n" +
+                "endlist", tmpl, context("items", Arrays.asList("one", "two", "three")));
+        test("list:\n" +
+                "  no items\n" +
+                "endlist", tmpl, context("items", Collections.emptyList()));
+    }
+
+    @Test public void testNewlineSkipping_CR () {
+        String tmpl = "list:\r" +
+                "  {{#items}}\r" +
+                "  {{this}}\r" +
+                "  {{/items}}\r" +
+                "  {{^items}}\r" +
+                "  no items\r" +
+                "  {{/items}}\r" +
+                "endlist";
+        test("list:\r" +
+                "  one\r" +
+                "  two\r" +
+                "  three\r" +
+                "endlist", tmpl, context("items", Arrays.asList("one", "two", "three")));
+        test("list:\r" +
+                "  no items\r" +
+                "endlist", tmpl, context("items", Collections.emptyList()));
     }
 
     @Test public void testNewlineNonSkipping () {
