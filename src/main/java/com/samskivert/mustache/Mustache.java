@@ -301,19 +301,21 @@ public class Mustache
         }
     }
 
-    // TODO: this method was never called, what was my intention here?
-    protected static boolean allowsWhitespace (char typeChar) {
-        return (typeChar == '=') || // change delimiters
-            (typeChar == '!');      // comment
+    protected static class LineEndingMode {
+        protected static final int LF = 1;
+        protected static final int CR = 2;
+        protected static final int CRLF = 3;
     }
-
-    protected static final int TEXT = 0;
-    protected static final int MATCHING_START = 1;
-    protected static final int MATCHING_END = 2;
-    protected static final int TAG = 3;
 
     // a hand-rolled parser; whee!
     protected static class Parser {
+
+        // Parser current state
+        protected static final int TEXT = 0;
+        protected static final int MATCHING_START = 1;
+        protected static final int MATCHING_END = 2;
+        protected static final int TAG = 3;
+
         final Delims delims;
         final StringBuilder text = new StringBuilder();
 
@@ -322,8 +324,9 @@ public class Mustache
 
         int state = TEXT;
         int line = 1, column = 0;
-        int tagStartColumn = -1;
-        boolean skipNewline = false;
+        int lineEndingMode = LineEndingMode.LF;
+        int numberOfSectionTagsInCurrentLine = 0;
+        StringWrapper textBlockSpanningCurrentLine = null;
 
         public Parser (Compiler compiler) {
             this.accum = new Accumulator(compiler);
@@ -333,25 +336,24 @@ public class Mustache
         public Accumulator parse (Reader source) {
             this.source = source;
 
-            int v;
-            while ((v = nextChar()) != -1) {
-                char c = (char)v;
-                if (c == '\n') {
+            tryGuessingLineEndingMode();
+
+            int encodedChar;
+            char currentChar;
+            while ((encodedChar = nextChar()) > -1) {
+
+                currentChar = (char) encodedChar;
+                parseChar(currentChar);
+
+                if (isLineTerminator(currentChar)) {
+                    removeLineJustTerminatedIfItContainedOnlySectionTags();
                     column = 0;
                     line++;
-                    // skip this newline character if we're configured to do so; TODO: handle CR
-                    if (skipNewline) {
-                        // if the preceding character is '\r', strip that off too
-                        int lastIdx = text.length()-1;
-                        if (lastIdx >= 0 && text.charAt(lastIdx) == '\r') text.setLength(lastIdx);
-                        skipNewline = false;
-                        continue;
-                    }
+                    numberOfSectionTagsInCurrentLine = 0;
+                    textBlockSpanningCurrentLine = null;
                 } else {
                     column++;
-                    skipNewline = false;
                 }
-                parseChar(c);
             }
 
             // accumulate any trailing text
@@ -369,9 +371,146 @@ public class Mustache
             case TEXT: // do nothing
                 break;
             }
-            accum.addTextSegment(text);
+
+            flushBufferIntoTextSegment();
 
             return accum;
+        }
+
+        /**
+         * Improves template readability when we are not generating HTML and line ending is important.
+         * For example if we are using Mustache for Java code generation (line endings represented
+         * with \LINE_END, in source code they are \n, \r\n or \r)
+         *
+         * 1. public void copyProperties({{beanClass}} src, {{beanClass}} dst) {\LINE_END
+         * 2.     {{props}}\LINE_END
+         * 3.     dst.{{setter}}(src.{{getter}}());\LINE_END
+         * 4.     {{/props}}\LINE_END
+         * 5. }
+         *
+         * We want line 2 and 4 to disappear from the generated output. This method is run after the line
+         * terminator character has been added to the current buffer. It checks if the current line contains
+         * only whitespace and exactly one section (ie a tag whose name begins with ^, # or /) and if
+         * that's the case it clears the current buffer and adjust any TextSegment before the section tag
+         */
+        private void removeLineJustTerminatedIfItContainedOnlySectionTags() {
+            if (numberOfSectionTagsInCurrentLine == 1) {
+
+                TextBlockSpanningCurrentLineBeforeSectionTag textBeforeSectionTag
+                        = new TextBlockSpanningCurrentLineBeforeSectionTag();
+
+                if (textBeforeSectionTag.isLastLineAllWhitespace() && isAllWhitespace(text.toString())) {
+                    textBeforeSectionTag.truncateWhitespaceAfterLastLineEnding();
+                    text.setLength(0);
+                }
+            }
+        }
+
+        private class TextBlockSpanningCurrentLineBeforeSectionTag {
+
+            public boolean isLastLineAllWhitespace() {
+                return textBlockSpanningCurrentLine == null || isAllWhitespace(lastLine());
+            }
+
+            private String lastLine() {
+                return textSpansMultipleLines()
+                        ? text().substring(lastLineStartIndex())
+                        : text();
+            }
+
+            private int lastLineStartIndex() {
+                return text().lastIndexOf(lineEndingStringInCurrentLineEndingMode()) + lineEndingStringInCurrentLineEndingMode().length();
+            }
+
+            private String text() {
+                return textBlockSpanningCurrentLine.getString();
+            }
+
+            private boolean textSpansMultipleLines() {
+                return text().lastIndexOf(lineEndingStringInCurrentLineEndingMode()) > -1;
+            }
+
+            public void truncateWhitespaceAfterLastLineEnding() {
+                if (textBlockSpanningCurrentLine != null) {
+                    textBlockSpanningCurrentLine.setString(textSpansMultipleLines()
+                            ? text().substring(0, lastLineStartIndex())
+                            : "");
+                }
+            }
+        }
+
+        private boolean isAllWhitespace(CharSequence cs) {
+
+            boolean isAllWhitespace = true;
+
+            for (int i = cs.length() - 1; i >= 0; i--) {
+                char c = cs.charAt(i);
+                if (!Character.isWhitespace(c)) {
+                    isAllWhitespace = false;
+                    break;
+                }
+            }
+
+            return isAllWhitespace;
+        }
+
+        private String lineEndingStringInCurrentLineEndingMode() {
+            switch (lineEndingMode) {
+                case LineEndingMode.CRLF: return "\r\n";
+                case LineEndingMode.CR: return "\r";
+                case LineEndingMode.LF: return "\n";
+                default: throw new RuntimeException("Unknown line ending mode " + lineEndingMode);
+            }
+        }
+
+        private boolean isLineTerminator(char c) {
+            return c == '\n' && (lineEndingMode == LineEndingMode.CRLF || lineEndingMode == LineEndingMode.LF)
+                    || c == '\r' && lineEndingMode == LineEndingMode.CR;
+        }
+
+        private void tryGuessingLineEndingMode() {
+            if (source.markSupported()) {
+                try {
+                    source.mark(0);
+
+                    boolean foundCR = false;
+                    boolean foundLF = false;
+                    char c;
+
+                    int encodedChar;
+                    while ((encodedChar = source.read()) > -1) {
+                        c = (char) encodedChar;
+                        if (c == '\r') {
+                            foundCR = true;
+                        } else if (c == '\n') {
+                            foundLF = true;
+                        } else if (foundCR || foundLF) {
+                            break;
+                        }
+                    }
+
+                    if (foundCR && foundLF) {
+                        lineEndingMode = LineEndingMode.CRLF;
+                    } else if (foundCR) {
+                        lineEndingMode = LineEndingMode.CR;
+                    } else if (foundLF) {
+                        lineEndingMode = LineEndingMode.LF;
+                    }
+
+                    source.reset();
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        private StringWrapper flushBufferIntoTextSegment() {
+            StringWrapper content = new StringWrapper(text.toString());
+            textBlockSpanningCurrentLine = content;
+            accum.addTextSegment(content);
+            text.setLength(0);
+            return content;
         }
 
         protected void parseChar (char c) {
@@ -379,7 +518,6 @@ public class Mustache
             case TEXT:
                 if (c == delims.start1) {
                     state = MATCHING_START;
-                    tagStartColumn = column;
                     if (delims.start2 == NO_CHAR) {
                         parseChar(NO_CHAR);
                     }
@@ -390,7 +528,7 @@ public class Mustache
 
             case MATCHING_START:
                 if (c == delims.start2) {
-                    accum.addTextSegment(text);
+                    flushBufferIntoTextSegment();
                     state = TAG;
                 } else {
                     text.append(delims.start1);
@@ -412,10 +550,9 @@ public class Mustache
                     // plain text and start matching a new tag from this point, unless we're in
                     // a comment tag.
                     restoreStartTag(text, delims);
-                    accum.addTextSegment(text);
-                    tagStartColumn = column;
+                    flushBufferIntoTextSegment();
                     if (delims.start2 == NO_CHAR) {
-                        accum.addTextSegment(text);
+                        flushBufferIntoTextSegment();
                         state = TAG;
                     } else {
                         state = MATCHING_START;
@@ -447,8 +584,15 @@ public class Mustache
                             text.replace(0, 1, "&");
                         }
                         // process the tag between the mustaches
+                        String tagText = text.toString();
                         accum = accum.addTagSegment(text, line);
-                        skipNewline = (tagStartColumn == 1) && accum.justOpenedOrClosedBlock();
+                        switch (tagText.charAt(0)) {
+                            case '/':
+                            case '#':
+                            case '^':
+                                numberOfSectionTagsInCurrentLine++;
+                                break;
+                        }
                     }
                     state = TEXT;
 
@@ -535,11 +679,10 @@ public class Mustache
             return (!_segs.isEmpty() && _segs.get(_segs.size()-1) instanceof BlockSegment);
         }
 
-        public void addTextSegment (StringBuilder text) {
-            if (text.length() > 0) {
-                _segs.add(new StringSegment(text.toString()));
-                text.setLength(0);
-            }
+        public TextSegment addTextSegment (StringWrapper text) {
+            TextSegment segment = new TextSegment(text);
+            _segs.add(segment);
+            return segment;
         }
 
         public Accumulator addTagSegment (final StringBuilder accum, final int tagLine) {
@@ -637,15 +780,33 @@ public class Mustache
         protected final List<Template.Segment> _segs = new ArrayList<Template.Segment>();
     }
 
-    /** A simple segment that reproduces a string. */
-    protected static class StringSegment extends Template.Segment {
-        public StringSegment (String text) {
+    protected static class StringWrapper {
+
+        private String str;
+
+        public StringWrapper(String str) {
+            this.str = str;
+        }
+
+        public void setString(String str) {
+            this.str = str;
+        }
+
+        public String getString() {
+            return str;
+        }
+
+    }
+
+    /** A simple segment that reproduces a string verbatim. The actual string is wrapped to allow whitespace adjusting */
+    protected static class TextSegment extends Template.Segment {
+        public TextSegment(StringWrapper text) {
             _text = text;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
-            write(out, _text);
+            write(out, _text.getString());
         }
-        protected final String _text;
+        protected final StringWrapper _text;
     }
 
     protected static class IncludedTemplateSegment extends Template.Segment {
