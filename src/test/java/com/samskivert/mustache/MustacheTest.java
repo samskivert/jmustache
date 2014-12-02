@@ -447,6 +447,25 @@ public class MustacheTest
              "endlist", tmpl, context("items", Collections.emptyList()));
     }
 
+    @Test public void testNewlineSkippingCRLF () {
+        String tmpl = "list:\r\n" +
+            "{{#items}}\r\n" +
+            "{{this}}\r\n" +
+            "{{/items}}\r\n" +
+            "{{^items}}\r\n" +
+            "no items\r\n" +
+            "{{/items}}\r\n" +
+            "endlist";
+        test("list:\r\n" +
+             "one\r\n" +
+             "two\r\n" +
+             "three\r\n" +
+             "endlist", tmpl, context("items", Arrays.asList("one", "two", "three")));
+        test("list:\r\n" +
+             "no items\r\n" +
+             "endlist", tmpl, context("items", Collections.emptyList()));
+    }
+
     @Test public void testNewlineNonSkipping () {
         // only when a section tag is by itself on a line should we absorb the newline following it
         String tmpl = "thing?: {{#thing}}yes{{/thing}}{{^thing}}no{{/thing}}\n" +

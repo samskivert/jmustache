@@ -336,14 +336,14 @@ public class Mustache
             int v;
             while ((v = nextChar()) != -1) {
                 char c = (char)v;
-                if (c == '\n') {
+                if (c == '\r' && skipNewline) {
+                    // skip this \r and stay in skip newline mode
+                    continue;
+                } else if (c == '\n') {
                     column = 0;
                     line++;
-                    // skip this newline character if we're configured to do so; TODO: handle CR
+                    // skip this newline character if we're configured to do so
                     if (skipNewline) {
-                        // if the preceding character is '\r', strip that off too
-                        int lastIdx = text.length()-1;
-                        if (lastIdx >= 0 && text.charAt(lastIdx) == '\r') text.setLength(lastIdx);
                         skipNewline = false;
                         continue;
                     }
@@ -619,7 +619,7 @@ public class Mustache
         }
 
         protected static void requireNoNewlines (String tag, int line) {
-            if (tag.indexOf("\n") != -1 || tag.indexOf("\r") != -1) {
+            if (tag.indexOf('\n') != -1 || tag.indexOf('\r') != -1) {
                 throw new MustacheParseException(
                     "Invalid tag name: contains newline '" + tag + "'", line);
             }
