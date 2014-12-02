@@ -69,13 +69,17 @@
   </dependencies>
 
   <build>
-    <!-- we include the source files in our main jar for use by GWT -->
     <resources>
+      <!-- include the source files in our main jar for use by GWT -->
       <resource>
         <directory>${project.build.sourceDirectory}</directory>
         <excludes>
           <exclude>com/samskivert/mustache/DefaultCollector.java</exclude>
         </excludes>
+      </resource>
+      <!-- also include the GWT-specific sources -->
+      <resource>
+        <directory>src/main/gwt</directory>
       </resource>
     </resources>
 
@@ -95,9 +99,6 @@
             <arg>-Xlint:-serial</arg>
             <arg>-Xlint:-path</arg>
           </compilerArgs>
-          <excludes>
-            <exclude>com/samskivert/gwt/**</exclude>
-          </excludes>
         </configuration>
       </plugin>
       <plugin>
@@ -152,9 +153,6 @@
         <configuration>
           <quiet>true</quiet>
           <show>public</show>
-          <sourceFileExcludes>
-            <exclude>com/samskivert/gwt/**</exclude>
-          </sourceFileExcludes>
         </configuration>
       </plugin>
       <plugin>
