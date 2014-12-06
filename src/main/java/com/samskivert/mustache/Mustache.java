@@ -280,8 +280,9 @@ public class Mustache
      * Returns a compiler that escapes HTML by default and does not use standards mode.
      */
     public static Compiler compiler () {
-        return new Compiler(false, null, true, false, false, DEFAULT_FORMATTER, Escapers.HTML,
-                            FAILING_LOADER, new DefaultCollector(), new Delims());
+        return new Compiler(/*standardsMode=*/false, /*nullValue=*/null, /*missingIsNull=*/true,
+                            /*emptyStringIsFalse=*/false, /*zeroIsFalse=*/false, DEFAULT_FORMATTER,
+                            Escapers.HTML, FAILING_LOADER, new DefaultCollector(), new Delims());
     }
 
     /**
