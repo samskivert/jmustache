@@ -429,40 +429,29 @@ public class MustacheTest
     }
 
     @Test public void testNewlineSkipping () {
-        String tmpl = "list:\n" +
-            "{{#items}}\n" +
-            "{{this}}\n" +
-            "{{/items}}\n" +
-            "{{^items}}\n" +
-            "no items\n" +
-            "{{/items}}\n" +
-            "endlist";
-        test("list:\n" +
-             "one\n" +
-             "two\n" +
-             "three\n" +
-             "endlist", tmpl, context("items", Arrays.asList("one", "two", "three")));
-        test("list:\n" +
-             "no items\n" +
-             "endlist", tmpl, context("items", Collections.emptyList()));
+        testNewlineSkipping("\n");
     }
 
     @Test public void testNewlineSkippingCRLF () {
-        String tmpl = "list:\r\n" +
-            "{{#items}}\r\n" +
-            "{{this}}\r\n" +
-            "{{/items}}\r\n" +
-            "{{^items}}\r\n" +
-            "no items\r\n" +
-            "{{/items}}\r\n" +
+        testNewlineSkipping("\r\n");
+    }
+
+    protected void testNewlineSkipping (String sep) {
+        String tmpl = "list:" + sep +
+            "{{#items}}" + sep +
+            "{{this}}" + sep +
+            "{{/items}}" + sep +
+            "{{^items}}" + sep +
+            "no items" + sep +
+            "{{/items}}" + sep +
             "endlist";
-        test("list:\r\n" +
-             "one\r\n" +
-             "two\r\n" +
-             "three\r\n" +
+        test("list:" + sep +
+             "one" + sep +
+             "two" + sep +
+             "three" + sep +
              "endlist", tmpl, context("items", Arrays.asList("one", "two", "three")));
-        test("list:\r\n" +
-             "no items\r\n" +
+        test("list:" + sep +
+             "no items" + sep +
              "endlist", tmpl, context("items", Collections.emptyList()));
     }
 
