@@ -62,7 +62,7 @@ public class SpecRunner extends BlockJUnit4ClassRunner
         List<FrameworkMethod> tests = new ArrayList<FrameworkMethod>();
         for (String name : groups) {
             for (Map<String, Object> test: getTestsForGroup(name)) {
-                tests.add(new SpecFrameworkTest(m, name, new Spec(test)));
+                tests.add(new SpecFrameworkMethod(m, name, new Spec(test)));
             }
         }
         return tests;

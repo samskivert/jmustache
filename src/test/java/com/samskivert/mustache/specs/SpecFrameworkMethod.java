@@ -10,12 +10,12 @@ import org.junit.runners.model.FrameworkMethod;
 /**
  * @author Yoryos Valotasios
  */
-public class SpecFrameworkTest extends FrameworkMethod
+public class SpecFrameworkMethod extends FrameworkMethod
 {
     private final String group;
     private final Spec spec;
 
-    public SpecFrameworkTest (Method method, String group, Spec spec) {
+    public SpecFrameworkMethod (Method method, String group, Spec spec) {
         super(method);
         this.group = group;
         this.spec = spec;
