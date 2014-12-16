@@ -299,21 +299,33 @@ public class Mustache
     protected static Template.Segment[] trim (Template.Segment[] segs) {
         // now that we have all of our segments, we make a pass through them to trim whitespace
         // from section tags which stand alone on their lines
-        for (int ii = 0, ll = segs.length-1; ii < ll; ii++) {
-            Template.Segment seg0 = segs[ii], seg1 = segs[ii+1];
-            // check whether we're looking at <sttart>/block (trim open) or block/<end> (trim close)
-            if (ii == 0 && seg0 instanceof BlockSegment) {
-                ((BlockSegment)seg0).trimOpen();
-            } else if (ii == ll-1 && seg1 instanceof BlockSegment) {
-                ((BlockSegment)seg1).trimClose();
+        for (int ii = 0, ll = segs.length; ii < ll; ii++) {
+            Template.Segment seg = segs[ii];
+            Template.Segment pseg = (ii > 0) ? segs[ii-1] : null;
+            Template.Segment nseg = (ii < ll-1) ? segs[ii+1] : null;
+            StringSegment prev = (pseg instanceof StringSegment) ? (StringSegment)pseg : null;
+            StringSegment next = (nseg instanceof StringSegment) ? (StringSegment)nseg : null;
+            boolean prevTrailsBlank = (pseg == null || (prev != null && prev.trailsBlank()));
+            boolean nextLeadsBlank = (nseg == null || (next != null && next.leadsBlank()));
+            boolean trimPrev = false, trimNext = false;
+            // potentially trim the open and close tags of a block segment
+            if (seg instanceof BlockSegment) {
+                BlockSegment block = (BlockSegment)seg;
+                if (prevTrailsBlank && block.firstLeadsBlank()) {
+                    if (pseg != null) segs[ii-1] = prev.trimTrailBlank();
+                    block.trimFirstBlank();
+                }
+                if (nextLeadsBlank && block.lastTrailsBlank()) {
+                    block.trimLastBlank();
+                    if (nseg != null) segs[ii+1] = next.trimLeadBlank();
+                }
             }
-            // check whether we're looking at a block/text sequence (trim close)
-            if (seg0 instanceof BlockSegment && seg1 instanceof StringSegment) {
-                segs[ii+1] = ((BlockSegment)seg0).trimClose((StringSegment)seg1);
-            }
-            // check whether we're looking at a text/block sequence (trim open)
-            else if (seg0 instanceof StringSegment && seg1 instanceof BlockSegment) {
-                segs[ii] = ((BlockSegment)seg1).trimOpen((StringSegment)seg0);
+            // potentially trim around a delims segment
+            else if (seg instanceof DelimsSegment) {
+                if (prevTrailsBlank && nextLeadsBlank) {
+                    if (pseg != null) segs[ii-1] = prev.trimTrailBlank();
+                    if (nseg != null) segs[ii+1] = next.trimLeadBlank();
+                }
             }
         }
         return segs;
@@ -446,6 +458,7 @@ public class Mustache
                     if (text.charAt(0) == '=') {
                         delims.updateDelims(text.substring(1, text.length()-1));
                         text.setLength(0);
+                        accum.addDelimsSegment(); // for newline trimming
                     } else {
                         // if the delimiters are {{ and }}, and the tag starts with {{{ then
                         // require that it end with }}} and disable escaping
@@ -610,6 +623,10 @@ public class Mustache
             }
         }
 
+        public void addDelimsSegment () {
+            _segs.add(new DelimsSegment());
+        }
+
         public Template.Segment[] finish () {
             return _segs.toArray(new Template.Segment[_segs.size()]);
         }
@@ -752,21 +769,22 @@ public class Mustache
 
     /** A helper class for block segments. */
     protected static abstract class BlockSegment extends NamedSegment {
-        public void trimOpen () {
-            if (firstLeadsBlank()) trimFirstBlank();
+        public boolean firstLeadsBlank () {
+            if (_segs.length == 0 || !(_segs[0] instanceof StringSegment)) return false;
+            return ((StringSegment)_segs[0]).leadsBlank();
         }
-        public void trimClose () {
-            if (lastTrailsBlank()) trimLastBlank();
+        public void trimFirstBlank () {
+            _segs[0] = ((StringSegment)_segs[0]).trimLeadBlank();
         }
-        public StringSegment trimOpen (StringSegment prev) {
-            if (!firstLeadsBlank() || !prev.trailsBlank()) return prev;
-            trimFirstBlank();
-            return prev.trimTrailBlank();
+
+        public boolean lastTrailsBlank () {
+            int lastIdx = _segs.length-1;
+            if (_segs.length == 0 || !(_segs[lastIdx] instanceof StringSegment)) return false;
+            return ((StringSegment)_segs[lastIdx]).trailsBlank();
         }
-        public StringSegment trimClose (StringSegment next) {
-            if (!lastTrailsBlank() || !next.leadsBlank()) return next;
-            trimLastBlank();
-            return next.trimLeadBlank();
+        public void trimLastBlank () {
+            int idx = _segs.length-1;
+            _segs[idx] = ((StringSegment)_segs[idx]).trimTrailBlank();
         }
 
         protected BlockSegment (String name, Template.Segment[] segs, int line) {
@@ -777,24 +795,6 @@ public class Mustache
             for (Template.Segment seg : _segs) {
                 seg.execute(tmpl, ctx, out);
             }
-        }
-
-        private boolean firstLeadsBlank () {
-            if (_segs.length == 0 || !(_segs[0] instanceof StringSegment)) return false;
-            return ((StringSegment)_segs[0]).leadsBlank();
-        }
-        private void trimFirstBlank () {
-            _segs[0] = ((StringSegment)_segs[0]).trimLeadBlank();
-        }
-
-        private boolean lastTrailsBlank () {
-            int lastIdx = _segs.length-1;
-            if (_segs.length == 0 || !(_segs[lastIdx] instanceof StringSegment)) return false;
-            return ((StringSegment)_segs[lastIdx]).trailsBlank();
-        }
-        private void trimLastBlank () {
-            int idx = _segs.length-1;
-            _segs[idx] = ((StringSegment)_segs[idx]).trimTrailBlank();
         }
 
         protected final Template.Segment[] _segs;
@@ -869,6 +869,10 @@ public class Mustache
             return "Inverted(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
         protected final Compiler _comp;
+    }
+
+    protected static class DelimsSegment extends Template.Segment {
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {} // nada
     }
 
     /** Used when we have only a single character delimiter. */
