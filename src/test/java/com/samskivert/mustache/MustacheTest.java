@@ -436,6 +436,12 @@ public class MustacheTest
         testNewlineSkipping("\r\n");
     }
 
+    @Test public void testTrimBlank () {
+        Mustache.StringSegment str = new Mustache.StringSegment("  \r\n  ", false);
+        assertEquals("Text(  )-1/0", str.trimLeadBlank().toString());
+        assertEquals("Text(  \\r\\n)3/-1", str.trimTrailBlank().toString());
+    }
+
     protected void testNewlineSkipping (String sep) {
         String tmpl = "list:" + sep +
             "{{#items}}" + sep +
@@ -743,11 +749,15 @@ public class MustacheTest
     }
 
     protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx) {
-        assertEquals(expected, compiler.compile(template).execute(ctx));
+        assertEquals(uncrlf(expected), uncrlf(compiler.compile(template).execute(ctx)));
     }
 
     protected void test (String expected, String template, Object ctx) {
         test(Mustache.compiler(), expected, template, ctx);
+    }
+
+    protected static String uncrlf (String text) {
+        return text == null ? null : text.replace("\r", "\\r").replace("\n", "\\n");
     }
 
     protected Object context (Object... data) {
