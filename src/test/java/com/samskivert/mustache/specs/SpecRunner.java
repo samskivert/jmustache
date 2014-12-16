@@ -52,10 +52,10 @@ public class SpecRunner extends BlockJUnit4ClassRunner
     private List<FrameworkMethod> computeTests () throws InitializationError {
         String[] groups =  new String[] {
             // "comments",
-            // "delimiters",
+            "delimiters",
             "interpolation",
-            // "inverted",
-            // "sections",
+            "inverted",
+            "sections",
             // "partials"
         };
         Method m = getTestClassMethod("test", Spec.class);

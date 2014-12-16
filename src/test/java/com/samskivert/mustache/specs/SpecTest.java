@@ -29,11 +29,18 @@ public class SpecTest
     public void test (Spec spec) {
         loader.setSpec(spec);
         String tmpl = spec.getTemplate();
-        Template t = compiler.compile(spec.getTemplate());
-        String out = t.execute(spec.getData());
-        Assert.assertEquals(String.format("When rendering '''%s''' with '%s'",
-                                          tmpl.replaceAll("\n", "\\\\n"),
-                                          spec.getData().toString().replaceAll("\n", "\\\\n")),
-                            spec.getExpectedOutput(), out);
+        String desc = String.format("Template: '''%s'''\nData: '%s'\n",
+                                    uncrlf(tmpl), uncrlf(spec.getData().toString()));
+        try {
+            Template t = compiler.compile(spec.getTemplate());
+            String out = t.execute(spec.getData());
+            Assert.assertEquals(desc, uncrlf(spec.getExpectedOutput()), uncrlf(out));
+        } catch (Exception e) {
+            Assert.fail(desc + ": " + e);
+        }
+    }
+
+    private static String uncrlf (String text) {
+        return (text == null) ? null : text.replace("\r", "\\r").replace("\n", "\\n");
     }
 }
