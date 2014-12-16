@@ -439,6 +439,11 @@ public class MustacheTest
         test("Begin.\nEnd.\n", "Begin.\n{{=@ @=}}\nEnd.\n", context());
     }
 
+    @Test public void testNoTrimNewlineFromNestedTagAt0 () {
+        test(" | \n  | \n", " | {{^boolean}}{{! comment }}\n {{/boolean}} | \n",
+             context("boolean", false));
+    }
+
     @Test public void testTrimBlank () {
         Mustache.StringSegment str = new Mustache.StringSegment("  \r\n  ", false);
         check("Text(  )-1/0", str.trimLeadBlank().toString());

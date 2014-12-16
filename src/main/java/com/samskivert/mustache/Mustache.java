@@ -291,38 +291,39 @@ public class Mustache
      */
     protected static Template compile (Reader source, Compiler compiler) {
         Accumulator accum = new Parser(compiler).parse(source);
-        return new Template(trim(accum.finish()), compiler);
+        return new Template(trim(accum.finish(), true), compiler);
     }
 
     private Mustache () {} // no instantiateski
 
-    protected static Template.Segment[] trim (Template.Segment[] segs) {
+    protected static Template.Segment[] trim (Template.Segment[] segs, boolean top) {
         // now that we have all of our segments, we make a pass through them to trim whitespace
         // from section tags which stand alone on their lines
         for (int ii = 0, ll = segs.length; ii < ll; ii++) {
             Template.Segment seg = segs[ii];
-            Template.Segment pseg = (ii > 0) ? segs[ii-1] : null;
+            Template.Segment pseg = (ii > 0   ) ? segs[ii-1] : null;
             Template.Segment nseg = (ii < ll-1) ? segs[ii+1] : null;
             StringSegment prev = (pseg instanceof StringSegment) ? (StringSegment)pseg : null;
             StringSegment next = (nseg instanceof StringSegment) ? (StringSegment)nseg : null;
-            boolean prevTrailsBlank = (pseg == null || (prev != null && prev.trailsBlank()));
-            boolean nextLeadsBlank = (nseg == null || (next != null && next.leadsBlank()));
+            // if we're at the top-level there are virtual "blank lines" before & after segs
+            boolean prevBlank = ((pseg == null && top) || (prev != null && prev.trailsBlank()));
+            boolean nextBlank = ((nseg == null && top) || (next != null && next.leadsBlank()));
             boolean trimPrev = false, trimNext = false;
-            // potentially trim the open and close tags of a block segment
+            // potentially trim around the open and close tags of a block segment
             if (seg instanceof BlockSegment) {
                 BlockSegment block = (BlockSegment)seg;
-                if (prevTrailsBlank && block.firstLeadsBlank()) {
+                if (prevBlank && block.firstLeadsBlank()) {
                     if (pseg != null) segs[ii-1] = prev.trimTrailBlank();
                     block.trimFirstBlank();
                 }
-                if (nextLeadsBlank && block.lastTrailsBlank()) {
+                if (nextBlank && block.lastTrailsBlank()) {
                     block.trimLastBlank();
                     if (nseg != null) segs[ii+1] = next.trimLeadBlank();
                 }
             }
-            // potentially trim around a delims segment
-            else if (seg instanceof DelimsSegment) {
-                if (prevTrailsBlank && nextLeadsBlank) {
+            // potentially trim around non-printing (comments/delims) segments
+            else if (seg instanceof FauxSegment) {
+                if (prevBlank && nextBlank) {
                     if (pseg != null) segs[ii-1] = prev.trimTrailBlank();
                     if (nseg != null) segs[ii+1] = next.trimLeadBlank();
                 }
@@ -362,7 +363,7 @@ public class Mustache
         int tagStartColumn = -1;
 
         public Parser (Compiler compiler) {
-            this.accum = new Accumulator(compiler);
+            this.accum = new Accumulator(compiler, true);
             this.delims = compiler.delims.copy();
         }
 
@@ -458,7 +459,7 @@ public class Mustache
                     if (text.charAt(0) == '=') {
                         delims.updateDelims(text.substring(1, text.length()-1));
                         text.setLength(0);
-                        accum.addDelimsSegment(); // for newline trimming
+                        accum.addFauxSegment(); // for newline trimming
                     } else {
                         // if the delimiters are {{ and }}, and the tag starts with {{{ then
                         // require that it end with }}} and disable escaping
@@ -553,13 +554,14 @@ public class Mustache
     }
 
     protected static class Accumulator {
-        public Accumulator (Compiler compiler) {
+        public Accumulator (Compiler compiler, boolean topLevel) {
             _comp = compiler;
+            _topLevel = topLevel;
         }
 
         public void addTextSegment (StringBuilder text) {
             if (text.length() > 0) {
-                _segs.add(new StringSegment(text.toString(), _segs.isEmpty()));
+                _segs.add(new StringSegment(text.toString(), _segs.isEmpty() && _topLevel));
                 text.setLength(0);
             }
         }
@@ -573,7 +575,7 @@ public class Mustache
             switch (tag.charAt(0)) {
             case '#':
                 requireNoNewlines(tag, tagLine);
-                return new Accumulator(_comp) {
+                return new Accumulator(_comp, false) {
                     @Override public Template.Segment[] finish () {
                         throw new MustacheParseException(
                             "Section missing close tag '" + tag1 + "'", tagLine);
@@ -591,7 +593,7 @@ public class Mustache
 
             case '^':
                 requireNoNewlines(tag, tagLine);
-                return new Accumulator(_comp) {
+                return new Accumulator(_comp, false) {
                     @Override public Template.Segment[] finish () {
                         throw new MustacheParseException(
                             "Inverted section missing close tag '" + tag1 + "'", tagLine);
@@ -609,6 +611,7 @@ public class Mustache
 
             case '!':
                 // comment!, ignore
+                _segs.add(new FauxSegment()); // for whitespace trimming
                 return this;
 
             case '&':
@@ -623,8 +626,8 @@ public class Mustache
             }
         }
 
-        public void addDelimsSegment () {
-            _segs.add(new DelimsSegment());
+        public void addFauxSegment () {
+            _segs.add(new FauxSegment());
         }
 
         public Template.Segment[] finish () {
@@ -652,6 +655,7 @@ public class Mustache
         }
 
         protected final Compiler _comp;
+        protected final boolean _topLevel;
         protected final List<Template.Segment> _segs = new ArrayList<Template.Segment>();
     }
 
@@ -789,7 +793,7 @@ public class Mustache
 
         protected BlockSegment (String name, Template.Segment[] segs, int line) {
             super(name, line);
-            _segs = trim(segs);
+            _segs = trim(segs, false);
         }
         protected void executeSegs (Template tmpl, Template.Context ctx, Writer out)  {
             for (Template.Segment seg : _segs) {
@@ -871,8 +875,9 @@ public class Mustache
         protected final Compiler _comp;
     }
 
-    protected static class DelimsSegment extends Template.Segment {
+    protected static class FauxSegment extends Template.Segment {
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {} // nada
+        @Override public String toString () { return "Faux"; }
     }
 
     /** Used when we have only a single character delimiter. */
