@@ -9,6 +9,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -290,10 +291,33 @@ public class Mustache
      */
     protected static Template compile (Reader source, Compiler compiler) {
         Accumulator accum = new Parser(compiler).parse(source);
-        return new Template(accum.finish(), compiler);
+        return new Template(trim(accum.finish()), compiler);
     }
 
     private Mustache () {} // no instantiateski
+
+    protected static Template.Segment[] trim (Template.Segment[] segs) {
+        // now that we have all of our segments, we make a pass through them to trim whitespace
+        // from section tags which stand alone on their lines
+        for (int ii = 0, ll = segs.length-1; ii < ll; ii++) {
+            Template.Segment seg0 = segs[ii], seg1 = segs[ii+1];
+            // check whether we're looking at <sttart>/block (trim open) or block/<end> (trim close)
+            if (ii == 0 && seg0 instanceof BlockSegment) {
+                ((BlockSegment)seg0).trimOpen();
+            } else if (ii == ll-1 && seg1 instanceof BlockSegment) {
+                ((BlockSegment)seg1).trimClose();
+            }
+            // check whether we're looking at a block/text sequence (trim close)
+            if (seg0 instanceof BlockSegment && seg1 instanceof StringSegment) {
+                segs[ii+1] = ((BlockSegment)seg0).trimClose((StringSegment)seg1);
+            }
+            // check whether we're looking at a text/block sequence (trim open)
+            else if (seg0 instanceof StringSegment && seg1 instanceof BlockSegment) {
+                segs[ii] = ((BlockSegment)seg1).trimOpen((StringSegment)seg0);
+            }
+        }
+        return segs;
+    }
 
     protected static void restoreStartTag (StringBuilder text, Delims starts) {
         text.insert(0, starts.start1);
@@ -324,7 +348,6 @@ public class Mustache
         int state = TEXT;
         int line = 1, column = 0;
         int tagStartColumn = -1;
-        boolean skipNewline = false;
 
         public Parser (Compiler compiler) {
             this.accum = new Accumulator(compiler);
@@ -337,22 +360,13 @@ public class Mustache
             int v;
             while ((v = nextChar()) != -1) {
                 char c = (char)v;
-                if (c == '\r' && skipNewline) {
-                    // skip this \r and stay in skip newline mode
-                    continue;
-                } else if (c == '\n') {
-                    column = 0;
-                    line++;
-                    // skip this newline character if we're configured to do so
-                    if (skipNewline) {
-                        skipNewline = false;
-                        continue;
-                    }
-                } else {
-                    column++;
-                    skipNewline = false;
-                }
+                ++column; // our columns start at one, so increment before parse
                 parseChar(c);
+                // if we just parsed a newline, reset the column to zero and advance line
+                if (c == '\n') {
+                    column = 0;
+                    ++line;
+                }
             }
 
             // accumulate any trailing text
@@ -449,7 +463,6 @@ public class Mustache
                         }
                         // process the tag between the mustaches
                         accum = accum.addTagSegment(text, line);
-                        skipNewline = (tagStartColumn == 1) && accum.justOpenedOrClosedBlock();
                     }
                     state = TEXT;
 
@@ -531,14 +544,9 @@ public class Mustache
             _comp = compiler;
         }
 
-        public boolean justOpenedOrClosedBlock () {
-            // return true if we just closed a block segment; we'll handle just opened elsewhere
-            return (!_segs.isEmpty() && _segs.get(_segs.size()-1) instanceof BlockSegment);
-        }
-
         public void addTextSegment (StringBuilder text) {
             if (text.length() > 0) {
-                _segs.add(new StringSegment(text.toString()));
+                _segs.add(new StringSegment(text.toString(), _segs.isEmpty()));
                 text.setLength(0);
             }
         }
@@ -553,10 +561,6 @@ public class Mustache
             case '#':
                 requireNoNewlines(tag, tagLine);
                 return new Accumulator(_comp) {
-                    @Override public boolean justOpenedOrClosedBlock () {
-                        // if we just opened this section, we'll have no segments
-                        return (_segs.isEmpty()) || super.justOpenedOrClosedBlock();
-                    }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheParseException(
                             "Section missing close tag '" + tag1 + "'", tagLine);
@@ -575,10 +579,6 @@ public class Mustache
             case '^':
                 requireNoNewlines(tag, tagLine);
                 return new Accumulator(_comp) {
-                    @Override public boolean justOpenedOrClosedBlock () {
-                        // if we just opened this section, we'll have no segments
-                        return (_segs.isEmpty()) || super.justOpenedOrClosedBlock();
-                    }
                     @Override public Template.Segment[] finish () {
                         throw new MustacheParseException(
                             "Inverted section missing close tag '" + tag1 + "'", tagLine);
@@ -640,13 +640,54 @@ public class Mustache
 
     /** A simple segment that reproduces a string. */
     protected static class StringSegment extends Template.Segment {
-        public StringSegment (String text) {
-            _text = text;
+        public StringSegment (String text, boolean first) {
+            this(text, blankPos(text, true, first), blankPos(text, false, first));
         }
+
+        public StringSegment (String text, int leadBlank, int trailBlank) {
+            assert leadBlank >= -1;
+            assert trailBlank >= -1;
+            _text = text;
+            _leadBlank = leadBlank;
+            _trailBlank = trailBlank;
+        }
+
+        public boolean leadsBlank () { return _leadBlank != -1; }
+        public boolean trailsBlank () { return _trailBlank != -1; }
+
+        public StringSegment trimLeadBlank () {
+            if (_leadBlank == -1) return this;
+            int lpos = _leadBlank+1, newTrail = _trailBlank == -1 ? -1 : _trailBlank-lpos;
+            return new StringSegment(_text.substring(lpos), -1, newTrail);
+        }
+        public StringSegment trimTrailBlank  () {
+            return _trailBlank == -1 ? this : new StringSegment(
+                _text.substring(0, _trailBlank), _leadBlank, -1);
+        }
+
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             write(out, _text);
         }
+        @Override public String toString () {
+            return "Text(" + _text.replace("\r", "\\r").replace("\n", "\\n") + ")" +
+                _leadBlank + "/" + _trailBlank;
+        }
+
+        private static int blankPos (String text, boolean leading, boolean first) {
+            int len = text.length();
+            for (int ii = leading ? 0 : len-1, ll = leading ? len : -1, dd = leading ? 1 : -1;
+                 ii != ll; ii += dd) {
+                char c = text.charAt(ii);
+                if (c == '\n') return leading ? ii : ii+1;
+                if (!Character.isWhitespace(c)) return -1;
+            }
+            // if this is the first string segment and we're looking for trailing whitespace, a
+            // totally blank segment (but which lacks a newline) is all trailing whitespace
+            return (leading || !first) ? -1 : 0;
+        }
+
         protected final String _text;
+        protected final int _leadBlank, _trailBlank;
     }
 
     protected static class IncludedTemplateSegment extends Template.Segment {
@@ -702,21 +743,60 @@ public class Mustache
             }
             write(out, _escaper.escape(_formatter.format(value)));
         }
+        @Override public String toString () {
+            return "Var(" + _name + ":" + _line + ")";
+        }
         protected final Formatter _formatter;
         protected final Escaper _escaper;
     }
 
     /** A helper class for block segments. */
     protected static abstract class BlockSegment extends NamedSegment {
+        public void trimOpen () {
+            if (firstLeadsBlank()) trimFirstBlank();
+        }
+        public void trimClose () {
+            if (lastTrailsBlank()) trimLastBlank();
+        }
+        public StringSegment trimOpen (StringSegment prev) {
+            if (!firstLeadsBlank() || !prev.trailsBlank()) return prev;
+            trimFirstBlank();
+            return prev.trimTrailBlank();
+        }
+        public StringSegment trimClose (StringSegment next) {
+            if (!lastTrailsBlank() || !next.leadsBlank()) return next;
+            trimLastBlank();
+            return next.trimLeadBlank();
+        }
+
         protected BlockSegment (String name, Template.Segment[] segs, int line) {
             super(name, line);
-            _segs = segs;
+            _segs = trim(segs);
         }
         protected void executeSegs (Template tmpl, Template.Context ctx, Writer out)  {
             for (Template.Segment seg : _segs) {
                 seg.execute(tmpl, ctx, out);
             }
         }
+
+        private boolean firstLeadsBlank () {
+            if (_segs.length == 0 || !(_segs[0] instanceof StringSegment)) return false;
+            return ((StringSegment)_segs[0]).leadsBlank();
+        }
+        private void trimFirstBlank () {
+            _segs[0] = ((StringSegment)_segs[0]).trimLeadBlank();
+        }
+
+        private boolean lastTrailsBlank () {
+            int lastIdx = _segs.length-1;
+            if (_segs.length == 0 || !(_segs[lastIdx] instanceof StringSegment)) return false;
+            return ((StringSegment)_segs[lastIdx]).trailsBlank();
+        }
+        private void trimLastBlank () {
+            int idx = _segs.length-1;
+            _segs[idx] = ((StringSegment)_segs[idx]).trimTrailBlank();
+        }
+
         protected final Template.Segment[] _segs;
     }
 
@@ -752,6 +832,9 @@ public class Mustache
                 executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
             }
         }
+        @Override public String toString () {
+            return "Section(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
+        }
         protected final Compiler _comp;
     }
 
@@ -781,6 +864,9 @@ public class Mustache
             } else if (_comp.isFalsey(value)) {
                 executeSegs(tmpl, ctx, out);
             } // TODO: fail?
+        }
+        @Override public String toString () {
+            return "Inverted(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
         protected final Compiler _comp;
     }

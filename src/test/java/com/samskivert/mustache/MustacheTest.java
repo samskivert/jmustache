@@ -453,6 +453,25 @@ public class MustacheTest
         test("list:" + sep +
              "no items" + sep +
              "endlist", tmpl, context("items", Collections.emptyList()));
+
+        // this tests newline trimming even if the group tags have leading/trailing whitespace
+        String htmlTmpl =
+            "<ul>" + sep +
+            "  {{#items}}  " + sep +
+            "  <li>{{this}}</li>" + sep +
+            "  {{/items}}  " + sep +
+            "  {{^items}}" + sep +
+            "  <li>no items</li>" + sep +
+            "  {{/items}}" + sep +
+            "</ul>";
+        test("<ul>" + sep +
+             "  <li>one</li>" + sep +
+             "  <li>two</li>" + sep +
+             "  <li>three</li>" + sep +
+             "</ul>", htmlTmpl, context("items", Arrays.asList("one", "two", "three")));
+        test("<ul>" + sep +
+             "  <li>no items</li>" + sep +
+             "</ul>", htmlTmpl, context("items", Collections.emptyList()));
     }
 
     @Test public void testNewlineNonSkipping () {
