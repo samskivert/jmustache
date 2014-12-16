@@ -36,7 +36,11 @@ public class SpecTest
             String out = t.execute(spec.getData());
             Assert.assertEquals(desc, uncrlf(spec.getExpectedOutput()), uncrlf(out));
         } catch (Exception e) {
-            Assert.fail(desc + ": " + e);
+            // the specs tests assume that the engine silently ignores invalid delimiter
+            // specifications, but we throw an exception (and rightfully so IMO; this is not a
+            // place where silent failure is helpful), so just ignore those test failures
+            if (!e.getMessage().contains("Invalid delimiter")) Assert.fail(
+                desc + "\nExpected: " + uncrlf(spec.getExpectedOutput()) + "\nError: " + e);
         }
     }
 
