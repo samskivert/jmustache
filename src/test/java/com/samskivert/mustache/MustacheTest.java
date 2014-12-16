@@ -66,16 +66,16 @@ public class MustacheTest
             String getFoo () { return "bar"; }
         };
         for (int ii = 0; ii < 50; ii++) {
-            assertEquals("bar", tmpl.execute(ctx));
+            check("bar", tmpl.execute(ctx));
         }
     }
 
     @Test public void testCallSiteChange () {
         Template tmpl = Mustache.compiler().compile("{{foo}}");
-        assertEquals("bar", tmpl.execute(new Object() {
+        check("bar", tmpl.execute(new Object() {
             String getFoo () { return "bar"; }
         }));
-        assertEquals("bar", tmpl.execute(new Object() {
+        check("bar", tmpl.execute(new Object() {
             String foo = "bar";
         }));
     }
@@ -290,15 +290,15 @@ public class MustacheTest
     }
 
     @Test public void testUnescapeHTML () {
-        assertEquals("<b>", Mustache.compiler().escapeHTML(true).compile("{{&a}}").
-                     execute(context("a", "<b>")));
-        assertEquals("<b>", Mustache.compiler().escapeHTML(true).compile("{{{a}}}").
-                     execute(context("a", "<b>")));
+        check("<b>", Mustache.compiler().escapeHTML(true).compile("{{&a}}").
+              execute(context("a", "<b>")));
+        check("<b>", Mustache.compiler().escapeHTML(true).compile("{{{a}}}").
+              execute(context("a", "<b>")));
         // make sure these also work when escape HTML is off
-        assertEquals("<b>", Mustache.compiler().escapeHTML(false).compile("{{&a}}").
-                     execute(context("a", "<b>")));
-        assertEquals("<b>", Mustache.compiler().escapeHTML(false).compile("{{{a}}}").
-                     execute(context("a", "<b>")));
+        check("<b>", Mustache.compiler().escapeHTML(false).compile("{{&a}}").
+              execute(context("a", "<b>")));
+        check("<b>", Mustache.compiler().escapeHTML(false).compile("{{{a}}}").
+              execute(context("a", "<b>")));
     }
 
     @Test public void testDanglingTag () {
@@ -332,18 +332,18 @@ public class MustacheTest
             }
             protected SimpleDateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
         };
-        assertEquals("Date: 2014/01/08", Mustache.compiler().withFormatter(fmt).
-                     compile("{{msg}}: {{today}}").execute(new Object() {
-                         String msg = "Date";
-                         Date today = new Date(1389208567874L);
-                     }));
+        check("Date: 2014/01/08", Mustache.compiler().withFormatter(fmt).
+              compile("{{msg}}: {{today}}").execute(new Object() {
+                  String msg = "Date";
+                  Date today = new Date(1389208567874L);
+              }));
     }
 
     @Test public void testEscapeHTML () {
-        assertEquals("&lt;b&gt;", Mustache.compiler().compile("{{a}}").
-                     execute(context("a", "<b>")));
-        assertEquals("<b>", Mustache.compiler().escapeHTML(false).compile("{{a}}").
-                     execute(context("a", "<b>")));
+        check("&lt;b&gt;", Mustache.compiler().compile("{{a}}").
+              execute(context("a", "<b>")));
+        check("<b>", Mustache.compiler().escapeHTML(false).compile("{{a}}").
+              execute(context("a", "<b>")));
     }
 
     @Test public void testUserDefinedEscaping() {
@@ -351,26 +351,25 @@ public class MustacheTest
             { "[", ":BEGIN:" },
             { "]", ":END:" }
         });
-        assertEquals(":BEGIN:b:END:", Mustache.compiler().withEscaper(escaper).
-                     compile("{{a}}").execute(context("a", "[b]")));
+        check(":BEGIN:b:END:", Mustache.compiler().withEscaper(escaper).
+              compile("{{a}}").execute(context("a", "[b]")));
     }
 
     @Test public void testPartialDelimiterMatch () {
-        assertEquals("{bob}", Mustache.compiler().compile("{bob}").execute(context()));
-        assertEquals("bar", Mustache.compiler().compile("{{bob}bob}}").execute(
-                         context("bob}bob", "bar")));
+        check("{bob}", Mustache.compiler().compile("{bob}").execute(context()));
+        check("bar", Mustache.compiler().compile("{{bob}bob}}").execute(context("bob}bob", "bar")));
     }
 
     @Test public void testTopLevelThis () {
-        assertEquals("bar", Mustache.compiler().compile("{{this}}").execute("bar"));
-        assertEquals("bar", Mustache.compiler().compile("{{.}}").execute("bar"));
+        check("bar", Mustache.compiler().compile("{{this}}").execute("bar"));
+        check("bar", Mustache.compiler().compile("{{.}}").execute("bar"));
     }
 
     @Test public void testNestedThis () {
-        assertEquals("barbazbif", Mustache.compiler().compile("{{#things}}{{this}}{{/things}}").
-                     execute(context("things", Arrays.asList("bar", "baz", "bif"))));
-        assertEquals("barbazbif", Mustache.compiler().compile("{{#things}}{{.}}{{/things}}").
-                execute(context("things", Arrays.asList("bar", "baz", "bif"))));
+        check("barbazbif", Mustache.compiler().compile("{{#things}}{{this}}{{/things}}").
+              execute(context("things", Arrays.asList("bar", "baz", "bif"))));
+        check("barbazbif", Mustache.compiler().compile("{{#things}}{{.}}{{/things}}").
+              execute(context("things", Arrays.asList("bar", "baz", "bif"))));
     }
 
     @Test public void testCompoundVariable () {
@@ -436,10 +435,14 @@ public class MustacheTest
         testNewlineSkipping("\r\n");
     }
 
+    @Test public void testNewlineSkippingDelimsTag () {
+        test("Begin.\nEnd.\n", "Begin.\n{{=@ @=}}\nEnd.\n", context());
+    }
+
     @Test public void testTrimBlank () {
         Mustache.StringSegment str = new Mustache.StringSegment("  \r\n  ", false);
-        assertEquals("Text(  )-1/0", str.trimLeadBlank().toString());
-        assertEquals("Text(  \\r\\n)3/-1", str.trimTrailBlank().toString());
+        check("Text(  )-1/0", str.trimLeadBlank().toString());
+        check("Text(  \\r\\n)3/-1", str.trimTrailBlank().toString());
     }
 
     protected void testNewlineSkipping (String sep) {
@@ -552,20 +555,20 @@ public class MustacheTest
     @Test public void testStandardsModeWithNullValuesInLoop () {
         String tmpl = "first line\n{{#nonexistent}}foo\n{{/nonexistent}}\nsecond line";
         String result = Mustache.compiler().standardsMode(true).compile(tmpl).execute(new Object());
-        assertEquals("first line\nsecond line", result);
+        check("first line\nsecond line", result);
     }
 
     @Test public void testStandardsModeWithNullValuesInInverseLoop () {
         String tmpl = "first line\n{{^nonexistent}}foo{{/nonexistent}} \nsecond line";
         String result = Mustache.compiler().standardsMode(true).compile(tmpl).execute(new Object());
-        assertEquals("first line\nfoo \nsecond line", result);
+        check("first line\nfoo \nsecond line", result);
     }
 
     @Test public void testStandardsModeWithDotValue () {
         String tmpl = "{{#foo}}:{{.}}:{{/foo}}";
         String result = Mustache.compiler().standardsMode(true).compile(tmpl).
             execute(Collections.singletonMap("foo", "bar"));
-        assertEquals(":bar:", result);
+        check(":bar:", result);
     }
 
     @Test(expected=MustacheException.class)
@@ -628,13 +631,13 @@ public class MustacheTest
             Mustache.compiler().compile("{{{foo}}");
             fail("Expected MustacheParseException");
         } catch (MustacheParseException e) {
-            assertEquals("Invalid triple-mustache tag: {{{foo}} @ line 1", e.getMessage());
+            check("Invalid triple-mustache tag: {{{foo}} @ line 1", e.getMessage());
         }
         try {
             Mustache.compiler().compile("{{{foo}}]");
             fail("Expected MustacheParseException");
         } catch (MustacheParseException e) {
-            assertEquals("Invalid triple-mustache tag: {{{foo}}] @ line 1", e.getMessage());
+            check("Invalid triple-mustache tag: {{{foo}}] @ line 1", e.getMessage());
         }
     }
 
@@ -723,11 +726,11 @@ public class MustacheTest
 
         class Foo { public int foo = 1; }
         final Template lfoo = c.compile("{{foo}}");
-        assertEquals("1", lfoo.execute(new Foo()));
+        check("1", lfoo.execute(new Foo()));
 
         class Bar { public String bar = "one"; }
         final Template lbar = c.compile("{{bar}}");
-        assertEquals("one", lbar.execute(new Bar()));
+        check("one", lbar.execute(new Bar()));
 
         test(c, "1oneone1one!", "{{#events}}{{#renderEvent}}{{/renderEvent}}{{/events}}", context(
                  "renderEvent", new Mustache.Lambda() {
@@ -749,7 +752,11 @@ public class MustacheTest
     }
 
     protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx) {
-        assertEquals(uncrlf(expected), uncrlf(compiler.compile(template).execute(ctx)));
+        check(expected, compiler.compile(template).execute(ctx));
+    }
+
+    protected void check (String expected, String output) {
+        assertEquals(uncrlf(expected), uncrlf(output));
     }
 
     protected void test (String expected, String template, Object ctx) {
