@@ -161,18 +161,45 @@ public class MustacheTest
         test("", "{{#foo}}{{bar}}{{/foo}}", new Object() {
             Object foo = null;
         });
-    }
-
-    @Test public void testNullSectionWithDefaultValue () {
         test(Mustache.compiler().defaultValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
             Object foo = null;
         });
-    }
-
-    @Test public void testNullSectionWithNullValue () {
         test(Mustache.compiler().nullValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
             Object foo = null;
         });
+    }
+
+    @Test public void testMissingNonStrictSection () {
+        test("", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            // no foo; section omitted due to non-strict-sections
+        });
+        test(Mustache.compiler().nullValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            // no foo; no exception because nullValue does change section strictness
+        });
+        test(Mustache.compiler().defaultValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            // no foo; no exception because defaultValue does change section strictness
+        });
+    }
+
+    @Test(expected=MustacheException.class)
+    public void testMissingStrictSection () {
+        test(Mustache.compiler().strictSections(true), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
+            // no foo; should throw exception due to strict-sections
+        });
+    }
+
+    @Test(expected=MustacheException.class)
+    public void testMissingStrictSectionNullValue () {
+        // missing strict-sections always throw regardless of nullValue()
+        test(Mustache.compiler().strictSections(true).nullValue(""), "", "{{#foo}}{{bar}}{{/foo}}",
+             new Object());
+    }
+
+    @Test(expected=MustacheException.class)
+    public void testMissingStrictSectionDefaultValue () {
+        // missing strict-sections always throw regardless of defaultValue()
+        test(Mustache.compiler().strictSections(true).defaultValue(""), "", "{{#foo}}{{bar}}{{/foo}}",
+             new Object());
     }
 
     @Test public void testSectionWithNonFalseyEmptyString () {
@@ -221,25 +248,6 @@ public class MustacheTest
                  float floatm () { return 0f; }
                  double doublem () { return 0d; }
              });
-    }
-
-    @Test public void testMissingSection () {
-        test("", "{{#foo}}{{bar}}{{/foo}}", new Object() {
-            // no foo
-        });
-    }
-
-    @Test public void testMissingSectionWithDefaultValue () {
-        test(Mustache.compiler().defaultValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
-            // no foo
-        });
-    }
-
-    @Test(expected=MustacheException.class)
-    public void testMissingSectionWithNullValue () {
-        test(Mustache.compiler().nullValue(""), "", "{{#foo}}{{bar}}{{/foo}}", new Object() {
-            // no foo
-        });
     }
 
     @Test public void testComment () {
@@ -558,15 +566,15 @@ public class MustacheTest
     }
 
     @Test public void testStandardsModeWithNullValuesInLoop () {
-        String tmpl = "first line\n{{#nonexistent}}foo\n{{/nonexistent}}\nsecond line";
-        String result = Mustache.compiler().standardsMode(true).compile(tmpl).execute(new Object());
-        check("first line\nsecond line", result);
+        test("first line\nsecond line",
+             "first line\n{{#nullvalue}}foo\n{{/nullvalue}}\nsecond line",
+             context("nullvalue", null));
     }
 
     @Test public void testStandardsModeWithNullValuesInInverseLoop () {
-        String tmpl = "first line\n{{^nonexistent}}foo{{/nonexistent}} \nsecond line";
-        String result = Mustache.compiler().standardsMode(true).compile(tmpl).execute(new Object());
-        check("first line\nfoo \nsecond line", result);
+        test("first line\nfoo \nsecond line",
+             "first line\n{{^nullvalue}}foo{{/nullvalue}} \nsecond line",
+             context("nullvalue", null));
     }
 
     @Test public void testStandardsModeWithDotValue () {

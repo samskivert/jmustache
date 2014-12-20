@@ -207,14 +207,11 @@ public class Template
 
     /**
      * Returns the value of the specified variable, noting that it is intended to be used as the
-     * contents for a segment. Presently this does not do anything special, but eventually this
-     * will be the means by which we enact configured behavior for sections that reference null or
-     * missing variables. Right now, all such variables result in a length 0 section.
+     * contents for a section.
      */
     protected Object getSectionValue (Context ctx, String name, int line) {
-        // TODO: configurable behavior on missing values
-        Object value = getValue(ctx, name, line, _compiler.missingIsNull);
-        // TODO: configurable behavior on null values
+        Object value = getValue(ctx, name, line, !_compiler.strictSections);
+        // TODO: configurable behavior on null values?
         return (value == null) ? Collections.emptyList() : value;
     }
 

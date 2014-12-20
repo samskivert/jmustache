@@ -34,6 +34,11 @@ public class Mustache
         /** Whether or not standards mode is enabled. */
         public final boolean standardsMode;
 
+        /** Whether or not to throw an exception when a section resolves to a missing value. If
+          * false, the section is simply omitted (or included in the case of inverse sections). If
+          * true, a {@code MustacheException} is thrown. */
+        public final boolean strictSections;
+
         /** A value to use when a variable resolves to null. If this value is null (which is the
          * default null value), an exception will be thrown. If {@link #missingIsNull} is also
          * true, this value will be used when a variable cannot be resolved.
@@ -92,16 +97,27 @@ public class Mustache
          * disables the non-standard JMustache extensions like looking up missing names in a parent
          * context. */
         public Compiler standardsMode (boolean standardsMode) {
-            return new Compiler(standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.zeroIsFalse, this.formatter,
-                                this.escaper, this.loader, this.collector, this.delims);
+            return new Compiler(standardsMode, this.strictSections, this.nullValue,
+                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+                                this.formatter, this.escaper, this.loader, this.collector,
+                                this.delims);
+        }
+
+        /** Returns a compiler that throws an exception when a section references a missing value
+         * ({@code true}) or treats a missing value as {@code false} ({@code false}, the default).
+         */
+        public Compiler strictSections (boolean strictSections) {
+            return new Compiler(this.standardsMode, strictSections, this.nullValue,
+                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+                                this.formatter, this.escaper, this.loader, this.collector,
+                                this.delims);
         }
 
         /** Returns a compiler that will use the given value for any variable that is missing, or
          * otherwise resolves to null. This is like {@link #nullValue} except that it returns the
          * supplied default for missing keys and existing keys that return null values. */
         public Compiler defaultValue (String defaultValue) {
-            return new Compiler(this.standardsMode, defaultValue, true,
+            return new Compiler(this.standardsMode, this.strictSections, defaultValue, true,
                                 this.emptyStringIsFalse, this.zeroIsFalse, this.formatter,
                                 this.escaper, this.loader, this.collector, this.delims);
         }
@@ -118,60 +134,62 @@ public class Mustache
          * which maps to {@code null}, then {@code nullValue} is used.</li>
          * </ul> */
         public Compiler nullValue (String nullValue) {
-            return new Compiler(this.standardsMode, nullValue, false,
+            return new Compiler(this.standardsMode, this.strictSections, nullValue, false,
                                 this.emptyStringIsFalse, this.zeroIsFalse, this.formatter,
                                 this.escaper, this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler that will treat empty string as a false value if parameter is true. */
         public Compiler emptyStringIsFalse (boolean emptyStringIsFalse) {
-            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
-                                emptyStringIsFalse, this.zeroIsFalse, this.formatter,
-                                this.escaper, this.loader, this.collector, this.delims);
+            return new Compiler(this.standardsMode, this.strictSections, this.nullValue,
+                                this.missingIsNull, emptyStringIsFalse, this.zeroIsFalse,
+                                this.formatter, this.escaper, this.loader, this.collector,
+                                this.delims);
         }
 
         /** Returns a compiler that will treat zero as a false value if parameter is true. */
         public Compiler zeroIsFalse (boolean zeroIsFalse) {
-            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, zeroIsFalse, this.formatter,
-                                this.escaper, this.loader, this.collector, this.delims);
+            return new Compiler(this.standardsMode, this.strictSections, this.nullValue,
+                                this.missingIsNull, this.emptyStringIsFalse, zeroIsFalse,
+                                this.formatter, this.escaper, this.loader, this.collector,
+                                this.delims);
         }
 
         /** Configures the {@link Formatter} used to turn objects into strings. */
         public Compiler withFormatter (Formatter formatter) {
-            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.zeroIsFalse, formatter,
-                                this.escaper, this.loader, this.collector, this.delims);
+            return new Compiler(this.standardsMode, this.strictSections, this.nullValue,
+                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+                                formatter, this.escaper, this.loader, this.collector, this.delims);
         }
 
         /** Configures the {@link Escaper} used to escape substituted text. */
         public Compiler withEscaper (Escaper escaper) {
-            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.zeroIsFalse, this.formatter,
-                                escaper, this.loader, this.collector, this.delims);
+            return new Compiler(this.standardsMode, this.strictSections, this.nullValue,
+                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+                                this.formatter, escaper, this.loader, this.collector, this.delims);
         }
 
         /** Returns a compiler configured to use the supplied template loader to handle partials. */
         public Compiler withLoader (TemplateLoader loader) {
-            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.zeroIsFalse, this.formatter,
-                                this.escaper, loader, this.collector, this.delims);
+            return new Compiler(this.standardsMode, this.strictSections, this.nullValue,
+                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+                                this.formatter, this.escaper, loader, this.collector, this.delims);
         }
 
         /** Returns a compiler configured to use the supplied collector. */
         public Compiler withCollector (Collector collector) {
-            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.zeroIsFalse, this.formatter,
-                                this.escaper, this.loader, collector, this.delims);
+            return new Compiler(this.standardsMode, this.strictSections, this.nullValue,
+                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+                                this.formatter, this.escaper, this.loader, collector, this.delims);
         }
 
         /** Returns a compiler configured to use the supplied delims as default delimiters.
          * @param delims a string of the form {@code AB CD} or {@code A D} where A and B are
          * opening delims and C and D are closing delims. */
         public Compiler withDelims (String delims) {
-            return new Compiler(this.standardsMode, this.nullValue, this.missingIsNull,
-                                this.emptyStringIsFalse, this.zeroIsFalse, this.formatter,
-                                this.escaper, this.loader, this.collector,
+            return new Compiler(this.standardsMode, this.strictSections, this.nullValue,
+                                this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
+                                this.formatter, this.escaper, this.loader, this.collector,
                                 new Delims().updateDelims(delims));
         }
 
@@ -189,11 +207,12 @@ public class Mustache
                 (zeroIsFalse && (value instanceof Number) && ((Number)value).longValue() == 0);
         }
 
-        protected Compiler (boolean standardsMode, String nullValue, boolean missingIsNull,
-                            boolean emptyStringIsFalse, boolean zeroIsFalse, Formatter formatter,
-                            Escaper escaper, TemplateLoader loader, Collector collector,
-                            Delims delims) {
+        protected Compiler (boolean standardsMode, boolean strictSections, String nullValue,
+                            boolean missingIsNull, boolean emptyStringIsFalse, boolean zeroIsFalse,
+                            Formatter formatter, Escaper escaper, TemplateLoader loader,
+                            Collector collector, Delims delims) {
             this.standardsMode = standardsMode;
+            this.strictSections = strictSections;
             this.nullValue = nullValue;
             this.missingIsNull = missingIsNull;
             this.emptyStringIsFalse = emptyStringIsFalse;
@@ -281,9 +300,10 @@ public class Mustache
      * Returns a compiler that escapes HTML by default and does not use standards mode.
      */
     public static Compiler compiler () {
-        return new Compiler(/*standardsMode=*/false, /*nullValue=*/null, /*missingIsNull=*/true,
-                            /*emptyStringIsFalse=*/false, /*zeroIsFalse=*/false, DEFAULT_FORMATTER,
-                            Escapers.HTML, FAILING_LOADER, new DefaultCollector(), new Delims());
+        return new Compiler(/*standardsMode=*/false, /*strictSections=*/false, /*nullValue=*/null,
+                            /*missingIsNull=*/false, /*emptyStringIsFalse=*/false,
+                            /*zeroIsFalse=*/false, DEFAULT_FORMATTER, Escapers.HTML, FAILING_LOADER,
+                            new DefaultCollector(), new Delims());
     }
 
     /**

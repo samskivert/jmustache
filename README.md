@@ -99,8 +99,8 @@ Sections behave as you would expect:
  * Array, `Iterator`, or `Iterable` values repeatedly execute the section with each element used as
    the context for each iteration. Empty collections result in zero instances of the section being
    included in the template.
- * An unresolvable or null value is treated as false (by default, see _Default Values_ for more
-   details).
+ * An unresolvable or null value is treated as false. This behavior can be changed by using
+   `strictSections()`. See _Default Values_ for more details.
  * Any other object results in a single execution of the section with that object as a context.
 
 See the code in
@@ -206,12 +206,16 @@ throws an exception.
     Mustache.compiler().nullValue("what").compile(tmpl).execute(map);
     // throws MustacheException when executing the template because doesNotExist cannot be resolved
 
-Note that section behavior deviates from the above specification (for historical reasons and
-because it's kind of useful). By default, a section that is not resolvable or resolves to null will
-be omitted (and conversely, an inverse section that is not resolvable or resolves to null will be
-included). If you use `defaultValue()`, this behavior is preserved. If you use `nullValue()`,
-sections that refer to an unresolvable variable will now throw an exception (sections that refer to
-a resolvable, but null-valued variable, will behave as before).
+### Sections
+
+Sections are not affected by the `nullValue()` or `defaultValue()` settings. Their behavior is
+governed by a separate configuration: `strictSections()`.
+
+By default, a section that is not resolvable or which resolves to `null` will be omitted (and
+conversely, an inverse section that is not resolvable or resolves to `null` will be included). If
+you use `strictSections(true)`, sections that refer to an unresolvable value will always throw an
+exception. Sections that refer to a resolvable but `null` value never throw an exception,
+regardless of the `strictSections()` setting.
 
 Extensions
 ==========
