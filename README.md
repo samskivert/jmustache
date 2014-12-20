@@ -359,31 +359,36 @@ contexts will not be searched when resolving subcomponents.
 Newline trimming
 ----------------
 
-If the opening or closing section tag are the only thing on a line, any newline following the tag
-is trimmed. This allows for civilized templates, like:
+If the opening or closing section tag are the only thing on a line, any surrounding whitespace and
+the line terminator following the tag are trimmed. This allows for civilized templates, like:
 
     Favorite foods:
-    {{#people}}
-    - {{first_name}} {{last_name}} likes {{favorite_food}}.
-    {{/people}}
+    <ul>
+      {{#people}}
+      <li>{{first_name}} {{last_name}} likes {{favorite_food}}.</li>
+      {{/people}}
+    </ul>
 
 which produces output like:
 
     Favorite foods:
-    - Elvis Presley likes peanut butter.
-    - Mahatma Gandhi likes aloo dum.
+    <ul>
+      <li>Elvis Presley likes peanut butter.</li>
+      <li>Mahatma Gandhi likes aloo dum.</li>
+    </ul>
 
 rather than:
 
     Favorite foods:
-    
-    - Elvis Presley likes peanut butter.
-    
-    - Mahatma Gandhi likes aloo dum.
-    
+    <ul/>
+      
+      <li>Elvis Presley likes peanut butter.</li>
+      
+      <li>Mahatma Gandhi likes aloo dum.</li>
+      
+    </ul>
 
-which would be produced without the newline trimming. Note: the current implementation does not
-handle Windows-style CRLF data. If you're a Windows user, how about sending me a patch?
+which would be produced without the newline trimming.
 
 Nested Contexts
 ---------------
