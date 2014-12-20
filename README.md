@@ -170,9 +170,9 @@ one.
 Default Values
 --------------
 
-By default, an exception will be thrown any time a variable cannot be resolved, or resolves to
-null. You can change this behavior in two ways. If you want to provide a value for use in all such
-circumstances, use `defaultValue()`:
+By default, an exception will be thrown any time a variable cannot be resolved, or resolves to null
+(except for sections, see below). You can change this behavior in two ways. If you want to provide a
+value for use in all such circumstances, use `defaultValue()`:
 
     String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
     Mustache.compiler().defaultValue("what").compile(tmpl).execute(new Object() {
