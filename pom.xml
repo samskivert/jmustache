@@ -153,6 +153,7 @@
         <configuration>
           <quiet>true</quiet>
           <show>public</show>
+          <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
         </configuration>
       </plugin>
       <plugin>
