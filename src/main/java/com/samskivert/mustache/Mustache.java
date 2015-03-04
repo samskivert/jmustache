@@ -273,7 +273,8 @@ public class Mustache
     /** Handles loading partial templates. */
     public interface TemplateLoader
     {
-        /** Returns a reader for the template with the supplied name.
+        /** Returns a reader for the template with the supplied name. 
+	 *  Reader will be closed by callee.
          * @throws Exception if the template could not be loaded for any reason. */
         Reader getTemplate (String name) throws Exception;
     }
@@ -741,7 +742,9 @@ public class Mustache
             // itself (see issue #13)
             if (_template == null) {
                 try {
-                    _template = _comp.compile(_comp.loader.getTemplate(_name));
+		    Reader t = _comp.loader.getTemplate(_name);
+                    _template = _comp.compile(t);
+		    t.close();
                 } catch (Exception e) {
                     if (e instanceof RuntimeException) {
                         throw (RuntimeException)e;
