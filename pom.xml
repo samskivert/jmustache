@@ -45,13 +45,13 @@
     <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-dev</artifactId>
-      <version>2.4.0</version>
+      <version>2.7.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-user</artifactId>
-      <version>2.4.0</version>
+      <version>2.7.0</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -115,10 +115,11 @@
           </instructions>
         </configuration>
       </plugin>
+<!-- disabled due to src/main/gwt related hoseage
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>gwt-maven-plugin</artifactId>
-        <version>2.4.0</version>
+        <version>2.7.0</version>
         <configuration>
           <mode>htmlunit</mode>
         </configuration>
@@ -130,6 +131,7 @@
           </execution>
         </executions>
       </plugin>
+-->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
