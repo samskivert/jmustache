@@ -41,16 +41,16 @@ public class Template
      */
     public abstract class Fragment {
         /** Returns the context object in effect for this fragment. The actual type of the object
-         * depends on the structure of the data passed to the top-level template. You know where
-         * your lambdas are executed, so you know what type to which to cast the context in order
-         * to inspect it (be that a {@code Map} or a POJO or something else). */
+          * depends on the structure of the data passed to the top-level template. You know where
+          * your lambdas are executed, so you know what type to which to cast the context in order
+          * to inspect it (be that a {@code Map} or a POJO or something else). */
         public abstract Object context ();
 
         /** Executes this fragment; writes its result to {@code out}. */
         public abstract void execute (Writer out);
 
         /** Executes this fragment with the provided context; writes its result to {@code out}. The
-         * provided context will be nested in the fragment's bound context. */
+          * provided context will be nested in the fragment's bound context. */
         public abstract void execute (Object context, Writer out);
 
         /** Executes this fragment and returns its result as a string. */
@@ -61,7 +61,7 @@ public class Template
         }
 
         /** Executes this fragment with the provided context; returns its result as a string. The
-         * provided context will be nested in the fragment's bound context. */
+          * provided context will be nested in the fragment's bound context. */
         public String execute (Object context) {
             StringWriter out = new StringWriter();
             execute(context, out);
@@ -70,7 +70,7 @@ public class Template
     }
 
     /** A sentinel object that can be returned by a {@link Mustache.Collector} to indicate that a
-     * variable does not exist in a particular context. */
+      * variable does not exist in a particular context. */
     public static final Object NO_FETCHER_FOUND = new Object();
 
     /**

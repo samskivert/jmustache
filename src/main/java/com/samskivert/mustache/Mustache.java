@@ -40,29 +40,29 @@ public class Mustache
         public final boolean strictSections;
 
         /** A value to use when a variable resolves to null. If this value is null (which is the
-         * default null value), an exception will be thrown. If {@link #missingIsNull} is also
-         * true, this value will be used when a variable cannot be resolved.
-         *
-         * <p>If the nullValue contains a substring {@code {{name}}}, then this substring will be
-         * replaced by name of the variable. For example, if nullValue is {@code ?{{name}}?} and
-         * the missing variable is {@code foo}, then string {@code ?foo?} will be used.</p> */
+          * default null value), an exception will be thrown. If {@link #missingIsNull} is also
+          * true, this value will be used when a variable cannot be resolved.
+          *
+          * <p>If the nullValue contains a substring {@code {{name}}}, then this substring will be
+          * replaced by name of the variable. For example, if nullValue is {@code ?{{name}}?} and
+          * the missing variable is {@code foo}, then string {@code ?foo?} will be used.</p> */
         public final String nullValue;
 
         /** If this value is true, missing variables will be treated like variables that return
-         * null. {@link #nullValue} will be used in their place, assuming {@link #nullValue} is
-         * configured to a non-null value. */
+          * null. {@link #nullValue} will be used in their place, assuming {@link #nullValue} is
+          * configured to a non-null value. */
         public final boolean missingIsNull;
 
         /** If this value is true, empty string will be treated as a false value, as in JavaScript
-         * mustache implementation. Default is false. */
+          * mustache implementation. Default is false. */
         public final boolean emptyStringIsFalse;
 
         /** If this value is true, zero will be treated as a false value, as in JavaScript
-         * mustache implementation. Default is false. */
+          * mustache implementation. Default is false. */
         public final boolean zeroIsFalse;
 
         /** Handles converting objects to strings when rendering a template. The default formatter
-         * uses {@link String#valueOf}. */
+          * uses {@link String#valueOf}. */
         public final Formatter formatter;
 
         /** Handles escaping characters in substituted text. */
@@ -88,14 +88,14 @@ public class Mustache
         }
 
         /** Returns a compiler that either does or does not escape HTML by default. Note: this
-         * overrides any escaper set via {@link #withEscaper}. */
+          * overrides any escaper set via {@link #withEscaper}. */
         public Compiler escapeHTML (boolean escapeHTML) {
             return withEscaper(escapeHTML ? Escapers.HTML : Escapers.NONE);
         }
 
         /** Returns a compiler that either does or does not use standards mode. Standards mode
-         * disables the non-standard JMustache extensions like looking up missing names in a parent
-         * context. */
+          * disables the non-standard JMustache extensions like looking up missing names in a parent
+          * context. */
         public Compiler standardsMode (boolean standardsMode) {
             return new Compiler(standardsMode, this.strictSections, this.nullValue,
                                 this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
@@ -104,8 +104,8 @@ public class Mustache
         }
 
         /** Returns a compiler that throws an exception when a section references a missing value
-         * ({@code true}) or treats a missing value as {@code false} ({@code false}, the default).
-         */
+          * ({@code true}) or treats a missing value as {@code false} ({@code false}, the default).
+          */
         public Compiler strictSections (boolean strictSections) {
             return new Compiler(this.standardsMode, strictSections, this.nullValue,
                                 this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
@@ -114,8 +114,8 @@ public class Mustache
         }
 
         /** Returns a compiler that will use the given value for any variable that is missing, or
-         * otherwise resolves to null. This is like {@link #nullValue} except that it returns the
-         * supplied default for missing keys and existing keys that return null values. */
+          * otherwise resolves to null. This is like {@link #nullValue} except that it returns the
+          * supplied default for missing keys and existing keys that return null values. */
         public Compiler defaultValue (String defaultValue) {
             return new Compiler(this.standardsMode, this.strictSections, defaultValue, true,
                                 this.emptyStringIsFalse, this.zeroIsFalse, this.formatter,
@@ -123,16 +123,16 @@ public class Mustache
         }
 
         /** Returns a compiler that will use the given value for any variable that resolves to
-         * null, but will still raise an exception for variables for which an accessor cannot be
-         * found. This is like {@link #defaultValue} except that it differentiates between missing
-         * accessors, and accessors that exist but return null.
-         * <ul>
-         * <li>In the case of a Java object being used as a context, if no field or method can be
-         * found for a variable, an exception will be raised.</li>
-         * <li>In the case of a {@link Map} being used as a context, if the map does not contain
-         * a mapping for a variable, an exception will be raised. If the map contains a mapping
-         * which maps to {@code null}, then {@code nullValue} is used.</li>
-         * </ul> */
+          * null, but will still raise an exception for variables for which an accessor cannot be
+          * found. This is like {@link #defaultValue} except that it differentiates between missing
+          * accessors, and accessors that exist but return null.
+          * <ul>
+          * <li>In the case of a Java object being used as a context, if no field or method can be
+          * found for a variable, an exception will be raised.</li>
+          * <li>In the case of a {@link Map} being used as a context, if the map does not contain
+          * a mapping for a variable, an exception will be raised. If the map contains a mapping
+          * which maps to {@code null}, then {@code nullValue} is used.</li>
+          * </ul> */
         public Compiler nullValue (String nullValue) {
             return new Compiler(this.standardsMode, this.strictSections, nullValue, false,
                                 this.emptyStringIsFalse, this.zeroIsFalse, this.formatter,
@@ -184,8 +184,8 @@ public class Mustache
         }
 
         /** Returns a compiler configured to use the supplied delims as default delimiters.
-         * @param delims a string of the form {@code AB CD} or {@code A D} where A and B are
-         * opening delims and C and D are closing delims. */
+          * @param delims a string of the form {@code AB CD} or {@code A D} where A and B are
+          * opening delims and C and D are closing delims. */
         public Compiler withDelims (String delims) {
             return new Compiler(this.standardsMode, this.strictSections, this.nullValue,
                                 this.missingIsNull, this.emptyStringIsFalse, this.zeroIsFalse,
@@ -194,17 +194,17 @@ public class Mustache
         }
 
         /** Returns the value to use in the template for the null-valued property {@code name}. See
-         * {@link #nullValue} for more details. */
+          * {@link #nullValue} for more details. */
         public String computeNullValue (String name) {
             return (nullValue == null) ? null : nullValue.replace("{{name}}", name);
         }
 
         /** Returns true if the supplied value is "falsey". If {@link #emptyStringIsFalse} is true,
-         * then empty strings are considered falsey. If {@link #zeroIsFalse} is true, then zero
-         * values are considered falsey. */
+          * then empty strings are considered falsey. If {@link #zeroIsFalse} is true, then zero
+          * values are considered falsey. */
         public boolean isFalsey (Object value) {
             return (emptyStringIsFalse && "".equals(value)) ||
-                (zeroIsFalse && (value instanceof Number) && ((Number)value).longValue() == 0);
+            (zeroIsFalse && (value instanceof Number) && ((Number)value).longValue() == 0);
         }
 
         protected Compiler (boolean standardsMode, boolean strictSections, String nullValue,
@@ -236,11 +236,11 @@ public class Mustache
     public interface Lambda
     {
         /** Executes this lambda on the supplied template fragment. The lambda should write its
-         * results to {@code out}.
-         *
-         * @param frag the fragment of the template that was passed to the lambda.
-         * @param out the writer to which the lambda should write its output.
-         */
+          * results to {@code out}.
+          *
+          * @param frag the fragment of the template that was passed to the lambda.
+          * @param out the writer to which the lambda should write its output.
+          */
         void execute (Template.Fragment frag, Writer out) throws IOException;
     }
 
@@ -248,11 +248,11 @@ public class Mustache
     public interface InvertibleLambda extends Lambda
     {
         /** Executes this lambda on the supplied template fragment, when the lambda is used in an
-         * inverse section. The lambda should write its results to {@code out}.
-         *
-         * @param frag the fragment of the template that was passed to the lambda.
-         * @param out the writer to which the lambda should write its output.
-         */
+          * inverse section. The lambda should write its results to {@code out}.
+          *
+          * @param frag the fragment of the template that was passed to the lambda.
+          * @param out the writer to which the lambda should write its output.
+          */
         void executeInverse (Template.Fragment frag, Writer out) throws IOException;
     }
 
@@ -274,8 +274,8 @@ public class Mustache
     public interface TemplateLoader
     {
         /** Returns a reader for the template with the supplied name.
-         * Reader will be closed by callee.
-         * @throws Exception if the template could not be loaded for any reason. */
+          * Reader will be closed by callee.
+          * @throws Exception if the template could not be loaded for any reason. */
         Reader getTemplate (String name) throws Exception;
     }
 
@@ -283,17 +283,17 @@ public class Mustache
     public interface Collector
     {
         /** Returns an iterator that can iterate over the supplied value, or null if the value is
-         * not a collection. */
+          * not a collection. */
         Iterator<?> toIterator (final Object value);
 
         /** Creates a fetcher for a so-named variable in the supplied context object, which will
-         * never be null. The fetcher will be cached and reused for future contexts for which
-         * {@code octx.getClass().equals(nctx.getClass()}. */
+          * never be null. The fetcher will be cached and reused for future contexts for which
+          * {@code octx.getClass().equals(nctx.getClass()}. */
         VariableFetcher createFetcher (Object ctx, String name);
 
         /** Creates a map to be used to cache {@link VariableFetcher} instances. The GWT-compatible
-         * collector returns a HashMap here, but the reflection based fetcher (which only works on
-         * the JVM and Android, returns a concurrent hashmap. */
+          * collector returns a HashMap here, but the reflection based fetcher (which only works on
+          * the JVM and Android, returns a concurrent hashmap. */
         <K,V> Map<K,V> createFetcherCache ();
     }
 
@@ -362,8 +362,7 @@ public class Mustache
 
     // TODO: this method was never called, what was my intention here?
     protected static boolean allowsWhitespace (char typeChar) {
-        return (typeChar == '=') || // change delimiters
-            (typeChar == '!');      // comment
+        return (typeChar == '=' /* change delimiters */) || (typeChar == '!' /* comment */);
     }
 
     protected static final int TEXT = 0;
