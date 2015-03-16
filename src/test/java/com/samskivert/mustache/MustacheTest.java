@@ -47,6 +47,18 @@ public class MustacheTest
         });
     }
 
+    @Test public void testBooleanPropertyVariable () {
+        test("true", "{{foo}}", new Object() {
+            Boolean isFoo () { return true; }
+        });
+    }
+
+    @Test public void testPrimitiveBooleanPropertyVariable () {
+        test("false", "{{foo}}", new Object() {
+            boolean isFoo () { return false; }
+        });
+    }
+
     @Test public void testSkipVoidReturn () {
         test("bar", "{{foo}}", new Object() {
             void foo () {}

@@ -93,6 +93,18 @@ public class DefaultCollector extends BasicCollector
         } catch (Exception e) {
             // fall through
         }
+        try {
+            m = clazz.getDeclaredMethod(
+                "is" + Character.toUpperCase(name.charAt(0)) + name.substring(1));
+            if (m.getReturnType().equals(boolean.class) || m.getReturnType().equals(Boolean.class)) {
+                if (!m.isAccessible()) {
+                    m.setAccessible(true);
+                }
+                return m;
+            }
+        } catch (Exception e) {
+            // fall through
+        }
 
         Class<?> sclass = clazz.getSuperclass();
         if (sclass != Object.class && sclass != null) {
