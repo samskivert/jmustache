@@ -1,7 +1,19 @@
+sudo: false
+
 language: java
+
 jdk:
   - oraclejdk7
   - openjdk7
   - openjdk6
+
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+
+script:
+  - mvn test -B
+  - rm -rf $HOME/.m2/repository/com/samskivert/jmustache
+
 after_success:
   - mvn clean cobertura:cobertura coveralls:cobertura
