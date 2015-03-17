@@ -45,18 +45,22 @@ Usage
 Using JMustache is very simple. Supply your template as a `String` or a `Reader` and get back a
 `Template` that you can execute on any context:
 
-    String text = "One, two, {{three}}. Three sir!";
-    Template tmpl = Mustache.compiler().compile(text);
-    Map<String, String> data = new HashMap<String, String>();
-    data.put("three", "five");
-    System.out.println(tmpl.execute(data));
-    // result: "One, two, five. Three sir!"
+```java
+String text = "One, two, {{three}}. Three sir!";
+Template tmpl = Mustache.compiler().compile(text);
+Map<String, String> data = new HashMap<String, String>();
+data.put("three", "five");
+System.out.println(tmpl.execute(data));
+// result: "One, two, five. Three sir!"
+```
 
 Use `Reader` and `Writer` if you're doing something more serious:
 
-    void executeTemplate (Reader template, Writer out, Map<String, String> data) {
-       Mustache.compiler().compile(template).execute(data, out);
-    }
+```java
+void executeTemplate (Reader template, Writer out, Map<String, String> data) {
+   Mustache.compiler().compile(template).execute(data, out);
+}
+```
 
 The execution context can be any Java object. Variables will be resolved via the following
 mechanisms:
@@ -68,26 +72,28 @@ mechanisms:
 
 Example:
 
-    class Person {
-        public final String name;
-        public Person (String name, int age) {
-            this.name = name;
-            _age = age;
-        }
-        public int getAge () {
-            return _age;
-        }
-        protected int _age;
+```java
+class Person {
+    public final String name;
+    public Person (String name, int age) {
+        this.name = name;
+        _age = age;
     }
+    public int getAge () {
+        return _age;
+    }
+    protected int _age;
+}
 
-    String tmpl = "{{#persons}}{{name}}: {{age}}{{/persons}}\n";
-    Mustache.compiler().compile(tmpl).execute(new Object() {
-        Object persons = Arrays.asList(new Person("Elvis", 75), new Person("Madonna", 52));
-    });
+String tmpl = "{{#persons}}{{name}}: {{age}}{{/persons}}\n";
+Mustache.compiler().compile(tmpl).execute(new Object() {
+    Object persons = Arrays.asList(new Person("Elvis", 75), new Person("Madonna", 52));
+});
 
-    // result:
-    // Elvis: 75
-    // Madonna: 52
+// result:
+// Elvis: 75
+// Madonna: 52
+```
 
 As you can see from the example, the fields (and methods) need not be public. The `persons` field
 in the anonymous class created to act as a context is accessible. Note that the use of non-public
@@ -115,14 +121,16 @@ Partials
 If you wish to make use of partials (e.g. `{{>subtmpl}}`) you must provide a
 `Mustache.TemplateLoader` to the compiler when creating it. For example:
 
-    final File templateDir = ...;
-    Mustache.Compiler c = Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
-        public Reader getTemplate (String name) {
-            return new FileReader(new File(templateDir, name));
-        }
-    });
-    String tmpl = "...{{>subtmpl}}...";
-    c.compile(tmpl).execute();
+```java
+final File templateDir = ...;
+Mustache.Compiler c = Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+    public Reader getTemplate (String name) {
+        return new FileReader(new File(templateDir, name));
+    }
+});
+String tmpl = "...{{>subtmpl}}...";
+c.compile(tmpl).execute();
+```
 
 The above snippet will load `new File(templateDir, "subtmpl")` when compiling the template.
 
@@ -133,35 +141,39 @@ JMustache implements lambdas by passing you a `Template.Fragment` instance which
 execute the fragment of the template that was passed to the lambda. You can decorate the results of
 the fragment execution, as shown in the standard Mustache documentation on lambdas:
 
-    String tmpl = "{{#bold}}{{name}} is awesome.{{/bold}}";
-    Mustache.compiler().compile(tmpl).execute(new Object() {
-        String name = "Willy";
-        Mustache.Lambda bold = new Mustache.Lambda() {
-             public void execute (Template.Fragment frag, Writer out) throws IOException {
-                 out.write("<b>");
-                 frag.execute(out);
-                 out.write("</b>");
-             }
-         };
-     });
-     // result:
-     <b>Willy is awesome.</b>
+```java
+String tmpl = "{{#bold}}{{name}} is awesome.{{/bold}}";
+Mustache.compiler().compile(tmpl).execute(new Object() {
+   String name = "Willy";
+   Mustache.Lambda bold = new Mustache.Lambda() {
+        public void execute (Template.Fragment frag, Writer out) throws IOException {
+            out.write("<b>");
+            frag.execute(out);
+            out.write("</b>");
+        }
+    };
+});
+// result:
+<b>Willy is awesome.</b>
+```
 
 You can also obtain the results of the fragment execution to do things like internationalization or
 caching:
 
-    Object ctx = new Object() {
-        Mustache.Lambda i18n = new Mustache.Lambda() {
-             public void execute (Template.Fragment frag, Writer out) throws IOException {
-                 String key = frag.execute();
-                 String text = // look up key in i18n system
-                 out.write(text);
-             }
-        };
+```java
+Object ctx = new Object() {
+    Mustache.Lambda i18n = new Mustache.Lambda() {
+         public void execute (Template.Fragment frag, Writer out) throws IOException {
+             String key = frag.execute();
+             String text = // look up key in i18n system
+             out.write(text);
+         }
     };
-    // template might look something like:
-    <h2>{{#i18n}}title{{/i18n}</h2>
-    {{#i18n}}welcome_msg{{/i18n}}
+};
+// template might look something like:
+<h2>{{#i18n}}title{{/i18n}</h2>
+{{#i18n}}welcome_msg{{/i18n}}
+```
 
 Currently there is no support for "unexecuting" the template and obtaining the original Mustache
 template text contained in the section. File a feature request with a sane use case if you have
@@ -174,37 +186,43 @@ By default, an exception will be thrown any time a variable cannot be resolved, 
 (except for sections, see below). You can change this behavior in two ways. If you want to provide a
 value for use in all such circumstances, use `defaultValue()`:
 
-    String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
-    Mustache.compiler().defaultValue("what").compile(tmpl).execute(new Object() {
-        String exists = "Say";
-        String nullValued = null;
-        // String doesNotExist
-    });
-    // result:
-    Say what what?
+```java
+String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
+Mustache.compiler().defaultValue("what").compile(tmpl).execute(new Object() {
+    String exists = "Say";
+    String nullValued = null;
+    // String doesNotExist
+});
+// result:
+Say what what?
+```
 
 If you only wish to provide a default value for variables that resolve to null, and wish to
 preserve exceptions in cases where variables cannot be resolved, use `nullValue()`:
 
-    String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
-    Mustache.compiler().nullValue("what").compile(tmpl).execute(new Object() {
-        String exists = "Say";
-        String nullValued = null;
-        // String doesNotExist
-    });
-    // throws MustacheException when executing the template because doesNotExist cannot be resolved
+```java
+String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
+Mustache.compiler().nullValue("what").compile(tmpl).execute(new Object() {
+    String exists = "Say";
+    String nullValued = null;
+    // String doesNotExist
+});
+// throws MustacheException when executing the template because doesNotExist cannot be resolved
+```
 
 When using a `Map` as a context, `nullValue()` will only be used when the map contains a mapping to
 `null`. If the map lacks a mapping for a given variable, then it is considered unresolvable and
 throws an exception.
 
-    Map<String,String> map = new HashMap<String,String>();
-    map.put("exists", "Say");
-    map.put("nullValued", null);
-    // no mapping exists for "doesNotExist"
-    String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
-    Mustache.compiler().nullValue("what").compile(tmpl).execute(map);
-    // throws MustacheException when executing the template because doesNotExist cannot be resolved
+```java
+Map<String,String> map = new HashMap<String,String>();
+map.put("exists", "Say");
+map.put("nullValued", null);
+// no mapping exists for "doesNotExist"
+String tmpl = "{{exists}} {{nullValued}} {{doesNotExist}}?";
+Mustache.compiler().nullValue("what").compile(tmpl).execute(map);
+// throws MustacheException when executing the template because doesNotExist cannot be resolved
+```
 
 ### Sections
 
@@ -228,11 +246,13 @@ Not escaping HTML by default
 
 You can change the default HTML escaping behavior when obtaining a compiler:
 
-    Mustache.compiler().escapeHTML(false).compile("{{foo}}").execute(new Object() {
-        String foo = "<bar>";
-    });
-    // result: <bar>
-    // not: &lt;bar&gt;
+```java
+Mustache.compiler().escapeHTML(false).compile("{{foo}}").execute(new Object() {
+    String foo = "<bar>";
+});
+// result: <bar>
+// not: &lt;bar&gt;
+```
 
 User-defined object formatting
 ------------------------------
@@ -240,17 +260,19 @@ User-defined object formatting
 By default, JMustache uses `String.valueOf` to convert objects to strings when rendering a
 template. You can customize this formatting by implementing the `Mustache.Formatter` interface:
 
-    Mustache.compiler().withFormatter(new Mustache.Formatter() {
-        public String format (Object value) {
-          if (value instanceof Date) return _fmt.format((Date)value);
-          else return String.valueOf(value);
-        }
-        protected DateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
-    }).compile("{{msg}}: {{today}}").execute(new Object() {
-        String msg = "Date";
-        Date today = new Date();
-    })
-    // result: Date: 2013/01/08
+```java
+Mustache.compiler().withFormatter(new Mustache.Formatter() {
+    public String format (Object value) {
+      if (value instanceof Date) return _fmt.format((Date)value);
+      else return String.valueOf(value);
+    }
+    protected DateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
+}).compile("{{msg}}: {{today}}").execute(new Object() {
+    String msg = "Date";
+    Date today = new Date();
+})
+// result: Date: 2013/01/08
+```
 
 User-defined escaping rules
 ---------------------------
@@ -260,12 +282,14 @@ HTML and plain text.
 
 If you only need to replace fixed strings in the text, you can use `Escapers.simple`:
 
-    String[][] escapes = {{ "[", "[[" }, { "]", "]]" }};
-    Mustache.compiler().withEscaper(Escapers.simple(escapes)).
-      compile("{{foo}}").execute(new Object() {
-          String foo = "[bar]";
-      });
-    // result: [[bar]]
+```java
+String[][] escapes = {{ "[", "[[" }, { "]", "]]" }};
+Mustache.compiler().withEscaper(Escapers.simple(escapes)).
+  compile("{{foo}}").execute(new Object() {
+      String foo = "[bar]";
+  });
+// result: [[bar]]
+```
 
 Or you can implement the `Mustache.Escaper` interface directly for more control over the escaping
 process.
@@ -277,19 +301,23 @@ Special variables
 You can use the special variable `this` to refer to the context object itself instead of one of its
 members. This is particularly useful when iterating over lists.
 
-    Mustache.compiler().compile("{{this}}").execute("hello"); // returns: hello
-    Mustache.compiler().compile("{{#names}}{{this}}{/names}}").execute(new Object() {
-        List<String> names () { return Arrays.asList("Tom", "Dick", "Harry"); }
-    });
-    // result: TomDickHarry
+```java
+Mustache.compiler().compile("{{this}}").execute("hello"); // returns: hello
+Mustache.compiler().compile("{{#names}}{{this}}{/names}}").execute(new Object() {
+    List<String> names () { return Arrays.asList("Tom", "Dick", "Harry"); }
+});
+// result: TomDickHarry
+```
 
 Note that you can also use the special variable `.` to mean the same thing.
 
-    Mustache.compiler().compile("{{.}}").execute("hello"); // returns: hello
-    Mustache.compiler().compile("{{#names}}{{.}}{/names}}").execute(new Object() {
-        List<String> names () { return Arrays.asList("Tom", "Dick", "Harry"); }
-    });
-    // result: TomDickHarry
+```java
+Mustache.compiler().compile("{{.}}").execute("hello"); // returns: hello
+Mustache.compiler().compile("{{#names}}{{.}}{/names}}").execute(new Object() {
+    List<String> names () { return Arrays.asList("Tom", "Dick", "Harry"); }
+});
+// result: TomDickHarry
+```
 
 `.` is apparently supported by other Mustache implementations, though it does not appear in the
 official documentation.
@@ -303,11 +331,13 @@ times.
 
 One will often make use of these special variables in an inverted section, as follows:
 
-    String tmpl = "{{#things}}{{^-first}}, {{/-first}}{{this}}{{/things}}";
-    Mustache.compiler().compile(tmpl).execute(new Object() {
-        List<String> things = Arrays.asList("one", "two", "three");
-    });
-    // result: one, two, three
+```java
+String tmpl = "{{#things}}{{^-first}}, {{/-first}}{{this}}{{/things}}";
+Mustache.compiler().compile(tmpl).execute(new Object() {
+    List<String> things = Arrays.asList("one", "two", "three");
+});
+// result: one, two, three
+```
 
 Note that the values of `-first` and `-last` refer only to the inner-most enclosing section. If you
 are processing a section within a section, there is no way to find out whether you are in the first
@@ -318,15 +348,17 @@ The `-index` special variable contains 1 for the first iteration through a secti
 second, 3 for the third and so forth. It contains 0 at all other times. Note that it also contains
 0 for a section that is populated by a singleton value rather than a list.
 
-    String tmpl = "My favorite things:\n{{#things}}{{-index}}. {{this}}\n{{/things}}";
-    Mustache.compiler().compile(tmpl).execute(new Object() {
-        List<String> things = Arrays.asList("Peanut butter", "Pen spinning", "Handstands");
-    });
-    // result:
-    // My favorite things:
-    // 1. Peanut butter
-    // 2. Pen spinning
-    // 3. Handstands
+```java
+String tmpl = "My favorite things:\n{{#things}}{{-index}}. {{this}}\n{{/things}}";
+Mustache.compiler().compile(tmpl).execute(new Object() {
+    List<String> things = Arrays.asList("Peanut butter", "Pen spinning", "Handstands");
+});
+// result:
+// My favorite things:
+// 1. Peanut butter
+// 2. Pen spinning
+// 3. Handstands
+```
 
 Compound variables
 ------------------
@@ -334,17 +366,21 @@ Compound variables
 In addition to resolving simple variables using the context, you can use compound variables to
 extract data from sub-objects of the current context. For example:
 
-    Mustache.compiler().compile("Hello {{field.who}}!").execute(new Object() {
-        public Object field = new Object() {
-            public String who () { return "world"; }
-        }
-    });
-    // result: Hello world!
+```java
+Mustache.compiler().compile("Hello {{field.who}}!").execute(new Object() {
+    public Object field = new Object() {
+        public String who () { return "world"; }
+    }
+});
+// result: Hello world!
+```
 
 By taking advantage of reflection and bean-property-style lookups, you can do kooky things:
 
-    Mustache.compiler().compile("Hello {{class.name}}!").execute(new Object());
-    // result: Hello java.lang.Object!
+```java
+Mustache.compiler().compile("Hello {{class.name}}!").execute(new Object());
+// result: Hello java.lang.Object!
+```
 
 Note that compound variables are essentially short-hand for using singleton sections. The above
 examples could also be represented as:
@@ -396,16 +432,18 @@ Nested Contexts
 If a variable is not found in a nested context, it is resolved in the next outer context. This
 allows usage like the following:
 
-    String template = "{{outer}}:\n{{#inner}}{{outer}}.{{this}}\n{{/inner}}";
-    Mustache.compiler().compile(template).execute(new Object() {
-        String outer = "foo";
-        List<String> inner = Arrays.asList("bar", "baz", "bif");
-    });
-    // results:
-    // foo:
-    // foo.bar
-    // foo.baz
-    // foo.bif
+```java
+String template = "{{outer}}:\n{{#inner}}{{outer}}.{{this}}\n{{/inner}}";
+Mustache.compiler().compile(template).execute(new Object() {
+    String outer = "foo";
+    List<String> inner = Arrays.asList("bar", "baz", "bif");
+});
+// results:
+// foo:
+// foo.bar
+// foo.baz
+// foo.bif
+```
 
 Note that if a variable _is_ defined in an inner context, it shadows the same name in the outer
 context. There is presently no way to access the variable from the outer context.
@@ -417,31 +455,33 @@ For some applications, it may be useful for lambdas to be executed for an invers
 than having the section omitted altogether. This allows for proper conditional substitution when
 statically translating templates into other languages or contexts:
 
-    String template = "{{#condition}}result if true{{/condition}}\n" +
-      "{{^condition}}result if false{{/condition}}";
-    Mustache.compiler().compile(template).execute(new Object() {
-        Mustache.InvertibleLambda condition = new Mustache.InvertibleLambda() {
-            public void execute (Template.Fragment frag, Writer out) throws IOException {
-                // this method is executed when the lambda is referenced in a normal section
-                out.write("if (condition) {console.log(\"");
-                out.write(toJavaScriptLiteral(frag.execute()));
-                out.write("\")}");
-            }
-            public void executeInverse (Template.Fragment frag, Writer out) throws IOException {
-                // this method is executed when the lambda is referenced in an inverse section
-                out.write("if (!condition) {console.log(\"");
-                out.write(toJavaScriptLiteral(frag.execute()));
-                out.write("\")}");
-            }
-            private String toJavaScriptLiteral (String execute) {
-                // note: this is NOT a complete implementation of JavaScript string literal escaping
-                return execute.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"");
-            }
-        };
-    });
-    // results:
-    // if (condition) {console.log("result if true")}
-    // if (!condition) {console.log("result if false")}
+```java
+String template = "{{#condition}}result if true{{/condition}}\n" +
+  "{{^condition}}result if false{{/condition}}";
+Mustache.compiler().compile(template).execute(new Object() {
+    Mustache.InvertibleLambda condition = new Mustache.InvertibleLambda() {
+        public void execute (Template.Fragment frag, Writer out) throws IOException {
+            // this method is executed when the lambda is referenced in a normal section
+            out.write("if (condition) {console.log(\"");
+            out.write(toJavaScriptLiteral(frag.execute()));
+            out.write("\")}");
+        }
+        public void executeInverse (Template.Fragment frag, Writer out) throws IOException {
+            // this method is executed when the lambda is referenced in an inverse section
+            out.write("if (!condition) {console.log(\"");
+            out.write(toJavaScriptLiteral(frag.execute()));
+            out.write("\")}");
+        }
+        private String toJavaScriptLiteral (String execute) {
+            // note: this is NOT a complete implementation of JavaScript string literal escaping
+            return execute.replaceAll("\\\\", "\\\\\\\\").replaceAll("\"", "\\\\\"");
+        }
+    };
+});
+// results:
+// if (condition) {console.log("result if true")}
+// if (!condition) {console.log("result if false")}
+```
 
 Of course, you are not limited strictly to conditional substitution -- you can use an
 InvertibleLambda whenever you need a single function with two modes of operation.
@@ -452,10 +492,12 @@ Standards Mode
 The more intrusive of these extensions, specifically the searching of parent contexts and the use
 of compound varables, can be disabled when creating a compiler, like so:
 
-    Map<String,String> ctx = new HashMap<String,String>();
-    ctx.put("foo.bar", "baz");
-    Mustache.compiler().standardsMode(true).compile("{{foo.bar}}").execute(ctx);
-    // result: baz
+```java
+Map<String,String> ctx = new HashMap<String,String>();
+ctx.put("foo.bar", "baz");
+Mustache.compiler().standardsMode(true).compile("{{foo.bar}}").execute(ctx);
+// result: baz
+```
 
 Thread Safety
 =============
