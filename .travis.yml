@@ -12,8 +12,5 @@ cache:
     - '$HOME/.m2/repository'
 
 script:
-  - mvn test -B
+  - mvn -B test cobertura:cobertura coveralls:cobertura
   - rm -rf $HOME/.m2/repository/com/samskivert/jmustache
-
-after_success:
-  - mvn clean cobertura:cobertura coveralls:cobertura
