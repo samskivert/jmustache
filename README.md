@@ -3,6 +3,8 @@ There exists [another Java implementation of Mustache](http://github.com/spullar
 but the motivations for this version are sufficiently different as to justify (in the author's
 mind, anyhow) the duplication.
 
+[![Build Status](https://travis-ci.org/samskivert/jmustache.svg?branch=master)](https://travis-ci.org/samskivert/jmustache)
+
 Motivations
 ===========
 
