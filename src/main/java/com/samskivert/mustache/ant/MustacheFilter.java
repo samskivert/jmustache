@@ -22,20 +22,80 @@ import org.apache.tools.ant.util.regexp.Regexp;
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 
+/**
+ * Provides <a href="http://mustache.github.com/">Mustache</a> templating
+ * services for Ant.
+ *
+ * <p>
+ * See README.md for the basic usage within an Ant build script.
+ */
+
 public class MustacheFilter extends ChainableReaderFilter {
 
+	/**
+	 * Whether to use Ant project properties in the data model
+	 */
 	private Boolean projectProperties = true;
+
+	/**
+	 * Prefix that project properties should have in order to be included in the
+	 * data model. By default, no prefix is set, so all project properties may
+	 * be included.
+	 */
 	private String prefix = null;
+
+	/**
+	 * If prefix is not null, removePrefix defines if this prefix should be
+	 * removed when inserting keys in the data model. Project properties names
+	 * remain unchanged
+	 */
 	private Boolean removePrefix = false;
+
+	/**
+	 * Whether to support list parsing in property names
+	 */
 	private Boolean supportLists = true;
+
+	/**
+	 * when list parsing is enabled, this defines the name of the id to be given
+	 * to each element of the list
+	 */
 	private String listIdName = "__id__";
-	private String dataFile = null;
+
+	/**
+	 * the regular expression pattern used to parse list property names. This
+	 * pattern should include three groups. The first group is the root key to
+	 * access the list. The second group is the id of this item in the list. The
+	 * third group is the sub-key to assign the value to.
+	 */
 	private String listRegex = "(.+)\\.(\\d+)\\.(.+)";
 	// other example of regex: (.+)\[(\d+)\]\.(.+)
 
+	/**
+	 * A file name from which data model properties should be loaded from.
+	 * Disabled by default.
+	 */
+	private String dataFile = null;
+
 	// JMustache settings
+
+	/**
+	 * Default value to give to undefined and null keys. By default, undefined
+	 * keys cause a failure. See
+	 * {@link com.samskivert.mustache.Mustache.Compiler#defaultValue}.
+	 */
 	private String defaultValue = null;
+
+	/**
+	 * Whether sections should be strict. Default is false. See
+	 * {@link com.samskivert.mustache.Mustache.Compiler#strictSections}.
+	 */
 	private boolean strictSections = false;
+
+	/**
+	 * Whether HTML output should be escaped. Default is false. See
+	 * {@link com.samskivert.mustache.Mustache.Compiler#escapeHTML}.
+	 */
 	private boolean escapeHTML = false;
 
 	public Boolean getProjectProperties() {
@@ -114,6 +174,10 @@ public class MustacheFilter extends ChainableReaderFilter {
 		this.listRegex = listRegex;
 	}
 
+	/**
+	 * The main method to implement the filter. Compiles the input text and
+	 * returns the output according to the defined data model
+	 */
 	public String filter(String text) {
 		getProject().log("Mustache DataModel: " + getDataModel().toString(),
 				Project.MSG_DEBUG);
@@ -125,6 +189,12 @@ public class MustacheFilter extends ChainableReaderFilter {
 
 	private Map<String, Object> _dataModel = null;
 
+	/**
+	 * gets the data model, building it from project properties and/or data file
+	 * if not already done
+	 * 
+	 * @return the data model Map
+	 */
 	private Map<String, Object> getDataModel() {
 		if (_dataModel == null) {
 			_dataModel = new HashMap<String, Object>();
@@ -134,12 +204,18 @@ public class MustacheFilter extends ChainableReaderFilter {
 		return _dataModel;
 	}
 
+	/**
+	 * Add project properties in the data model
+	 */
 	private void addProjectProperties() {
 		if (projectProperties) {
 			addProperties(getProject().getProperties(), prefix, removePrefix);
 		}
 	}
 
+	/**
+	 * Add property file content to the data model.
+	 */
 	private void addSrcFile() {
 		if (dataFile != null) {
 			Properties props = new Properties();
@@ -152,6 +228,18 @@ public class MustacheFilter extends ChainableReaderFilter {
 		}
 	}
 
+	/**
+	 * Adds a set of properties to the datamodel
+	 * 
+	 * @param props
+	 *            the properties to add
+	 * @param prefix
+	 *            the prefix that properties should have in order to be
+	 *            considered. If null, all properties will be considered.
+	 * @param removePrefix
+	 *            whether the prefix should be removed in the data model key
+	 *            name
+	 */
 	private void addProperties(Hashtable<?, ?> props, String prefix,
 			Boolean removePrefix) {
 		Iterator<?> it = props.keySet().iterator();
@@ -167,6 +255,19 @@ public class MustacheFilter extends ChainableReaderFilter {
 		}
 	}
 
+	/**
+	 * Adds a single key/value pair inside the specified Map. This map could be
+	 * the datamodel itself or a sub-map in case of lists. The key will be
+	 * parsed for a list item
+	 * 
+	 * @param map
+	 *            the map to insert into
+	 * @param key
+	 *            the key to insert
+	 * @param value
+	 *            the value to insert
+	 * @return the modified map
+	 */
 	private Map<String, Object> add(Map<String, Object> map, String key,
 			Object value) {
 		map.put(key, value);
@@ -174,6 +275,17 @@ public class MustacheFilter extends ChainableReaderFilter {
 		return map;
 	}
 
+	/**
+	 * Verifies if the provided key should be considered as a list item and
+	 * creates the corresponding list objects in the map if needed
+	 * 
+	 * @param map
+	 *            the map to insert the list into
+	 * @param key
+	 *            the key to be parsed as a list
+	 * @param value
+	 *            the value ton insert
+	 */
 	private void handleList(Map<String, Object> map, String key, Object value) {
 		if (supportLists && getListRegex().matches(key)) {
 			ListKeyParser parser = new ListKeyParser(key);
@@ -181,6 +293,21 @@ public class MustacheFilter extends ChainableReaderFilter {
 		}
 	}
 
+	/**
+	 * Adds or updates a list into the specified Map, creating the necessary
+	 * List and Map objects
+	 * 
+	 * @param map
+	 *            the map to insert or update the list into
+	 * @param rootKey
+	 *            the list name
+	 * @param id
+	 *            the id of the element being inserted in the list
+	 * @param subKey
+	 *            the key of the value to put in the list element
+	 * @param value
+	 *            the value to put in the list element
+	 */
 	private void addList(Map<String, Object> map, String rootKey, String id,
 			String subKey, Object value) {
 		List<Map<String, Object>> listContext = (List<Map<String, Object>>) map
@@ -215,6 +342,11 @@ public class MustacheFilter extends ChainableReaderFilter {
 
 	private Regexp _listRegexp = null;
 
+	/**
+	 * get an Ant regexp from the given standard regex pattern
+	 * 
+	 * @return the ant regexp
+	 */
 	private Regexp getListRegex() {
 		if (_listRegexp == null) {
 			RegularExpression _listRegularExpression = new RegularExpression();
@@ -224,11 +356,35 @@ public class MustacheFilter extends ChainableReaderFilter {
 		return _listRegexp;
 	}
 
+	/**
+	 * This class splits the key string provided to its constructor into the
+	 * root key, the id and the sub key of a list item
+	 * 
+	 * @author Patrick
+	 *
+	 */
 	private class ListKeyParser {
+		/**
+		 * the list name
+		 */
 		public String rootKey = null;
+
+		/**
+		 * the id of the list element
+		 */
 		public String id = null;
+
+		/**
+		 * the key to put into the list element
+		 */
 		public String subKey = null;
 
+		/**
+		 * constructor: parses the key into root key, id and sub-key
+		 * 
+		 * @param key
+		 *            the key to parse
+		 */
 		public ListKeyParser(String key) {
 			Vector<?> groups = getListRegex().getGroups(key);
 			rootKey = (String) groups.get(1);
@@ -237,6 +393,16 @@ public class MustacheFilter extends ChainableReaderFilter {
 		}
 	}
 
+	/**
+	 * computes the value into a Boolean if needed
+	 * 
+	 * @param key
+	 *            the key to evaluate, which should match the boolean pattern in
+	 *            order to be treated as a boolean
+	 * @param value
+	 *            the value to translate into a boolean if needed
+	 * @return either a corresponding boolean or the value itself
+	 */
 	private Object computeValue(String key, Object value) {
 		if (key.endsWith("?") && "false".equals(value)) {
 			return false;
