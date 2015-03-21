@@ -46,7 +46,7 @@ All parameters are optional.
 | removePrefix      | Boolean: should we remove the prefix (if specified) from the property name?   | false          |
 | supportLists      | Boolean. Adds list support (see below)                                        | true           |
 | listRegex         | The regex pattern to use to defined lists (see below)                   | (.*)\\.(\\d+)\\.(.*) |
-| listIdName        | The name of the list id to be generated (see below)                           | __id__         |
+| listIdName        | The name of the list id to be generated (see below)                           | \__id__         |
 | dataFile          | A property file containing datamodel key and values                           | None           |
 | defaultValue      | As JMustache defaultValue(), provides a default to non-defined keys | No default, fails on missing|
 | strictSections    | As JMustache strictSections(), defines if section referring to a non-defined value should fail | false |
@@ -61,30 +61,32 @@ Provided property names can be parsed to generate lists. The default Regexp patt
 
 This pattern means that any property containing a number between two dots would be translated into a list.
 The list name is the first part.
-The id in the list is the number. It can be accessed using the value of listIdName (__id__ by default).
+The id in the list is the number. It can be accessed using the value of listIdName ("\__id__" by default).
 The remaining part is then used as a key inside the list.
 
 An example may help here. Consider the following properties:
 
-	mylist.01.prop1 = value 01-1
-	mylist.01.prop2 = value 01-2
-	mylist.02.prop1 = value 02-1
-	mylist.02.prop2 = value 02-2
+	mylist.01.prop1 = value-1-1
+	mylist.01.prop2 = value-1-2
+	mylist.02.prop1 = value-2-1
+	mylist.02.prop2 = value-2-2
 	
 And this template
 
+	mylist = {{mylist}}
 	{{#mylist}}
-	{{prop1}}
-	{{prop2}}
+	{{__id__}}.prop1 = {{prop1}}
+	{{__id__}}.prop2 = {{prop2}}
 	{{/mylist}}
 	
 The output would be:
 
-	value 01-1
-	value 01-2
-	value 02-1
-	value 02-2
-
+	mylist = [{prop2=value-1-2, prop1=value-1-1, __id__=01}, {prop2=value-2-2, prop1=value-2-1, __id__=02}]
+	01.prop1 = value-1-1
+	01.prop2 = value-1-2
+	02.prop1 = value-2-1
+	02.prop2 = value-2-2
+   
 Note that you can override the default pattern. For example, you may prefer to use a notation with square brackets:
 
 	listRegex="(.+)\[(\d+)\]\.(.+)"
@@ -107,6 +109,7 @@ Properties ending by a question mark are treated as Booleans, specifically to be
 	
 In the template:
 
+	mytrue? = {{mytrue?}}
 	{{#mytrue?}}
 	mytrue is valid (not false nor empty list), showing this!
 	{{/mytrue?}}
