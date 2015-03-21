@@ -1,0 +1,26 @@
+Hello,
+
+1. replace value:
+v = V
+k.v = K.V
+
+2. test
+mytrue? = true
+mytrue? is valid (not false nor empty list), showing this!
+
+myfalse? = false
+myfalse? is NOT valid (false or empty list), showing that!
+
+doesnotexist is NOT valid (false or empty list), showing that!
+
+3. list
+l is empty or not set
+
+mylist = [{prop2=value-1-2, prop1=value-1-1, __id__=01}, {prop2=value-2-2, prop1=value-2-1, __id__=02}]
+01.prop1 = value-1-1
+01.prop2 = value-1-2
+02.prop1 = value-2-1
+02.prop2 = value-2-2
+
+4. direct access:
+l[02].b = L[02].B

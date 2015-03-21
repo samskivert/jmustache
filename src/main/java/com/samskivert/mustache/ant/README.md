@@ -22,7 +22,7 @@ This filter must be used inside a filetokenizer tokenfilter as it needs to parse
 	<filterchain>
 		<tokenfilter>
 			<filetokenizer />
-			<mustachefilter />
+			<mustache />
 		</tokenfilter>
 	</filterchain>
 
