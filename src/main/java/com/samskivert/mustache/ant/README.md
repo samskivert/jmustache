@@ -45,7 +45,7 @@ All parameters are optional.
 | prefix            | Only project properties starting with this prefix will be used                | No prefix used |
 | removePrefix      | Boolean: should we remove the prefix (if specified) from the property name?   | false          |
 | supportLists      | Boolean. Adds list support (see below)                                        | true           |
-| listRegex         | The regex pattern to use to defined lists (see below)                   | (.+)\\.(\\d+)\\.(.+) |
+| listRegex         | The regex pattern to use to defined lists (see below)                   | (.+?)\\.(\\d+)\\.(.+) |
 | listIdName        | The name of the list id to be generated (see below)                           | \__id__         |
 | dataFile          | A property file containing datamodel key and values                           | None           |
 | defaultValue      | As JMustache defaultValue(), provides a default to non-defined keys | No default, fails on missing|
@@ -57,7 +57,7 @@ Lists support
 
 Provided property names can be parsed to generate lists. The default Regexp pattern for such property is
 
-	(.+)\\.(\\d+)\\.(.+)
+	(.+?)\\.(\\d+)\\.(.+)
 
 This pattern means that any property containing a number between two dots would be translated into a list.
 The list name is the first part.
@@ -89,7 +89,7 @@ The output would be:
    
 Note that you can override the default pattern. For example, you may prefer to use a notation with square brackets:
 
-	listRegex="(.+)\[(\d+)\]\.(.+)"
+	listRegex="(.+?)\[(\d+)\]\.(.+)"
 
 With such regex, the previous list would be written
 

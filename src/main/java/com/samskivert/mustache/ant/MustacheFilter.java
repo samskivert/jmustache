@@ -68,8 +68,8 @@ public class MustacheFilter extends ChainableReaderFilter {
 	 * access the list. The second group is the id of this item in the list. The
 	 * third group is the sub-key to assign the value to.
 	 */
-	private String listRegex = "(.+)\\.(\\d+)\\.(.+)";
-	// other example of regex: (.+)\[(\d+)\]\.(.+)
+	private String listRegex = "(.+?)\\.(\\d+)\\.(.+)";
+	// other example of regex: (.+?)\[(\d+)\]\.(.+)
 
 	/**
 	 * A file name from which data model properties should be loaded from.
@@ -98,72 +98,36 @@ public class MustacheFilter extends ChainableReaderFilter {
 	 */
 	private boolean escapeHTML = false;
 
-	public Boolean getProjectProperties() {
-		return projectProperties;
-	}
-
 	public void setProjectProperties(Boolean projectProperties) {
 		this.projectProperties = projectProperties;
-	}
-
-	public String getPrefix() {
-		return prefix;
 	}
 
 	public void setPrefix(String prefix) {
 		this.prefix = prefix;
 	}
 
-	public Boolean getRemovePrefix() {
-		return removePrefix;
-	}
-
 	public void setRemovePrefix(Boolean removePrefix) {
 		this.removePrefix = removePrefix;
-	}
-
-	public Boolean getSupportLists() {
-		return supportLists;
 	}
 
 	public void setSupportLists(Boolean supportLists) {
 		this.supportLists = supportLists;
 	}
 
-	public String getListIdName() {
-		return listIdName;
-	}
-
 	public void setListIdName(String listIdName) {
 		this.listIdName = listIdName;
-	}
-
-	public String getDataFile() {
-		return dataFile;
 	}
 
 	public void setDataFile(String dataFile) {
 		this.dataFile = dataFile;
 	}
 
-	public String getDefaultValue() {
-		return defaultValue;
-	}
-
 	public void setDefaultValue(String defaultValue) {
 		this.defaultValue = defaultValue;
 	}
 
-	public boolean isStrictSections() {
-		return strictSections;
-	}
-
 	public void setStrictSections(boolean strictSections) {
 		this.strictSections = strictSections;
-	}
-
-	public boolean isEscapeHTML() {
-		return escapeHTML;
 	}
 
 	public void setEscapeHTML(boolean escapeHTML) {
