@@ -45,7 +45,7 @@ All parameters are optional.
 | prefix            | Only project properties starting with this prefix will be used                | No prefix used |
 | removePrefix      | Boolean: should we remove the prefix (if specified) from the property name?   | false          |
 | supportLists      | Boolean. Adds list support (see below)                                        | true           |
-| listRegex         | The regex pattern to use to defined lists (see below)                   | (.*)\\.(\\d+)\\.(.*) |
+| listRegex         | The regex pattern to use to defined lists (see below)                   | (.+)\\.(\\d+)\\.(.+) |
 | listIdName        | The name of the list id to be generated (see below)                           | \__id__         |
 | dataFile          | A property file containing datamodel key and values                           | None           |
 | defaultValue      | As JMustache defaultValue(), provides a default to non-defined keys | No default, fails on missing|
