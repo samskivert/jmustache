@@ -329,7 +329,6 @@ public class Mustache
             // if we're at the top-level there are virtual "blank lines" before & after segs
             boolean prevBlank = ((pseg == null && top) || (prev != null && prev.trailsBlank()));
             boolean nextBlank = ((nseg == null && top) || (next != null && next.leadsBlank()));
-            boolean trimPrev = false, trimNext = false;
             // potentially trim around the open and close tags of a block segment
             if (seg instanceof BlockSegment) {
                 BlockSegment block = (BlockSegment)seg;
