@@ -81,10 +81,24 @@ public class DefaultCollector extends BasicCollector
         } catch (Exception e) {
             // fall through
         }
+
+        String upperName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
         try {
-            m = clazz.getDeclaredMethod(
-                "get" + Character.toUpperCase(name.charAt(0)) + name.substring(1));
+            m = clazz.getDeclaredMethod("get" + upperName);
             if (!m.getReturnType().equals(void.class)) {
+                if (!m.isAccessible()) {
+                    m.setAccessible(true);
+                }
+                return m;
+            }
+        } catch (Exception e) {
+            // fall through
+        }
+
+        try {
+            m = clazz.getDeclaredMethod("is" + upperName);
+            if (m.getReturnType().equals(boolean.class) ||
+                m.getReturnType().equals(Boolean.class)) {
                 if (!m.isAccessible()) {
                     m.setAccessible(true);
                 }
