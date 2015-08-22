@@ -41,6 +41,22 @@ public class MustacheTest
         });
     }
 
+    public interface HasDefault {
+        default String getFoo () { return "bar"; }
+    }
+    public interface Interloper extends HasDefault {
+        default String getFoo () { return "bang"; }
+    }
+    @Test public void testDefaultMethodVariable () {
+        test("bar", "{{foo}}", new HasDefault() {
+        });
+        test("bang", "{{foo}}", new Interloper() {
+        });
+        test("bong", "{{foo}}", new Interloper() {
+            public String getFoo () { return "bong"; }
+        });
+    }
+
     @Test public void testPropertyVariable () {
         test("bar", "{{foo}}", new Object() {
             String getFoo () { return "bar"; }

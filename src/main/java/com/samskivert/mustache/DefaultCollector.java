@@ -10,7 +10,9 @@ import java.lang.reflect.Method;
 
 import java.util.AbstractList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -41,6 +43,7 @@ public class DefaultCollector extends BasicCollector
         Mustache.VariableFetcher fetcher = super.createFetcher(ctx, name);
         if (fetcher != null) return fetcher;
 
+        // first check for a getter which provides the value
         Class<?> cclass = ctx.getClass();
         final Method m = getMethod(cclass, name);
         if (m != null) {
@@ -51,11 +54,23 @@ public class DefaultCollector extends BasicCollector
             };
         }
 
+        // next check for a getter which provides the value
         final Field f = getField(cclass, name);
         if (f != null) {
             return new Mustache.VariableFetcher() {
                 public Object get (Object ctx, String name) throws Exception {
                     return f.get(ctx);
+                }
+            };
+        }
+
+        // finally check for a default interface method which provides the value (this is left to
+        // last because it's much more expensive and hopefully something already matched above)
+        final Method im = getIfaceMethod(cclass, name);
+        if (im != null) {
+            return new Mustache.VariableFetcher() {
+                public Object get (Object ctx, String name) throws Exception {
+                    return im.invoke(ctx);
                 }
             };
         }
@@ -69,15 +84,38 @@ public class DefaultCollector extends BasicCollector
     }
 
     protected Method getMethod (Class<?> clazz, String name) {
+        // first check up the superclass chain
+        for (Class<?> cc = clazz; cc != null && cc != Object.class; cc = cc.getSuperclass()) {
+            Method m = getMethodOn(cc, name);
+            if (m != null) return m;
+        }
+        return null;
+    }
+
+    protected Method getIfaceMethod (Class<?> clazz, String name) {
+        // enumerate the transitive closure of all interfaces implemented by clazz
+        Set<Class<?>> ifaces = new LinkedHashSet<Class<?>>();
+        for (Class<?> cc = clazz; cc != null && cc != Object.class; cc = cc.getSuperclass()) {
+            addIfaces(ifaces, cc, false);
+        }
+        // now search those in the order that we found them
+        for  (Class<?> iface : ifaces) {
+            Method m = getMethodOn(iface, name);
+            if (m != null) return m;
+        }
+        return null;
+    }
+
+    private void addIfaces (Set<Class<?>> ifaces, Class<?> clazz, boolean isIface) {
+        if (isIface) ifaces.add(clazz);
+        for (Class<?> iface : clazz.getInterfaces()) addIfaces(ifaces, iface, true);
+    }
+
+    protected Method getMethodOn (Class<?> clazz, String name) {
         Method m;
         try {
             m = clazz.getDeclaredMethod(name);
-            if (!m.getReturnType().equals(void.class)) {
-                if (!m.isAccessible()) {
-                    m.setAccessible(true);
-                }
-                return m;
-            }
+            if (!m.getReturnType().equals(void.class)) return makeAccessible(m);
         } catch (Exception e) {
             // fall through
         }
@@ -85,12 +123,7 @@ public class DefaultCollector extends BasicCollector
         String upperName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
         try {
             m = clazz.getDeclaredMethod("get" + upperName);
-            if (!m.getReturnType().equals(void.class)) {
-                if (!m.isAccessible()) {
-                    m.setAccessible(true);
-                }
-                return m;
-            }
+            if (!m.getReturnType().equals(void.class)) return makeAccessible(m);
         } catch (Exception e) {
             // fall through
         }
@@ -98,21 +131,17 @@ public class DefaultCollector extends BasicCollector
         try {
             m = clazz.getDeclaredMethod("is" + upperName);
             if (m.getReturnType().equals(boolean.class) ||
-                m.getReturnType().equals(Boolean.class)) {
-                if (!m.isAccessible()) {
-                    m.setAccessible(true);
-                }
-                return m;
-            }
+                m.getReturnType().equals(Boolean.class)) return makeAccessible(m);
         } catch (Exception e) {
             // fall through
         }
 
-        Class<?> sclass = clazz.getSuperclass();
-        if (sclass != Object.class && sclass != null) {
-            return getMethod(clazz.getSuperclass(), name);
-        }
         return null;
+    }
+
+    private Method makeAccessible (Method m) {
+        if (!m.isAccessible()) m.setAccessible(true);
+        return m;
     }
 
     protected Field getField (Class<?> clazz, String name) {

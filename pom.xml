@@ -91,6 +91,8 @@
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
+          <testSource>1.8</testSource>
+          <testTarget>1.8</testTarget>
           <fork>true</fork>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
@@ -101,6 +103,7 @@
           </compilerArgs>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
@@ -115,6 +118,7 @@
           </instructions>
         </configuration>
       </plugin>
+
 <!-- disabled due to src/main/gwt related hoseage
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -132,6 +136,7 @@
         </executions>
       </plugin>
 -->
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
@@ -140,6 +145,7 @@
           <encoding>UTF-8</encoding>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -148,6 +154,7 @@
           <includes><include>**/*Test.java</include></includes>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -158,6 +165,7 @@
           <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -184,6 +192,7 @@
           <maxmem>256m</maxmem>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.eluder.coveralls</groupId>
         <artifactId>coveralls-maven-plugin</artifactId>
