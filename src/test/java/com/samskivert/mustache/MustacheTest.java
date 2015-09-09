@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TimeZone;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -367,6 +368,9 @@ public class MustacheTest
                 else return String.valueOf(value);
             }
             protected SimpleDateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
+            {
+                _fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
+            }
         };
         check("Date: 2014/01/08", Mustache.compiler().withFormatter(fmt).
               compile("{{msg}}: {{today}}").execute(new Object() {
