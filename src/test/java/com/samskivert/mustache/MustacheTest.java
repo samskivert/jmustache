@@ -384,8 +384,7 @@ public class MustacheTest
                 if (value instanceof Date) return _fmt.format((Date)value);
                 else return String.valueOf(value);
             }
-            protected SimpleDateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd");
-            {
+            protected SimpleDateFormat _fmt = new SimpleDateFormat("yyyy/MM/dd"); {
                 _fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
             }
         };
