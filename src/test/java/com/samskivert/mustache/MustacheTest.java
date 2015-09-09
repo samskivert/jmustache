@@ -122,6 +122,11 @@ public class MustacheTest
             "foo", Arrays.asList(context("bar", "baz"), context("bar", "bif"))));
     }
 
+    @Test public void testListIndexOutOfBoundsSection () {
+        test("", "{{#foo.2}}{{bar}}{{/foo.2}}", context(
+                 "foo", Arrays.asList(context("bar", "baz"), context("bar", "bif"))));
+    }
+
     @Test public void testListItemSection() {
         test("baz", "{{foo.0.bar}}", context(
             "foo", Arrays.asList(context("bar", "baz"), context("bar", "bif"))));
@@ -137,6 +142,12 @@ public class MustacheTest
         test("baz", "{{#foo.0}}{{bar}}{{/foo.0}}",
             context("foo", new Object[] {
                 context("bar", "baz"), context("bar", "bif") }));
+    }
+
+    @Test public void testArrayIndexOutOfBoundsSection () {
+        test("", "{{#foo.2}}{{bar}}{{/foo.2}}",
+             context("foo", new Object[] {
+                     context("bar", "baz"), context("bar", "bif") }));
     }
 
     @Test public void testArrayItemSection () {
@@ -155,6 +166,12 @@ public class MustacheTest
         test("baz", "{{#foo.0}}{{bar}}{{/foo.0}}",
             context("foo", Arrays.asList(context("bar", "baz"),
                 context("bar", "bif")).iterator()));
+    }
+
+    @Test public void testIteratorIndexOutOfBoundsSection () {
+        test("", "{{#foo.2}}{{bar}}{{/foo.2}}",
+             context("foo", Arrays.asList(context("bar", "baz"),
+                                          context("bar", "bif")).iterator()));
     }
 
     @Test public void testIteratorItemSection () {

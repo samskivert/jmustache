@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * A collector that does not use reflection and can be used with GWT.
@@ -58,6 +59,8 @@ public abstract class BasicCollector implements Mustache.Collector
                 return ((List<?>)ctx).get(Integer.parseInt(name));
             } catch (NumberFormatException nfe) {
                 return Template.NO_FETCHER_FOUND;
+            } catch (IndexOutOfBoundsException e) {
+                return Template.NO_FETCHER_FOUND;
             }
         }
     };
@@ -67,6 +70,8 @@ public abstract class BasicCollector implements Mustache.Collector
             try {
                 return ((Object[])ctx)[Integer.parseInt(name)];
             } catch (NumberFormatException nfe) {
+                return Template.NO_FETCHER_FOUND;
+            } catch (IndexOutOfBoundsException e) {
                 return Template.NO_FETCHER_FOUND;
             }
         }
@@ -79,6 +84,8 @@ public abstract class BasicCollector implements Mustache.Collector
                 for (int ii = 0, ll = Integer.parseInt(name); ii < ll; ii++) iter.next();
                 return iter.next();
             } catch (NumberFormatException nfe) {
+                return Template.NO_FETCHER_FOUND;
+            } catch (NoSuchElementException e) {
                 return Template.NO_FETCHER_FOUND;
             }
         }
