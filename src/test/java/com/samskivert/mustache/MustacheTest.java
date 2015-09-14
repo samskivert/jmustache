@@ -89,6 +89,19 @@ public class MustacheTest
         });
     }
 
+    @Test public void testPrimitiveArrayIndexVariable () {
+        test("1", "{{foo.0}}", new Object() {
+            int[] getFoo () { return new int[] { 1, 2, 3, 4 }; }
+        });
+    }
+
+    @Test public void testPrimitiveArrayIndexOutOfBoundsVariable () {
+        Mustache.Compiler comp = Mustache.compiler().defaultValue("?");
+        test(comp, "?", "{{foo.4}}", new Object() {
+            int[] getFoo () { return new int[] { 1, 2, 3, 4 }; }
+        });
+    }
+
     @Test public void testCallSiteReuse () {
         Template tmpl = Mustache.compiler().compile("{{foo}}");
         Object ctx = new Object() {
