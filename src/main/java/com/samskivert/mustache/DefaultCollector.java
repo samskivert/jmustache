@@ -21,24 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DefaultCollector extends BasicCollector
 {
     @Override
-    public Iterator<?> toIterator (final Object value) {
-        Iterator<?> iter = super.toIterator(value);
-        if (iter != null) return iter;
-
-        if (value.getClass().isArray()) {
-            return new AbstractList<Object>() {
-                public int size () {
-                    return Array.getLength(value);
-                }
-                public Object get (int idx) {
-                    return Array.get(value, idx);
-                }
-            }.iterator();
-        }
-        return null;
-    }
-
-    @Override
     public Mustache.VariableFetcher createFetcher (Object ctx, String name) {
         Mustache.VariableFetcher fetcher = super.createFetcher(ctx, name);
         if (fetcher != null) return fetcher;
