@@ -16,6 +16,8 @@ public class StringReader extends Reader
         return (_pos >= _data.length()) ? -1 : _data.charAt(_pos++);
     }
 
+    public void close () throws IOException {}
+
     protected final String _data;
     protected int _pos;
 }
