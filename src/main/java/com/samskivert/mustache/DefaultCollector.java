@@ -43,15 +43,8 @@ public class DefaultCollector extends BasicCollector
         Mustache.VariableFetcher fetcher = super.createFetcher(ctx, name);
         if (fetcher != null) return fetcher;
 
-        Class<?> cclass = ctx.getClass();
-
-        // try generic 'indexing' fetcher for primitive arrays
-        char c = name.charAt(0);
-        if (c >= '0' && c <= '9') {
-            if (cclass.isArray()) return GENERIC_ARRAY_FETCHER;
-        }
-
         // first check for a getter which provides the value
+        Class<?> cclass = ctx.getClass();
         final Method m = getMethod(cclass, name);
         if (m != null) {
             return new Mustache.VariableFetcher() {
@@ -169,16 +162,4 @@ public class DefaultCollector extends BasicCollector
         }
         return null;
     }
-
-    protected static final Mustache.VariableFetcher GENERIC_ARRAY_FETCHER = new Mustache.VariableFetcher() {
-        public Object get (Object ctx, String name) throws Exception {
-            try {
-                return Array.get(ctx, Integer.parseInt(name));
-            } catch (NumberFormatException nfe) {
-                return Template.NO_FETCHER_FOUND;
-            } catch (IndexOutOfBoundsException e) {
-                return Template.NO_FETCHER_FOUND;
-            }
-        }
-    };
 }

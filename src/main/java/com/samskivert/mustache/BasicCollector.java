@@ -35,8 +35,16 @@ public abstract class BasicCollector implements Mustache.Collector
         char c = name.charAt(0);
         if (c >= '0' && c <= '9') {
             if (ctx instanceof List<?>) return LIST_FETCHER;
-            if (ctx instanceof Object[]) return ARRAY_FETCHER;
             if (ctx instanceof Iterator<?>) return ITER_FETCHER;
+            if (ctx instanceof Object[]) return OBJECT_ARRAY_FETCHER;
+            if (ctx instanceof boolean[]) return BOOLEAN_ARRAY_FETCHER;
+            if (ctx instanceof byte[]) return BYTE_ARRAY_FETCHER;
+            if (ctx instanceof char[]) return CHAR_ARRAY_FETCHER;
+            if (ctx instanceof short[]) return SHORT_ARRAY_FETCHER;
+            if (ctx instanceof int[]) return INT_ARRAY_FETCHER;
+            if (ctx instanceof long[]) return LONG_ARRAY_FETCHER;
+            if (ctx instanceof float[]) return FLOAT_ARRAY_FETCHER;
+            if (ctx instanceof double[]) return DOUBLE_ARRAY_FETCHER;
         }
 
         return null;
@@ -65,18 +73,6 @@ public abstract class BasicCollector implements Mustache.Collector
         }
     };
 
-    protected static final Mustache.VariableFetcher ARRAY_FETCHER = new Mustache.VariableFetcher() {
-        public Object get (Object ctx, String name) throws Exception {
-            try {
-                return ((Object[])ctx)[Integer.parseInt(name)];
-            } catch (NumberFormatException nfe) {
-                return Template.NO_FETCHER_FOUND;
-            } catch (IndexOutOfBoundsException e) {
-                return Template.NO_FETCHER_FOUND;
-            }
-        }
-    };
-
     protected static final Mustache.VariableFetcher ITER_FETCHER = new Mustache.VariableFetcher() {
         public Object get (Object ctx, String name) throws Exception {
             try {
@@ -89,6 +85,47 @@ public abstract class BasicCollector implements Mustache.Collector
                 return Template.NO_FETCHER_FOUND;
             }
         }
+    };
+
+    protected static abstract class ArrayFetcher implements Mustache.VariableFetcher {
+        public Object get (Object ctx, String name) throws Exception {
+            try {
+                return get(ctx, Integer.parseInt(name));
+            } catch (NumberFormatException nfe) {
+                return Template.NO_FETCHER_FOUND;
+            } catch (ArrayIndexOutOfBoundsException e) {
+                return Template.NO_FETCHER_FOUND;
+            }
+        }
+        protected abstract Object get (Object ctx, int index);
+    }
+
+    protected static final ArrayFetcher OBJECT_ARRAY_FETCHER = new ArrayFetcher() {
+        @Override protected Object get (Object ctx, int index) { return ((Object[])ctx)[index]; }
+    };
+    protected static final ArrayFetcher BOOLEAN_ARRAY_FETCHER = new ArrayFetcher() {
+        @Override protected Object get (Object ctx, int index) { return ((boolean[])ctx)[index]; }
+    };
+    protected static final ArrayFetcher BYTE_ARRAY_FETCHER = new ArrayFetcher() {
+        @Override protected Object get (Object ctx, int index) { return ((byte[])ctx)[index]; }
+    };
+    protected static final ArrayFetcher CHAR_ARRAY_FETCHER = new ArrayFetcher() {
+        @Override protected Object get (Object ctx, int index) { return ((char[])ctx)[index]; }
+    };
+    protected static final ArrayFetcher SHORT_ARRAY_FETCHER = new ArrayFetcher() {
+        @Override protected Object get (Object ctx, int index) { return ((short[])ctx)[index]; }
+    };
+    protected static final ArrayFetcher INT_ARRAY_FETCHER = new ArrayFetcher() {
+        @Override protected Object get (Object ctx, int index) { return ((int[])ctx)[index]; }
+    };
+    protected static final ArrayFetcher LONG_ARRAY_FETCHER = new ArrayFetcher() {
+        @Override protected Object get (Object ctx, int index) { return ((long[])ctx)[index]; }
+    };
+    protected static final ArrayFetcher FLOAT_ARRAY_FETCHER = new ArrayFetcher() {
+        @Override protected Object get (Object ctx, int index) { return ((float[])ctx)[index]; }
+    };
+    protected static final ArrayFetcher DOUBLE_ARRAY_FETCHER = new ArrayFetcher() {
+        @Override protected Object get (Object ctx, int index) { return ((double[])ctx)[index]; }
     };
 
     protected static final Mustache.VariableFetcher THIS_FETCHER = new Mustache.VariableFetcher() {
