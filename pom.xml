@@ -48,7 +48,7 @@
   <properties>
     <source.level>1.6</source.level>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <gwt.version>2.8.0-SNAPSHOT</gwt.version>
+    <gwt.version>2.7.0</gwt.version>
   </properties>
 
   <dependencies>
@@ -132,6 +132,7 @@
         </configuration>
       </plugin>
 
+<!-- disabled for release (need GWT 2.8.0 to be released)
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>gwt-maven-plugin</artifactId>
@@ -147,6 +148,7 @@
           <mode>htmlunit</mode>
         </configuration>
       </plugin>
+-->
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
