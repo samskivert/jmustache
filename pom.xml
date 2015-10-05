@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.sonatype.oss</groupId>
     <artifactId>oss-parent</artifactId>
-    <version>5</version>
+    <version>9</version>
   </parent>
 
   <groupId>com.samskivert</groupId>
@@ -41,7 +41,13 @@
     <url>http://github.com/samskivert/jmustache</url>
   </scm>
 
+  <prerequisites>
+    <maven>3.3.0</maven>
+  </prerequisites>
+
   <properties>
+    <source.level>1.6</source.level>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <gwt.version>2.8.0-SNAPSHOT</gwt.version>
   </properties>
 
@@ -91,10 +97,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
+        <version>3.3</version>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>${source.level}</source>
+          <target>${source.level}</target>
           <testSource>1.8</testSource>
           <testTarget>1.8</testTarget>
           <fork>true</fork>
@@ -145,7 +151,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
-        <version>2.4.3</version>
+        <version>2.7</version>
         <configuration>
           <encoding>UTF-8</encoding>
         </configuration>
@@ -154,7 +160,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.12.2</version>
+        <version>2.18.1</version>
         <configuration>
           <includes><include>**/*Test.java</include></includes>
         </configuration>
@@ -163,28 +169,12 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.9.1</version>
+        <version>2.10.3</version>
         <configuration>
           <quiet>true</quiet>
           <show>public</show>
           <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
         </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.3.1</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-install-plugin</artifactId>
-        <version>2.3.1</version>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>2.5</version>
       </plugin>
 
       <!-- these handle code coverage -->
@@ -203,6 +193,20 @@
         <artifactId>coveralls-maven-plugin</artifactId>
         <version>2.1.0</version>
       </plugin>
+
+      <!-- makes shipping to sonatype easier -->
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.6</version>
+        <extensions>true</extensions>
+        <inherited>false</inherited>
+        <configuration>
+          <serverId>ossrh-releases</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <stagingProfileId>aaa740f9c5c260</stagingProfileId>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 
@@ -217,7 +221,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.1</version>
+            <version>1.6</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
