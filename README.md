@@ -226,6 +226,10 @@ Mustache.compiler().nullValue("what").compile(tmpl).execute(map);
 // throws MustacheException when executing the template because doesNotExist cannot be resolved
 ```
 
+**Do not** use both `defaultValue` and `nullValue` in your compiler configuration. Each one
+overrides the other, so whichever one you call last is the behavior you will get. But even if you
+accidentally do the right thing, you have confusing code, so don't call both, use one or the other.
+
 ### Sections
 
 Sections are not affected by the `nullValue()` or `defaultValue()` settings. Their behavior is
