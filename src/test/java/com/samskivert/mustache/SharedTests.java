@@ -283,10 +283,11 @@ public abstract class SharedTests extends GWTTestCase
     }
 
     @Test public void testEscapeHTML () {
-        check("&lt;b&gt;", Mustache.compiler().compile("{{a}}").
-              execute(context("a", "<b>")));
+        check("&lt;b&gt;", Mustache.compiler().compile("{{a}}").execute(context("a", "<b>")));
         check("<b>", Mustache.compiler().escapeHTML(false).compile("{{a}}").
               execute(context("a", "<b>")));
+        // ensure that some potential XSS enablers are escaped
+        check("&#x60;&#x3D;", Mustache.compiler().compile("{{a}}").execute(context("a", "`=")));
     }
 
     @Test public void testUserDefinedEscaping() {

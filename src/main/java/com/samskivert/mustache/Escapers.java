@@ -15,7 +15,9 @@ public class Escapers
         { "'",  "&#39;" },
         { "\"", "&quot;" },
         { "<",  "&lt;" },
-        { ">",  "&gt;" }
+        { ">",  "&gt;" },
+        { "`",  "&#x60;" },
+        { "=",  "&#x3D;" }
     });
 
     /** An escaper that does no escaping. */
