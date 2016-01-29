@@ -8,7 +8,10 @@ import java.io.IOException;
 import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import org.junit.Test;
@@ -121,6 +124,22 @@ public class MustacheTest extends SharedTests
                  float floatm () { return 0f; }
                  double doublem () { return 0d; }
              });
+    }
+
+    @Test public void testOptionalSupportingCollector () {
+        Mustache.Compiler comp = Mustache.compiler().withCollector(new DefaultCollector() {
+            public Iterator<?> toIterator (final Object value) {
+                if (value instanceof Optional<?>) {
+                    Optional<?> opt = (Optional<?>) value;
+                    return opt.isPresent() ? Collections.singleton(opt.get()).iterator() :
+                        Collections.emptyList().iterator();
+                } else return super.toIterator(value);
+            }
+        });
+        test(comp, "test", "{{#foo}}{{.}}{{/foo}}", context("foo", Optional.of("test")));
+        test(comp, "", "{{#foo}}{{.}}{{/foo}}", context("foo", Optional.empty()));
+        test(comp, "", "{{^foo}}{{.}}{{/foo}}", context("foo", Optional.of("test")));
+        test(comp, "test", "{{^foo}}test{{/foo}}", context("foo", Optional.empty()));
     }
 
     @Test public void testCompoundVariable () {
