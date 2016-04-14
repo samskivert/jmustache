@@ -594,6 +594,42 @@ public abstract class SharedTests extends GWTTestCase
                  }));
     }
 
+    @Test public void testLambdaDecompile () {
+        test("Foo {{a}}, Bar {{a}}", "{{#lam}}Foo {{a}}{{/lam}}, {{#lam}}Bar {{a}}{{/lam}}",
+             context("lam", new Mustache.Lambda() {
+               public void execute (Template.Fragment frag, Writer out) throws IOException {
+                   out.write(frag.decompile());
+               }
+             }));
+        // whitespace inside tags is dropped!
+        test("Foo {{a}}, Bar {{a}}", "{{#lam}}Foo {{a}}{{/lam}}, {{#lam}}Bar {{ a }}{{/lam}}",
+             context("lam", new Mustache.Lambda() {
+               public void execute (Template.Fragment frag, Writer out) throws IOException {
+                   out.write(frag.decompile());
+               }
+             }));
+        // custom delimiters are ignored!
+        test("Foo {{a}}, Bar {{a}}",
+             "{{#lam}}Foo {{a}}{{/lam}}, {{=(( ))=}}((#lam))Bar ((a))((/lam))",
+             context("lam", new Mustache.Lambda() {
+               public void execute (Template.Fragment frag, Writer out) throws IOException {
+                   out.write(frag.decompile());
+               }
+             }));
+        // coalesced whitespace around section tags is preserved
+        test("{{#section}}\n" +
+             "{{a}}\n" +
+             "{{/section}}",
+             "{{#lam}}{{#section}}\n" +
+             "{{a}}\n" +
+             "{{/section}}{{/lam}}",
+             context("lam", new Mustache.Lambda() {
+               public void execute (Template.Fragment frag, Writer out) throws IOException {
+                   out.write(frag.decompile());
+               }
+             }));
+    }
+
     @Test public void testNonStandardDefaultDelims () {
         test(Mustache.compiler().withDelims("<% %>"), "bar", "<%foo%>", context("foo", "bar"));
     }

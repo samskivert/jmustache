@@ -557,6 +557,15 @@ public class Mustache
             return this;
         }
 
+        public void addTag (char prefix, String name, StringBuilder into) {
+            into.append(start1);
+            into.append(start2);
+            if (prefix != ' ') into.append(prefix);
+            into.append(name);
+            into.append(end1);
+            into.append(end2);
+        }
+
         Delims copy () {
             Delims d = new Delims();
             d.start1 = start1;
@@ -708,6 +717,9 @@ public class Mustache
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             write(out, _text);
         }
+        @Override public void decompile (Delims delims, StringBuilder into) {
+            into.append(_text);
+        }
         @Override public String toString () {
             return "Text(" + _text.replace("\r", "\\r").replace("\n", "\\n") + ")" +
                 _leadBlank + "/" + _trailBlank;
@@ -761,6 +773,9 @@ public class Mustache
             // would happen if we just called execute() with ctx.data
             _template.executeSegs(ctx, out);
         }
+        @Override public void decompile (Delims delims, StringBuilder into) {
+            delims.addTag('>', _name, into);
+        }
         protected final Compiler _comp;
         protected final String _name;
         protected Template _template;
@@ -790,6 +805,9 @@ public class Mustache
                                                     "' on line " + _line, _name, _line);
             }
             write(out, _escaper.escape(_formatter.format(value)));
+        }
+        @Override public void decompile (Delims delims, StringBuilder into) {
+            delims.addTag(' ', _name, into);
         }
         @Override public String toString () {
             return "Var(" + _name + ":" + _line + ")";
@@ -863,6 +881,11 @@ public class Mustache
                 executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
             }
         }
+        @Override public void decompile (Delims delims, StringBuilder into) {
+            delims.addTag('#', _name, into);
+            for (Template.Segment seg : _segs) seg.decompile(delims, into);
+            delims.addTag('/', _name, into);
+        }
         @Override public String toString () {
             return "Section(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
@@ -896,6 +919,11 @@ public class Mustache
                 executeSegs(tmpl, ctx, out);
             } // TODO: fail?
         }
+        @Override public void decompile (Delims delims, StringBuilder into) {
+            delims.addTag('^', _name, into);
+            for (Template.Segment seg : _segs) seg.decompile(delims, into);
+            delims.addTag('/', _name, into);
+        }
         @Override public String toString () {
             return "Inverted(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
@@ -904,6 +932,7 @@ public class Mustache
 
     protected static class FauxSegment extends Template.Segment {
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {} // nada
+        @Override public void decompile (Delims delims, StringBuilder into) {} // nada
         @Override public String toString () { return "Faux"; }
     }
 

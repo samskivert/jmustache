@@ -67,6 +67,35 @@ public class Template
             execute(context, out);
             return out.toString();
         }
+
+        /** Decompiles the template inside this lamdba and returns <em>an approximation</em> of
+          * the original template from which it was parsed. This is not the exact character for
+          * character representation because the original text is not preserved because that would
+          * incur a huge memory penalty for all users of the library when the vast majority of
+          * them do not call decompile.
+          *
+          * <p>Limitations:
+          * <ul><li> Whitespace inside tags is not preserved: i.e. {@code {{ foo.bar }}} becomes
+          * {@code {{foo.bar}}}.
+          * <li> If the delimiters are changed by the template, those are not preserved.
+          * The delimiters configured on the {@link Compiler} are used for all decompilation.
+          * </ul>
+          *
+          * <p>This feature is meant to enable use of lambdas for i18n such that you can recover
+          * the contents of a lambda (so long as they're simple) to use as the lookup key for a
+          * translation string. For example: {@code {{#i18n}}Hello {{user.name}}!{{/i18n}}} can be
+          * sent to an {@code i18n} lambda which can use {@code decompile} to recover the text
+          * {@code Hello {{user.name}}!} to be looked up in a translation dictionary. The
+          * translated fragment could then be compiled and cached and then executed in lieu of the
+          * original fragment using {@link Template.Fragment#context}.
+          */
+        public String decompile () {
+            return decompile(new StringBuilder()).toString();
+        }
+
+        /** Decompiles this fragment into {@code into}. See {@link #decompile()}.
+          * @return {@code into} for call chaining. */
+        public abstract StringBuilder decompile (StringBuilder into);
     }
 
     /** A sentinel object that can be returned by a {@link Mustache.Collector} to indicate that a
@@ -125,6 +154,10 @@ public class Template
             }
             @Override public void execute (Object context, Writer out) {
                 execute(currentCtx.nest(context, 0, false, false), out);
+            }
+            @Override public StringBuilder decompile (StringBuilder into) {
+                for (Segment seg : segs) seg.decompile(_compiler.delims, into);
+                return into;
             }
             private void execute (Context ctx, Writer out) {
                 for (Segment seg : segs) {
@@ -301,6 +334,8 @@ public class Template
     /** A template is broken into segments. */
     protected static abstract class Segment {
         abstract void execute (Template tmpl, Context ctx, Writer out);
+
+        abstract void decompile (Mustache.Delims delims, StringBuilder into);
 
         protected static void write (Writer out, String data) {
             try {
