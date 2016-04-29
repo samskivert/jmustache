@@ -16,6 +16,7 @@ import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * @author Yoryos Valotasios
@@ -78,10 +79,17 @@ public class SpecRunner extends BlockJUnit4ClassRunner
     }
 
     private Iterable<Map<String, Object>> getTestsForGroup (String name) {
-        @SuppressWarnings("unchecked") Map<String, Object> map = (Map<String, Object>)
-            yaml.load(getClass().getResourceAsStream("/specs/specs/" + name + ".yml"));
-        @SuppressWarnings("unchecked") List<Map<String, Object>> tests = (List<Map<String, Object>>)
-            map.get("tests");
-        return tests;
+        String ymlPath = "/specs/specs/" + name + ".yml";
+        try {
+            @SuppressWarnings("unchecked") Map<String, Object> map =
+                (Map<String, Object>)yaml.load(getClass().getResourceAsStream(ymlPath));
+            @SuppressWarnings("unchecked") List<Map<String, Object>> tests =
+                (List<Map<String, Object>>)map.get("tests");
+            return tests;
+        } catch (YAMLException err) {
+            System.err.println("*** Error loading: " + ymlPath);
+            System.err.println("*** You probably need to 'git submodule update'.");
+            throw err;
+        }
     }
 }
