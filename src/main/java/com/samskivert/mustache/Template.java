@@ -40,12 +40,6 @@ public class Template
      * the variable context that was in effect at the time the lambda was called.
      */
     public abstract class Fragment {
-        /** Returns the context object in effect for this fragment. The actual type of the object
-          * depends on the structure of the data passed to the top-level template. You know where
-          * your lambdas are executed, so you know what type to which to cast the context in order
-          * to inspect it (be that a {@code Map} or a POJO or something else). */
-        public abstract Object context ();
-
         /** Executes this fragment; writes its result to {@code out}. */
         public abstract void execute (Writer out);
 
@@ -67,6 +61,19 @@ public class Template
             execute(context, out);
             return out.toString();
         }
+
+        /** Returns the context object in effect for this fragment. The actual type of the object
+          * depends on the structure of the data passed to the top-level template. You know where
+          * your lambdas are executed, so you know what type to which to cast the context in order
+          * to inspect it (be that a {@code Map} or a POJO or something else). */
+        public abstract Object context ();
+
+        /** Like {@link #context()} btu returns the {@code n}th parent context object. {@code 0}
+          * returns the same value as {@link #context()}, {@code 1} returns the parent context,
+          * {@code 2} returns the grandparent and so forth. Note that if you request a parent that
+          * does not exist an exception will be thrown. You should only use this method when you
+          * know your lambda is run consistently in a context with a particular lineage. */
+        public abstract Object context (int n);
 
         /** Decompiles the template inside this lamdba and returns <em>an approximation</em> of
           * the original template from which it was parsed. This is not the exact character for
@@ -146,18 +153,24 @@ public class Template
 
     protected Fragment createFragment (final Segment[] segs, final Context currentCtx) {
         return new Fragment() {
-            @Override public Object context () {
-                return currentCtx.data;
-            }
             @Override public void execute (Writer out) {
                 execute(currentCtx, out);
             }
             @Override public void execute (Object context, Writer out) {
                 execute(currentCtx.nest(context, 0, false, false), out);
             }
+            @Override public Object context () {
+                return currentCtx.data;
+            }
+            @Override public Object context (int n) {
+                return context(currentCtx, n);
+            }
             @Override public StringBuilder decompile (StringBuilder into) {
                 for (Segment seg : segs) seg.decompile(_compiler.delims, into);
                 return into;
+            }
+            private Object context (Context ctx, int n) {
+                return (n == 0) ? ctx.data : context(ctx.parent, n-1);
             }
             private void execute (Context ctx, Writer out) {
                 for (Segment seg : segs) {
