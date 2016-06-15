@@ -70,6 +70,14 @@ public abstract class SharedTests extends GWTTestCase
             "foo", Arrays.asList(context("bar", "baz"), context("bar", "bif"))));
     }
 
+    @Test public void testMapEntriesSection () {
+        Map<String,String> data = new HashMap<String,String>();
+        data.put("k1", "v1");
+        data.put("k2", "v2");
+        test("k1v1k2v2", "{{#map.entrySet}}{{key}}{{value}}{{/map.entrySet}}",
+             context("map", data));
+    }
+
     @Test public void testArraySection () {
         test("bazbif", "{{#foo}}{{bar}}{{/foo}}",
              context("foo", new Object[] { context("bar", "baz"), context("bar", "bif") }));
