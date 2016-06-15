@@ -107,7 +107,7 @@ public class Template
 
     /** A sentinel object that can be returned by a {@link Mustache.Collector} to indicate that a
       * variable does not exist in a particular context. */
-    public static final Object NO_FETCHER_FOUND = new Object();
+    public static final Object NO_FETCHER_FOUND = new String("<no fetcher found>");
 
     /**
      * Executes this template with the given context, returning the results as a string.
@@ -376,6 +376,10 @@ public class Template
         @Override public boolean equals (Object other) {
             Key okey = (Key)other;
             return okey.cclass == cclass && okey.name == name;
+        }
+
+        @Override public String toString () {
+            return cclass.getName() + ":" + name;
         }
     }
 

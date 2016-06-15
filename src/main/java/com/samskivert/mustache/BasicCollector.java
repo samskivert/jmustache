@@ -73,6 +73,9 @@ public abstract class BasicCollector implements Mustache.Collector
             Map<?,?> map = (Map<?,?>)ctx;
             return map.containsKey(name) ? map.get(name) : Template.NO_FETCHER_FOUND;
         }
+        @Override public String toString () {
+            return "MAP_FETCHER";
+        }
     };
 
     protected static final Mustache.VariableFetcher LIST_FETCHER = new Mustache.VariableFetcher() {
@@ -84,6 +87,9 @@ public abstract class BasicCollector implements Mustache.Collector
             } catch (IndexOutOfBoundsException e) {
                 return Template.NO_FETCHER_FOUND;
             }
+        }
+        @Override public String toString () {
+            return "LIST_FETCHER";
         }
     };
 
@@ -99,11 +105,17 @@ public abstract class BasicCollector implements Mustache.Collector
                 return Template.NO_FETCHER_FOUND;
             }
         }
+        @Override public String toString () {
+            return "ITER_FETCHER";
+        }
     };
 
     protected static final Mustache.VariableFetcher THIS_FETCHER = new Mustache.VariableFetcher() {
         public Object get (Object ctx, String name) throws Exception {
             return ctx;
+        }
+        @Override public String toString () {
+            return "THIS_FETCHER";
         }
     };
 
