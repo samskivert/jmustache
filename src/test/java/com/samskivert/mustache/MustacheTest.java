@@ -10,7 +10,9 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TimeZone;
 
@@ -254,5 +256,14 @@ public class MustacheTest extends SharedTests
                   String msg = "Date";
                   Date today = new Date(1389208567874L);
               }));
+    }
+
+    @Test public void testMapEntriesPlusReflectSection () {
+        Map<String,String> data = new HashMap<String,String>();
+        data.put("k1", "v1");
+        data.put("k2", "v2");
+        // 'key' and 'value' here rely on reflection so we can't test this in GWT
+        test("k1v1k2v2", "{{#map.entrySet}}{{key}}{{value}}{{/map.entrySet}}",
+             context("map", data));
     }
 }

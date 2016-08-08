@@ -74,7 +74,8 @@ public abstract class SharedTests extends GWTTestCase
         Map<String,String> data = new HashMap<String,String>();
         data.put("k1", "v1");
         data.put("k2", "v2");
-        test("k1v1k2v2", "{{#map.entrySet}}{{key}}{{value}}{{/map.entrySet}}",
+        test(Mustache.compiler().escapeHTML(false),
+             "k1=v1k2=v2", "{{#map.entrySet}}{{.}}{{/map.entrySet}}",
              context("map", data));
     }
 
