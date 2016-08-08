@@ -41,6 +41,14 @@ JMustache is available via Maven Central and can thus be easily added to your Ma
 projects by adding a dependency on `com.samskivert:jmustache:1.13`. Or download the pre-built
 [jar file](https://repo1.maven.org/maven2/com/samskivert/jmustache/1.13/jmustache-1.13.jar).
 
+Documentation
+=============
+
+In addition to the usage section below, the following documentation may be useful:
+
+  * [API docs](http://samskivert.github.io/jmustache/apidocs/)
+  * [Mustache manual](http://mustache.github.io/mustache.5.html)
+
 Usage
 =====
 
@@ -177,9 +185,9 @@ Object ctx = new Object() {
 {{#i18n}}welcome_msg{{/i18n}}
 ```
 
-Currently there is no support for "unexecuting" the template and obtaining the original Mustache
-template text contained in the section. File a feature request with a sane use case if you have
-one.
+There is also limited support for decompiling (unexecuting) the template and obtaining the original
+Mustache template text contained in the section. See the documentation for [Template.Fragment] for
+details on the limitations.
 
 Default Values
 --------------
@@ -551,3 +559,5 @@ In the name of simplicity, some features of Mustache were omitted or simplified:
 
   * `{{= =}}` only supports one or two character delimiters. This is just because I'm lazy and it
     simplifies the parser.
+
+[Template.Fragment]: http://samskivert.github.io/jmustache/apidocs/com/samskivert/mustache/Template.Fragment.html#decompile--
