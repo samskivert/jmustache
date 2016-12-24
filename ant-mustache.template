@@ -1,0 +1,48 @@
+Hello,
+
+1. replace value:
+v = {{v}}
+k.v = {{k.v}}
+
+2. test
+mytrue? = {{mytrue?}}
+{{#mytrue?}}
+mytrue? is valid (not false nor empty list), showing this!
+{{/mytrue?}}
+{{^mytrue?}}
+mytrue? is NOT valid (false or empty list), showing that!
+{{/mytrue?}}
+
+myfalse? = {{myfalse?}}
+{{#myfalse?}}
+myfalse? is valid (not false nor empty list), showing this!
+{{/myfalse?}}
+{{^myfalse?}}
+myfalse? is NOT valid (false or empty list), showing that!
+{{/myfalse?}}
+
+{{#doesnotexist}}
+doesnotexist is valid (not false nor empty list), showing this!
+{{/doesnotexist}}
+{{^doesnotexist}}
+doesnotexist is NOT valid (false or empty list), showing that!
+{{/doesnotexist}}
+
+3. list
+{{#l}}
+__id__ = {{__id__}}
+a      = {{a}}
+b      = {{b}}
+{{/l}}
+{{^l}}
+l is empty or not set
+{{/l}}
+
+mylist = {{mylist}}
+{{#mylist}}
+{{__id__}}.prop1 = {{prop1}}
+{{__id__}}.prop2 = {{prop2}}
+{{/mylist}}
+
+4. direct access:
+l[02].b = {{l[02].b}}

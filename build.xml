@@ -1,0 +1,34 @@
+<project name="mustache-ant-test" default="test">
+	
+	<target name="init">
+		<typedef name="mustache" classname="com.samskivert.mustache.ant.MustacheFilter">
+			<classpath>
+				<path location="target/classes" />
+			</classpath>
+		</typedef>
+		<property name="\n" value="${line.separator}" />
+	</target>
+	<target name="test" depends="init">
+		<loadfile property="expected">
+			<fileset file="ant-mustache.expected" />
+		</loadfile>
+
+		<loadfile property="test1.output">
+			<fileset file="ant-mustache.template" />
+			<filterchain>
+				<tokenfilter>
+					<filetokenizer />
+					<mustache projectProperties="false" dataFile="ant-mustache.properties" strictSections="false" />
+				</tokenfilter>
+			</filterchain>
+		</loadfile>
+		<loadfile property="expected">
+			<fileset file="ant-mustache.expected" />
+		</loadfile>
+		<fail message="test1 failed:${\n}output:${\n}${test1.output}${\n}${\n}Expected:${\n}${expected}">
+			<condition>
+				<not><equals arg1="${test1.output}" arg2="${expected}" /></not>
+			</condition>
+		</fail>
+		<property file="ant-mustache.properties" prefix="mustache" />	</target>
+	</project>
