@@ -432,20 +432,13 @@ public abstract class SharedTests extends GWTTestCase
     }
 
     @Test public void testNestedIndex () {
-        class Foo {
-            public String name;
-            public Integer quantity;
-            public Foo(String name, Integer quantity) {
-                this.name = name;
-                this.quantity = quantity;
-            }
-        }
         String tmpl =
             "{{#fooList}}\n" +
             "{{#quantity}}|q{{-index}}={{quantity}}{{/quantity}}|{{name}}\n" +
             "{{/fooList}}";
         test("|q1=1|a\n|b\n", tmpl,
-             context("fooList", Arrays.asList(new Foo("a", 1), new Foo("b", null))));
+             context("fooList", Arrays.asList(context("name", "a", "quantity", 1),
+                                              context("name", "b"))));
     }
 
     @Test public void testLineReporting () {
