@@ -157,7 +157,7 @@ public class Template
                 execute(currentCtx, out);
             }
             @Override public void execute (Object context, Writer out) {
-                execute(currentCtx.nest(context, 0, false, false), out);
+                execute(currentCtx.nest(context), out);
             }
             @Override public Object context () {
                 return currentCtx.data;
@@ -337,6 +337,10 @@ public class Template
             this.index = index;
             this.onFirst = onFirst;
             this.onLast = onLast;
+        }
+
+        public Context nest (Object data) {
+            return new Context(data, this, index, onFirst, onLast);
         }
 
         public Context nest (Object data, int index, boolean onFirst, boolean onLast) {

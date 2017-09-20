@@ -878,7 +878,7 @@ public class Mustache
             } else if (_comp.isFalsey(value)) {
                 // omit the section
             } else {
-                executeSegs(tmpl, ctx.nest(value, 0, false, false), out);
+                executeSegs(tmpl, ctx.nest(value), out);
             }
         }
         @Override public void decompile (Delims delims, StringBuilder into) {
