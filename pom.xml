@@ -48,8 +48,8 @@
   <properties>
     <source.level>1.8</source.level>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <gwt.version>2.8.0</gwt.version>
-    <gwt.maven.version>2.8.0</gwt.maven.version>
+    <gwt.version>2.8.2</gwt.version>
+    <gwt.maven.version>2.8.2</gwt.maven.version>
   </properties>
 
   <dependencies>
