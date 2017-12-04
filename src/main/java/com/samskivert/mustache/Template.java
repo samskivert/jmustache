@@ -47,6 +47,13 @@ public class Template
           * provided context will be nested in the fragment's bound context. */
         public abstract void execute (Object context, Writer out);
 
+        /** Executes {@code tmpl} using this fragment's bound context. This allows a lambda to
+          * resolve its fragment to a dynamically loaded template and then run that template with
+          * the same context as the lamda, allowing a lambda to act as a 'late bound' included
+          * template, i.e. you can decide which template to include based on information in the
+          * context. */
+        public abstract void executeTemplate (Template tmpl, Writer out);
+
         /** Executes this fragment and returns its result as a string. */
         public String execute () {
             StringWriter out = new StringWriter();
@@ -158,6 +165,9 @@ public class Template
             }
             @Override public void execute (Object context, Writer out) {
                 execute(currentCtx.nest(context), out);
+            }
+            @Override public void executeTemplate (Template tmpl, Writer out) {
+                tmpl.executeSegs(currentCtx, out);
             }
             @Override public Object context () {
                 return currentCtx.data;

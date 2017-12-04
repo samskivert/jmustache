@@ -649,6 +649,26 @@ public abstract class SharedTests extends GWTTestCase
              }));
     }
 
+    @Test public void testLambdaFragExecTemplate () {
+        Template a = Mustache.compiler().compile("{{value}} should be A");
+        Template b = Mustache.compiler().compile("{{value}} should be B");
+        Mustache.Lambda lambda = new Mustache.Lambda() {
+            public void execute (Template.Fragment frag, Writer out) {
+                String which = frag.execute();
+                if (which.equals("A")) {
+                    frag.executeTemplate(a, out);
+                } else if (which.equals("B")) {
+                    frag.executeTemplate(b, out);
+                } else {
+                    throw new AssertionError("Invalid fragment content: " + which);
+                }
+            }
+        };
+        String tmpl = "[{{#lam}}{{value}}{{/lam}}]";
+        test("[A should be A]", tmpl, context("lam", lambda, "value", "A"));
+        test("[B should be B]", tmpl, context("lam", lambda, "value", "B"));
+    }
+
     @Test public void testNonStandardDefaultDelims () {
         test(Mustache.compiler().withDelims("<% %>"), "bar", "<%foo%>", context("foo", "bar"));
     }
