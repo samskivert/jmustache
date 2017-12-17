@@ -313,7 +313,7 @@ public class Mustache {
 
         /** Visits an include (partial) tag.
           * @param name the name of the partial template specified by the tag.
-          * @return true if the template should be processed and visited, false to skip it.
+          * @return true if the template should be resolved and visited, false to skip it.
           */
         boolean visitInclude (String name);
 
