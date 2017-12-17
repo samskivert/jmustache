@@ -149,6 +149,16 @@ public class Template {
         executeSegs(new Context(context, pctx, 0, false, false), out);
     }
 
+    /**
+     * Visits the tags in this template (via {@code visitor}) without executing it.
+     * @param visitor the visitor to be called back on each tag in the template.
+     */
+    public void visit (Mustache.Visitor visitor) {
+        for (Segment seg : _segs) {
+            seg.visit(visitor);
+        }
+    }
+
     protected Template (Segment[] segs, Mustache.Compiler compiler) {
         _segs = segs;
         _compiler = compiler;
@@ -366,6 +376,8 @@ public class Template {
         abstract void execute (Template tmpl, Context ctx, Writer out);
 
         abstract void decompile (Mustache.Delims delims, StringBuilder into);
+
+        abstract void visit (Mustache.Visitor visitor);
 
         protected static void write (Writer out, String data) {
             try {

@@ -8,11 +8,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import com.google.gwt.junit.client.GWTTestCase;
 
@@ -346,6 +342,33 @@ public abstract class SharedTests extends GWTTestCase
         Mustache.StringSegment str = new Mustache.StringSegment("  \r\n  ", false);
         check("Text(  )-1/0", str.trimLeadBlank().toString());
         check("Text(  \\r\\n)3/-1", str.trimTrailBlank().toString());
+    }
+
+    static class GetKeysVisitor implements Mustache.Visitor {
+        public final Set<String> keys = new HashSet<String>();
+        public void visitText (String text) {}
+        public void visitVariable (String name) { keys.add(name); }
+        public boolean visitInclude (String name) { keys.add(name); return true; }
+        public boolean visitSection (String name) { keys.add(name); return true; }
+        public boolean visitInvertedSection (String name) { keys.add(name); return true; }
+    }
+
+    @Test public void testVisit() {
+        String template = "{{#one}}1{{/one}} {{^two}}2{{three}}{{/two}}{{four}}";
+        GetKeysVisitor viz = new GetKeysVisitor();
+        Mustache.compiler().compile(template).visit(viz);
+        List<String> expect = Arrays.asList("one", "two", "three", "four");
+        assertEquals(new HashSet<>(expect), viz.keys);
+    }
+
+    @Test public void testVisitNested() {
+        String template = "{{#one}}1{{/one}} {{^two}}" +
+            "2{{two_and_half}}{{#five}}{{three}}{{/five}}" +
+            "{{/two}} {{#one}}{{three}}{{/one}} {{four}}{{! ignore me }}";
+        GetKeysVisitor viz = new GetKeysVisitor();
+        Mustache.compiler().compile(template).visit(viz);
+        List<String> expect = Arrays.asList("one", "two", "three", "four", "two_and_half", "five");
+        assertEquals(new HashSet<>(expect), viz.keys);
     }
 
     protected void testNewlineSkipping (String sep) {

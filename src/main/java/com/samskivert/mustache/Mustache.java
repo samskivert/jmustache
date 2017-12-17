@@ -297,6 +297,39 @@ public class Mustache {
         <K,V> Map<K,V> createFetcherCache ();
     }
 
+    /** Used to visit the tags in a template without executing it. */
+    public interface Visitor {
+
+        /** Visits a text segment. These are blocks of text that are normally just reproduced as
+          * is when executing a template.
+          * @param text the block of text. May contain newlines.
+          */
+        void visitText (String text);
+
+        /** Visits a variable tag.
+          * @param name the name of the variable.
+          */
+        void visitVariable (String name);
+
+        /** Visits an include (partial) tag.
+          * @param name the name of the partial template specified by the tag.
+          * @return true if the template should be processed and visited, false to skip it.
+          */
+        boolean visitInclude (String name);
+
+        /** Visits a section tag.
+          * @param name the name of the section.
+          * @return true if the contents of the section should be visited, false to skip.
+          */
+        boolean visitSection (String name);
+
+        /** Visits an inverted section tag.
+          * @param name the name of the inverted section.
+          * @return true if the contents of the section should be visited, false to skip.
+          */
+        boolean visitInvertedSection (String name);
+    }
+
     /**
      * Returns a compiler that escapes HTML by default and does not use standards mode.
      */
@@ -719,6 +752,9 @@ public class Mustache {
         @Override public void decompile (Delims delims, StringBuilder into) {
             into.append(_text);
         }
+        @Override public void visit (Visitor visitor) {
+            visitor.visitText(_text);
+        }
         @Override public String toString () {
             return "Text(" + _text.replace("\r", "\\r").replace("\n", "\\n") + ")" +
                 _leadBlank + "/" + _trailBlank;
@@ -741,12 +777,26 @@ public class Mustache {
         protected final int _leadBlank, _trailBlank;
     }
 
+    /** A segment that loads and executes a sub-template. */
     protected static class IncludedTemplateSegment extends Template.Segment {
         public IncludedTemplateSegment (Compiler compiler, String name) {
             _comp = compiler;
             _name = name;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
+            // we must take care to preserve our context rather than creating a new one, which
+            // would happen if we just called execute() with ctx.data
+            getTemplate().executeSegs(ctx, out);
+        }
+        @Override public void decompile (Delims delims, StringBuilder into) {
+            delims.addTag('>', _name, into);
+        }
+        @Override public void visit (Visitor visitor) {
+            if (visitor.visitInclude(_name)) {
+                getTemplate().visit(visitor);
+            }
+        }
+        protected Template getTemplate () {
             // we compile our template lazily to avoid infinie recursion if a template includes
             // itself (see issue #13)
             if (_template == null) {
@@ -768,16 +818,11 @@ public class Mustache {
                     }
                 }
             }
-            // we must take care to preserve our context rather than creating a new one, which
-            // would happen if we just called execute() with ctx.data
-            _template.executeSegs(ctx, out);
-        }
-        @Override public void decompile (Delims delims, StringBuilder into) {
-            delims.addTag('>', _name, into);
+            return _template;
         }
         protected final Compiler _comp;
         protected final String _name;
-        protected Template _template;
+        private Template _template;
     }
 
     /** A helper class for named segments. */
@@ -807,6 +852,9 @@ public class Mustache {
         }
         @Override public void decompile (Delims delims, StringBuilder into) {
             delims.addTag(' ', _name, into);
+        }
+        @Override public void visit (Visitor visitor) {
+            visitor.visitVariable(_name);
         }
         @Override public String toString () {
             return "Var(" + _name + ":" + _line + ")";
@@ -885,6 +933,13 @@ public class Mustache {
             for (Template.Segment seg : _segs) seg.decompile(delims, into);
             delims.addTag('/', _name, into);
         }
+        @Override public void visit (Visitor visitor) {
+            if (visitor.visitSection(_name)) {
+                for (Template.Segment seg : _segs) {
+                    seg.visit(visitor);
+                }
+            }
+        }
         @Override public String toString () {
             return "Section(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
@@ -923,6 +978,13 @@ public class Mustache {
             for (Template.Segment seg : _segs) seg.decompile(delims, into);
             delims.addTag('/', _name, into);
         }
+        @Override public void visit (Visitor visitor) {
+            if (visitor.visitInvertedSection(_name)) {
+                for (Template.Segment seg : _segs) {
+                    seg.visit(visitor);
+                }
+            }
+        }
         @Override public String toString () {
             return "Inverted(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
@@ -932,6 +994,7 @@ public class Mustache {
     protected static class FauxSegment extends Template.Segment {
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {} // nada
         @Override public void decompile (Delims delims, StringBuilder into) {} // nada
+        @Override public void visit (Visitor visit) {}
         @Override public String toString () { return "Faux"; }
     }
 
