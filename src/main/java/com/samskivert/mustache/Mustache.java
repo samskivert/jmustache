@@ -26,11 +26,11 @@ import java.util.Map;
  * tmpl.execute(context); // returns "Hello world!"
  * }</pre>
  */
-public class Mustache
-{
+public class Mustache {
+
     /** Compiles templates into executable form. See {@link Mustache}. */
-    public static class Compiler
-    {
+    public static class Compiler {
+
         /** Whether or not standards mode is enabled. */
         public final boolean standardsMode;
 
@@ -226,15 +226,15 @@ public class Mustache
     }
 
     /** Handles converting objects to strings when rendering templates. */
-    public interface Formatter
-    {
+    public interface Formatter {
+
         /** Converts {@code value} to a string for inclusion in a template. */
         String format (Object value);
     }
 
     /** Handles lambdas. */
-    public interface Lambda
-    {
+    public interface Lambda {
+
         /** Executes this lambda on the supplied template fragment. The lambda should write its
           * results to {@code out}.
           *
@@ -245,8 +245,8 @@ public class Mustache
     }
 
     /** Handles lambdas that are also invoked for inverse sections.. */
-    public interface InvertibleLambda extends Lambda
-    {
+    public interface InvertibleLambda extends Lambda {
+
         /** Executes this lambda on the supplied template fragment, when the lambda is used in an
           * inverse section. The lambda should write its results to {@code out}.
           *
@@ -257,22 +257,22 @@ public class Mustache
     }
 
     /** Reads variables from context objects. */
-    public interface VariableFetcher
-    {
+    public interface VariableFetcher {
+
         /** Reads the so-named variable from the supplied context object. */
         Object get (Object ctx, String name) throws Exception;
     }
 
     /** Handles escaping characters in substituted text. */
-    public interface Escaper
-    {
+    public interface Escaper {
+
         /** Returns {@code raw} with the appropriate characters replaced with escape sequences. */
         String escape (String raw);
     }
 
     /** Handles loading partial templates. */
-    public interface TemplateLoader
-    {
+    public interface TemplateLoader {
+
         /** Returns a reader for the template with the supplied name.
           * Reader will be closed by callee.
           * @throws Exception if the template could not be loaded for any reason. */
@@ -280,8 +280,8 @@ public class Mustache
     }
 
     /** Handles interpreting objects as collections. */
-    public interface Collector
-    {
+    public interface Collector {
+
         /** Returns an iterator that can iterate over the supplied value, or null if the value is
           * not a collection. */
         Iterator<?> toIterator (final Object value);
@@ -674,8 +674,7 @@ public class Mustache
             }
         }
 
-        protected static void requireSameName (String name1, String name2, int line)
-        {
+        protected static void requireSameName (String name1, String name2, int line) {
             if (!name1.equals(name2)) {
                 throw new MustacheParseException("Section close tag with mismatched open tag '" +
                                                  name2 + "' != '" + name1 + "'", line);
@@ -798,7 +797,7 @@ public class Mustache
             _formatter = formatter;
             _escaper = escaper;
         }
-        @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             Object value = tmpl.getValueOrDefault(ctx, _name, _line);
             if (value == null) {
                 throw new MustacheException.Context("No key, method or field with name '" + _name +
@@ -840,7 +839,7 @@ public class Mustache
             super(name, line);
             _segs = trim(segs, false);
         }
-        protected void executeSegs (Template tmpl, Template.Context ctx, Writer out)  {
+        protected void executeSegs (Template tmpl, Template.Context ctx, Writer out) {
             for (Template.Segment seg : _segs) {
                 seg.execute(tmpl, ctx, out);
             }
@@ -855,7 +854,7 @@ public class Mustache
             super(name, segs, line);
             _comp = compiler;
         }
-        @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
             Iterator<?> iter = _comp.collector.toIterator(value);
             if (iter != null) {
@@ -898,7 +897,7 @@ public class Mustache
             super(name, segs, line);
             _comp = compiler;
         }
-        @Override public void execute (Template tmpl, Template.Context ctx, Writer out)  {
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
             Iterator<?> iter = _comp.collector.toIterator(value);
             if (iter != null) {

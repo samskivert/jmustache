@@ -16,6 +16,7 @@ import java.util.Map;
  * output. The context can be any tree of objects. Variables are resolved against the context.
  * Given a name {@code foo}, the following mechanisms are supported for resolving its value
  * (and are sought in this order):
+ *
  * <ul>
  * <li>If the variable has the special name {@code this} the context object itself will be
  * returned. This is useful when iterating over lists.
@@ -25,6 +26,7 @@ import java.util.Map;
  * <li>A method named {@code getFoo} in the supplied object (with non-void return value).
  * <li>A field named {@code foo} in the supplied object.
  * </ul>
+ *
  * <p> The field type, method return type, or map value type should correspond to the desired
  * behavior if the resolved name corresponds to a section. {@link Boolean} is used for showing or
  * hiding sections without binding a sub-context. Arrays, {@link Iterator} and {@link Iterable}
@@ -33,13 +35,14 @@ import java.util.Map;
  * to add if desire exists. See the <a href="http://mustache.github.com/mustache.5.html">Mustache
  * documentation</a> for more details on section behavior. </p>
  */
-public class Template
-{
+public class Template {
+
     /**
      * Encapsulates a fragment of a template that is passed to a lambda. The fragment is bound to
      * the variable context that was in effect at the time the lambda was called.
      */
     public abstract class Fragment {
+
         /** Executes this fragment; writes its result to {@code out}. */
         public abstract void execute (Writer out);
 
