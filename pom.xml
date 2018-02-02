@@ -46,7 +46,7 @@
   </prerequisites>
 
   <properties>
-    <source.level>1.8</source.level>
+    <source.level>1.7</source.level>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <gwt.version>2.8.2</gwt.version>
     <gwt.maven.version>2.8.2</gwt.maven.version>
@@ -102,6 +102,8 @@
         <configuration>
           <source>${source.level}</source>
           <target>${source.level}</target>
+          <testSource>1.8</testSource>
+          <testTarget>1.8</testTarget>
           <fork>true</fork>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
