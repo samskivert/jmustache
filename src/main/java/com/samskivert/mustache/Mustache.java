@@ -207,6 +207,33 @@ public class Mustache {
             (zeroIsFalse && (value instanceof Number) && ((Number)value).longValue() == 0);
         }
 
+        /** Loads and compiles the template {@code name} using this compiler's configured template
+          * loader. Note that this does no caching: the caller should cache the loaded template if
+          * they expect to use it multiple times.
+          * @return the compiled template.
+          * @throw MustacheException if the template could not be loaded (due to I/O exception) or
+          * compiled (due to syntax error, etc.).
+          */
+        public Template loadTemplate (String name) throws MustacheException {
+            Reader tin = null;
+            try {
+                tin = loader.getTemplate(name);
+                return compile(tin);
+            } catch (Exception e) {
+                if (e instanceof RuntimeException) {
+                    throw (RuntimeException)e;
+                } else {
+                    throw new MustacheException("Unable to load template: " + name, e);
+                }
+            } finally {
+                if (tin != null) try {
+                    tin.close();
+                } catch (IOException ioe) {
+                    throw new RuntimeException(ioe);
+                }
+            }
+        }
+
         protected Compiler (boolean standardsMode, boolean strictSections, String nullValue,
                             boolean missingIsNull, boolean emptyStringIsFalse, boolean zeroIsFalse,
                             Formatter formatter, Escaper escaper, TemplateLoader loader,
@@ -800,23 +827,7 @@ public class Mustache {
             // we compile our template lazily to avoid infinie recursion if a template includes
             // itself (see issue #13)
             if (_template == null) {
-                Reader tin = null;
-                try {
-                    tin = _comp.loader.getTemplate(_name);
-                    _template = _comp.compile(tin);
-                } catch (Exception e) {
-                    if (e instanceof RuntimeException) {
-                        throw (RuntimeException)e;
-                    } else {
-                        throw new MustacheException("Unable to load template: " + _name, e);
-                    }
-                } finally {
-                    if (tin != null) try {
-                        tin.close();
-                    } catch (IOException ioe) {
-                        throw new RuntimeException(ioe);
-                    }
-                }
+                _template = _comp.loadTemplate(_name);
             }
             return _template;
         }
