@@ -208,7 +208,7 @@ public class Template {
      * context.
      *
      * @param ctx the context in which to look up the variable.
-     * @param name the name of the variable to be resolved, which must be an interned string.
+     * @param name the name of the variable to be resolved.
      * @param missingIsNull whether to fail if a variable cannot be resolved, or to return null in
      * that case.
      *
@@ -216,11 +216,11 @@ public class Template {
      */
     protected Object getValue (Context ctx, String name, int line, boolean missingIsNull) {
         // handle our special variables
-        if (name == FIRST_NAME) {
+        if (name.equals(FIRST_NAME)) {
             return ctx.onFirst;
-        } else if (name == LAST_NAME) {
+        } else if (name.equals(LAST_NAME)) {
             return ctx.onLast;
-        } else if (name == INDEX_NAME) {
+        } else if (name.equals(INDEX_NAME)) {
             return ctx.index;
         }
 
@@ -257,7 +257,7 @@ public class Template {
         // we want to allow the first component of a compound key to be located in a parent
         // context, but once we're selecting sub-components, they must only be resolved in the
         // object that represents that component
-        Object data = getValue(ctx, comps[0].intern(), line, missingIsNull);
+        Object data = getValue(ctx, comps[0], line, missingIsNull);
         for (int ii = 1; ii < comps.length; ii++) {
             if (data == NO_FETCHER_FOUND) {
                 if (!missingIsNull) throw new MustacheException.Context(
@@ -269,7 +269,7 @@ public class Template {
             }
             // once we step into a composite key, we drop the ability to query our parent contexts;
             // that would be weird and confusing
-            data = getValueIn(data, comps[ii].intern(), line);
+            data = getValueIn(data, comps[ii], line);
         }
         return checkForMissing(name, line, missingIsNull, data);
     }
@@ -404,7 +404,7 @@ public class Template {
 
         @Override public boolean equals (Object other) {
             Key okey = (Key)other;
-            return okey.cclass == cclass && okey.name == name;
+            return okey.cclass == cclass && okey.name.equals(name);
         }
 
         @Override public String toString () {
@@ -412,11 +412,11 @@ public class Template {
         }
     }
 
-    protected static final String DOT_NAME = ".".intern();
-    protected static final String THIS_NAME = "this".intern();
-    protected static final String FIRST_NAME = "-first".intern();
-    protected static final String LAST_NAME = "-last".intern();
-    protected static final String INDEX_NAME = "-index".intern();
+    protected static final String DOT_NAME = ".";
+    protected static final String THIS_NAME = "this";
+    protected static final String FIRST_NAME = "-first";
+    protected static final String LAST_NAME = "-last";
+    protected static final String INDEX_NAME = "-index";
 
     /** A fetcher cached for lookups that failed to find a fetcher. */
     protected static Mustache.VariableFetcher NOT_FOUND_FETCHER = new Mustache.VariableFetcher() {
