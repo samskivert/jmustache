@@ -240,7 +240,7 @@ public class Template {
         // if we reach here, we found nothing in this or our parent contexts...
 
         // if we have a compound key, decompose the value and resolve it step by step
-        if (name != DOT_NAME && name.indexOf(DOT_NAME) != -1) {
+        if (!name.equals(DOT_NAME) && name.indexOf(DOT_NAME) != -1) {
             return getCompoundValue(ctx, name, line, missingIsNull);
         } else {
             // otherwise let checkForMissing() decide what to do
@@ -297,6 +297,11 @@ public class Template {
     }
 
     protected Object getValueIn (Object data, String name, int line) {
+        // if we're getting `.` or `this` then just return the whole context; we do this before the
+        // null check because it may be valid for the context to be null (if we're iterating over a
+        // list which contains nulls, for example)
+        if (isThisName(name)) return data;
+
         if (data == null) {
             throw new NullPointerException(
                 "Null context for variable '" + name + "' on line " + line);
@@ -410,6 +415,10 @@ public class Template {
         @Override public String toString () {
             return cclass.getName() + ":" + name;
         }
+    }
+
+    protected static boolean isThisName (String name) {
+        return DOT_NAME.equals(name) || THIS_NAME.equals(name);
     }
 
     protected static final String DOT_NAME = ".";

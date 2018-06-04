@@ -321,6 +321,12 @@ public abstract class SharedTests extends GWTTestCase
               execute(context("things", Arrays.asList("bar", "baz", "bif"))));
     }
 
+    @Test public void testNestedNullThis () {
+        check("bar!bif", Mustache.compiler().defaultValue("!").
+              compile("{{#things}}{{.}}{{/things}}").
+              execute(context("things", Arrays.asList("bar", null, "bif"))));
+    }
+
     @Test public void testNewlineSkipping () {
         testNewlineSkipping("\n");
     }

@@ -35,9 +35,6 @@ public abstract class BasicCollector implements Mustache.Collector
     }
 
     public Mustache.VariableFetcher createFetcher (Object ctx, String name) {
-        // support both .name and this.name to fetch members
-        if (name == Template.DOT_NAME || name == Template.THIS_NAME) return THIS_FETCHER;
-
         if (ctx instanceof Map<?,?>) return MAP_FETCHER;
 
         // if the name looks like a number, potentially use one of our 'indexing' fetchers
@@ -73,7 +70,7 @@ public abstract class BasicCollector implements Mustache.Collector
             Map<?,?> map = (Map<?,?>)ctx;
             if (map.containsKey(name)) return map.get(name);
             // special case to allow map entry set to be iterated over
-            if (name == "entrySet") return map.entrySet();
+            if ("entrySet".equals(name)) return map.entrySet();
             return Template.NO_FETCHER_FOUND;
         }
         @Override public String toString () {
@@ -110,15 +107,6 @@ public abstract class BasicCollector implements Mustache.Collector
         }
         @Override public String toString () {
             return "ITER_FETCHER";
-        }
-    };
-
-    protected static final Mustache.VariableFetcher THIS_FETCHER = new Mustache.VariableFetcher() {
-        public Object get (Object ctx, String name) throws Exception {
-            return ctx;
-        }
-        @Override public String toString () {
-            return "THIS_FETCHER";
         }
     };
 

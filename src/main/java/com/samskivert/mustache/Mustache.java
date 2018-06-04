@@ -856,8 +856,10 @@ public class Mustache {
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             Object value = tmpl.getValueOrDefault(ctx, _name, _line);
             if (value == null) {
-                throw new MustacheException.Context("No key, method or field with name '" + _name +
-                                                    "' on line " + _line, _name, _line);
+                String msg = Template.isThisName(_name) ?
+                    "Resolved '.' to null (which is disallowed), on line " + _line :
+                    "No key, method or field with name '" + _name + "' on line " + _line;
+                throw new MustacheException.Context(msg, _name, _line);
             }
             write(out, _escaper.escape(_formatter.format(value)));
         }
