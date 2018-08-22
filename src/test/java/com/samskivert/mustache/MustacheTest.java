@@ -45,8 +45,8 @@ public class MustacheTest extends SharedTests
         });
     }
 
-    @Test public void testMustacheCustomContext() {
-        test("bar", "{{foo}}", new MustacheCustomContext() {
+    @Test public void testCustomContext() {
+        test("bar", "{{foo}}", new Mustache.CustomContext() {
             @Override
             public Object get(String name) {
                 return "foo".equals(name) ? "bar" : null;

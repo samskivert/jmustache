@@ -324,6 +324,21 @@ public class Mustache {
         <K,V> Map<K,V> createFetcherCache ();
     }
 
+    /**
+     * Provides a means to implement custom logic for variable lookup. If a context object
+     * implements this interface, its {@code get} method will be used to look up variables instead
+     * of the usual methods.
+     *
+     * This is simpler than having a context implement {@link Map} which would require that it also
+     * support the {@link Map#entrySet} method for iteration. A {@code CustomContext} object cannot
+     * be used for a list section.
+     */
+    public interface CustomContext {
+
+        /** Fetches the value of a variable named {@code name}. */
+        Object get (String name) throws Exception;
+    }
+
     /** Used to visit the tags in a template without executing it. */
     public interface Visitor {
 

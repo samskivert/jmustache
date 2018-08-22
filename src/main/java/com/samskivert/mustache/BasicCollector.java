@@ -35,7 +35,7 @@ public abstract class BasicCollector implements Mustache.Collector
     }
 
     public Mustache.VariableFetcher createFetcher (Object ctx, String name) {
-        if (ctx instanceof MustacheCustomContext) return CUSTOM_FETCHER;
+        if (ctx instanceof Mustache.CustomContext) return CUSTOM_FETCHER;
         if (ctx instanceof Map<?,?>) return MAP_FETCHER;
 
         // if the name looks like a number, potentially use one of our 'indexing' fetchers
@@ -68,7 +68,7 @@ public abstract class BasicCollector implements Mustache.Collector
 
     protected static final Mustache.VariableFetcher CUSTOM_FETCHER = new Mustache.VariableFetcher() {
         public Object get (Object ctx, String name) throws Exception {
-            MustacheCustomContext custom = (MustacheCustomContext)ctx;
+            Mustache.CustomContext custom = (Mustache.CustomContext)ctx;
             Object val = custom.get(name);
             return val == null ? Template.NO_FETCHER_FOUND : val;
         }
