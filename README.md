@@ -75,6 +75,7 @@ void executeTemplate (Reader template, Writer out, Map<String, String> data) {
 The execution context can be any Java object. Variables will be resolved via the following
 mechanisms:
 
+  * If the context is a `MustacheCustomContext`, `MustacheCustomContext.get` will be used.
   * If the context is a `Map`, `Map.get` will be used.
   * If a non-void method with the same name as the variable exists, it will be called.
   * If a non-void method named (for variable `foo`) `getFoo` exists, it will be called.
