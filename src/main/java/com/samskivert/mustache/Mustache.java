@@ -203,7 +203,7 @@ public class Mustache {
           * then empty strings are considered falsey. If {@link #zeroIsFalse} is true, then zero
           * values are considered falsey. */
         public boolean isFalsey (Object value) {
-            return (emptyStringIsFalse && "".equals(value)) ||
+            return (emptyStringIsFalse && "".equals(formatter.format(value))) ||
             (zeroIsFalse && (value instanceof Number) && ((Number)value).longValue() == 0);
         }
 
