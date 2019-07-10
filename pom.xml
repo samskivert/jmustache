@@ -198,20 +198,13 @@
         <configuration>
           <quiet>true</quiet>
           <show>public</show>
-          <additionalparam>-Xdoclint:all -Xdoclint:-missing</additionalparam>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.1.2</version>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Automatic-Module-Name>com.samskivert.jmustache</Automatic-Module-Name>
-            </manifestEntries>
-          </archive>
+          <additionalOptions>
+            <additionalOption>--module-path</additionalOption>
+            <additionalOption>${project.build.outputDirectory}</additionalOption>
+            <additionalOption>-Xdoclint:all</additionalOption>
+            <additionalOption>-Xdoclint:-missing</additionalOption>
+            <additionalOption>-html5</additionalOption>
+          </additionalOptions>
         </configuration>
       </plugin>
 
