@@ -17,6 +17,16 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DefaultCollector extends BasicCollector
 {
+    private final boolean _allowAccessCoercion;
+
+    public DefaultCollector () {
+        this(true);
+    }
+
+    public DefaultCollector (boolean allowAccessCoercion) {
+        _allowAccessCoercion = allowAccessCoercion;
+    }
+
     @Override
     public Mustache.VariableFetcher createFetcher (Object ctx, String name) {
         Mustache.VariableFetcher fetcher = super.createFetcher(ctx, name);
@@ -63,10 +73,20 @@ public class DefaultCollector extends BasicCollector
     }
 
     protected Method getMethod (Class<?> clazz, String name) {
-        // first check up the superclass chain
-        for (Class<?> cc = clazz; cc != null && cc != Object.class; cc = cc.getSuperclass()) {
-            Method m = getMethodOn(cc, name);
-            if (m != null) return m;
+        if (_allowAccessCoercion) {
+            // first check up the superclass chain
+            for (Class<?> cc = clazz; cc != null && cc != Object.class; cc = cc.getSuperclass()) {
+                Method m = getMethodOn(cc, name);
+                if (m != null) return m;
+            }
+        } else {
+            // if we only allow access to accessible methods, then we can just let the JVM handle
+            // searching superclasses for the method
+            try {
+                return clazz.getMethod(name);
+            } catch (Exception e) {
+                // fall through
+            }
         }
         return null;
     }
@@ -119,11 +139,21 @@ public class DefaultCollector extends BasicCollector
     }
 
     private Method makeAccessible (Method m) {
-        if (!m.isAccessible()) m.setAccessible(true);
+        if (m.isAccessible()) return m;
+        else if (!_allowAccessCoercion) return null;
+        m.setAccessible(true);
         return m;
     }
 
     protected Field getField (Class<?> clazz, String name) {
+        if (!_allowAccessCoercion) {
+            try {
+                return clazz.getField(name);
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
         Field f;
         try {
             f = clazz.getDeclaredField(name);

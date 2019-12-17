@@ -275,4 +275,22 @@ public class MustacheTest extends SharedTests
         test("k1v1k2v2", "{{#map.entrySet}}{{key}}{{value}}{{/map.entrySet}}",
              context("map", data));
     }
+
+    @Test public void testNoAccesCoercion () {
+        Object ctx = new Object() {
+            public Object foo () {
+                return new Object() {
+                    public Object bar = new Object() {
+                        public String baz = "hello";
+                        private String quux = "hello";
+                    };
+                };
+            }
+        };
+        test("hello:hello", "{{foo.bar.baz}}:{{foo.bar.quux}}", ctx);
+        Mustache.Compiler comp = Mustache.compiler().
+            withCollector(new DefaultCollector(false)).
+            defaultValue("missing");
+        test(comp, "hello:missing", "{{foo.bar.baz}}:{{foo.bar.quux}}", ctx);
+    }
 }
