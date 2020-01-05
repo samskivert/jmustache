@@ -3,7 +3,7 @@ sudo: false
 language: java
 
 jdk:
-  - oraclejdk9
+  - openjdk9
 
 cache:
   directories:
