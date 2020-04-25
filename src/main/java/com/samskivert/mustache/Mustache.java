@@ -370,6 +370,11 @@ public class Mustache {
           * @return true if the contents of the section should be visited, false to skip.
           */
         boolean visitInvertedSection (String name);
+
+        /** Inform that all section segments were visited.
+         * @param name the name of the section or inverted section.
+         */
+        void returnFromSection (String name);
     }
 
     /**
@@ -966,6 +971,7 @@ public class Mustache {
                 for (Template.Segment seg : _segs) {
                     seg.visit(visitor);
                 }
+                visitor.returnFromSection(_name);
             }
         }
         @Override public String toString () {
@@ -1011,6 +1017,7 @@ public class Mustache {
                 for (Template.Segment seg : _segs) {
                     seg.visit(visitor);
                 }
+                visitor.returnFromSection(_name);
             }
         }
         @Override public String toString () {
