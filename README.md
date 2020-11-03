@@ -1,7 +1,4 @@
 This is a Java implementation of the [Mustache template language](http://mustache.github.com/).
-There exists [another Java implementation of Mustache](http://github.com/spullara/mustache.java),
-but the motivations for this version are sufficiently different as to justify (in the author's
-mind, anyhow) the duplication.
 
 [![Build Status](https://travis-ci.org/samskivert/jmustache.svg?branch=master)](https://travis-ci.org/samskivert/jmustache)
 
