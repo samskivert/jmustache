@@ -7,11 +7,10 @@ Motivations
 
   * Zero dependencies. You can include this single tiny library in your project and start making
     use of templates.
-  * Usability on a variety of target platforms. The other Java Mustache implementation requires
-    that a Java compiler be available to compile templates into Java classes. This implementation
-    makes no such requirements and as a result is usable on Android, or other exciting places where
-    a Java compiler is not available. It is even possible to avoid the use of reflection and
-    provide all of your data as a series of nested Maps, if desired.
+  * Usability on a variety of target platforms. This implementation makes very limited demands on
+    the JVM in which it runs and as a result is usable on Android, or on other limited JVMs. It is
+    even possible to avoid the use of reflection and provide all of your data as a series of nested
+    maps.
 
   * [Proguard](http://proguard.sourceforge.net/) and [JarJar](http://code.google.com/p/jarjar/)
     friendly. Though the library will reflectively access your data (if you desire it), the library
