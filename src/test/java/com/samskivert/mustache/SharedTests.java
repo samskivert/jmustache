@@ -243,6 +243,24 @@ public abstract class SharedTests extends GWTTestCase
                                             context("thing_name", "baz"))));
     }
 
+    @Test public void testRecursivePartial () {
+        String template = "[{{name}}{{#properties}}, {{> schema.mustache}}{{/properties}}]";
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                return new StringReader(template);
+            }
+        }), "[level0, [level1a, [level2a]], [level1b, [level2b]]]", template,
+             context("name", "level0",
+                     "properties", Arrays.asList(
+            context("name", "level1a",
+                    // test with empty list as recursive terminator
+                    "properties", context("name", "level2a", "properties", Arrays.asList())),
+            context("name", "level1b",
+                    // test with null as recursive terminator
+                    "properties", context("name", "level2b", "properties", null))
+        )));
+    }
+
     @Test public void testDelimiterChange () {
         test("foo bar baz", "{{one}} {{=<% %>=}}<%two%><%={{ }}=%> {{three}}",
              context("one", "foo", "two", "bar", "three", "baz"));
