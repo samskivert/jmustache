@@ -466,6 +466,27 @@ public abstract class SharedTests extends GWTTestCase
              context("things", Arrays.asList("foo", "bar", "baz")));
     }
 
+    @Test public void testFirstLastCombo () {
+        test("FIRST_and_LAST", "{{#things}}{{#-first}}FIRST{{/-first}}{{this}}{{#-last}}LAST{{/-last}}{{/things}}",
+                context("things", Arrays.asList("_and_")));
+    }
+
+    @Test public void testInverseFirstLastCombo () {
+        test("_and_", "{{#things}}{{^-first}}NOT-FIRST{{/-first}}{{this}}{{^-last}}NOT-LAST{{/-last}}{{/things}}",
+                context("things", Arrays.asList("_and_")));
+    }
+
+    @Test public void testNotFirst () {
+        test("1,2,3", "{{#things}}{{^-first}},{{/-first}}{{this}}{{/things}}",
+                context("things", Arrays.asList("1", "2", "3")));
+    }
+
+    @Test public void testNotLast () {
+        test("1,2,3", "{{#things}}{{this}}{{^-last}},{{/-last}}{{/things}}",
+                context("things", Arrays.asList("1", "2", "3")));
+    }
+
+
     @Test public void testFirstLast () {
         test("[foo]", "{{#things}}{{#-first}}[{{/-first}}{{this}}{{#-last}}]{{/-last}}{{/things}}",
              context("things", Arrays.asList("foo")));
