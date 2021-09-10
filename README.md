@@ -92,7 +92,7 @@ class Person {
     protected int _age;
 }
 
-String tmpl = "{{#persons}}{{name}}: {{age}}{{/persons}}\n";
+String tmpl = "{{#persons}}{{name}}: {{age}}\n{{/persons}}";
 Mustache.compiler().compile(tmpl).execute(new Object() {
     Object persons = Arrays.asList(new Person("Elvis", 75), new Person("Madonna", 52));
 });
