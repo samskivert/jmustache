@@ -178,7 +178,7 @@ Object ctx = new Object() {
     };
 };
 // template might look something like:
-<h2>{{#i18n}}title{{/i18n}</h2>
+<h2>{{#i18n}}title{{/i18n}}</h2>
 {{#i18n}}welcome_msg{{/i18n}}
 ```
 
