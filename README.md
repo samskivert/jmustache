@@ -501,7 +501,7 @@ Standards Mode
 --------------
 
 The more intrusive of these extensions, specifically the searching of parent contexts and the use
-of compound varables, can be disabled when creating a compiler, like so:
+of compound variables, can be disabled when creating a compiler, like so:
 
 ```java
 Map<String,String> ctx = new HashMap<String,String>();
