@@ -427,7 +427,7 @@ which produces output like:
 rather than:
 
     Favorite foods:
-    <ul/>
+    <ul>
       
       <li>Elvis Presley likes peanut butter.</li>
       
