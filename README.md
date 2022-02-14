@@ -409,31 +409,37 @@ Newline trimming
 If the opening or closing section tag are the only thing on a line, any surrounding whitespace and
 the line terminator following the tag are trimmed. This allows for civilized templates, like:
 
-    Favorite foods:
-    <ul>
-      {{#people}}
-      <li>{{first_name}} {{last_name}} likes {{favorite_food}}.</li>
-      {{/people}}
-    </ul>
+```html
+Favorite foods:
+<ul>
+  {{#people}}
+  <li>{{first_name}} {{last_name}} likes {{favorite_food}}.</li>
+  {{/people}}
+</ul>
+```
 
 which produces output like:
 
-    Favorite foods:
-    <ul>
-      <li>Elvis Presley likes peanut butter.</li>
-      <li>Mahatma Gandhi likes aloo dum.</li>
-    </ul>
+```html
+Favorite foods:
+<ul>
+  <li>Elvis Presley likes peanut butter.</li>
+  <li>Mahatma Gandhi likes aloo dum.</li>
+</ul>
+```
 
 rather than:
 
-    Favorite foods:
-    <ul>
-      
-      <li>Elvis Presley likes peanut butter.</li>
-      
-      <li>Mahatma Gandhi likes aloo dum.</li>
-      
-    </ul>
+```html
+Favorite foods:
+<ul>
+
+  <li>Elvis Presley likes peanut butter.</li>
+
+  <li>Mahatma Gandhi likes aloo dum.</li>
+
+</ul>
+```
 
 which would be produced without the newline trimming.
 
