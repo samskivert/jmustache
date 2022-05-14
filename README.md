@@ -1,4 +1,4 @@
-This is a Java implementation of the [Mustache template language](http://mustache.github.com/).
+This is a Java implementation of the [Mustache template language](http://mustache.github.io/).
 
 [![Build Status](https://travis-ci.org/samskivert/jmustache.svg?branch=master)](https://travis-ci.org/samskivert/jmustache)
 
@@ -119,7 +119,7 @@ Sections behave as you would expect:
 See the code in
 [MustacheTest.java](http://github.com/samskivert/jmustache/blob/master/src/test/java/com/samskivert/mustache/MustacheTest.java)
 for concrete examples. See also the
-[Mustache documentation](http://mustache.github.com/mustache.5.html) for details on the template
+[Mustache documentation](http://mustache.github.io/mustache.5.html) for details on the template
 syntax.
 
 Partials
