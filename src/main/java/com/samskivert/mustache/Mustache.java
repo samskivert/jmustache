@@ -203,8 +203,23 @@ public class Mustache {
           * then empty strings are considered falsey. If {@link #zeroIsFalse} is true, then zero
           * values are considered falsey. */
         public boolean isFalsey (Object value) {
-            return ((emptyStringIsFalse && "".equals(formatter.format(value))) ||
+            return ((emptyStringIsFalse && isEmptyCharSequence(formatter.format(value))) ||
                     (zeroIsFalse && (value instanceof Number) && ((Number)value).longValue() == 0));
+        }
+
+        /**
+         * Replaces "".equals(value). E.g. only not null values with length 0
+         */
+        private boolean isEmptyCharSequence(Object value) {
+            if (value == null) {
+                return false;
+            }
+
+            if(value instanceof CharSequence) {
+                return ((CharSequence) value).length() == 0;
+            }
+
+            return false;
         }
 
         /** Loads and compiles the template {@code name} using this compiler's configured template
@@ -255,8 +270,8 @@ public class Mustache {
     /** Handles converting objects to strings when rendering templates. */
     public interface Formatter {
 
-        /** Converts {@code value} to a string for inclusion in a template. */
-        String format (Object value);
+        /** Converts {@code value} to a CharSequence for inclusion in a template. */
+        CharSequence format (Object value);
     }
 
     /** Handles lambdas. */
@@ -295,6 +310,11 @@ public class Mustache {
 
         /** Returns {@code raw} with the appropriate characters replaced with escape sequences. */
         String escape (String raw);
+
+        /** Returns {@code raw} with the appropriate characters replaced with escape sequences. **/
+        default CharSequence escape (CharSequence raw) {
+            return escape(raw.toString());
+        }
     }
 
     /** Handles loading partial templates. */

@@ -384,9 +384,9 @@ public class Template {
 
         abstract void visit (Mustache.Visitor visitor);
 
-        protected static void write (Writer out, String data) {
+        protected static void write (Writer out, CharSequence data) {
             try {
-                out.write(data);
+                out.append(data);
             } catch (IOException ioe) {
                 throw new MustacheException(ioe);
             }

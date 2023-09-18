@@ -17,9 +17,6 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Mustache tests that can only be run on the JVM. Most tests should go in BaseMustacheTest so
@@ -52,6 +49,14 @@ public class MustacheTest extends SharedTests
                 return "foo".equals(name) ? "bar" : null;
             }
         });
+    }
+
+    @Test public void testCharSequenceVariable() {
+        Map<String, CharSequence> ctx = new HashMap<>();
+        StringBuffer stringBuffer = new StringBuffer();
+        stringBuffer.append("bar");
+        ctx.put("foo", stringBuffer);
+        test("bar", "{{foo}}", ctx);
     }
 
     public interface HasDefault {

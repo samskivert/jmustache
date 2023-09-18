@@ -9,4 +9,6 @@ package java.io;
 public abstract class Writer
 {
     public abstract void write (String text) throws IOException;
+
+    public abstract Writer append (CharSequence text) throws IOException;
 }
