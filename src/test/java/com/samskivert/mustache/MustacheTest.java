@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.TimeZone;
 
 import org.junit.Test;
+import static org.junit.Assert.fail;
 
 /**
  * Mustache tests that can only be run on the JVM. Most tests should go in BaseMustacheTest so
