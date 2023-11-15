@@ -228,6 +228,97 @@ public abstract class SharedTests extends GWTTestCase
         }), "foo inside:foo nonfoo foo", "{{bar}} {{>foo}} {{>baz}} {{bar}}", context("bar", "foo"));
     }
 
+    @Test public void testPartialIndent () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                return new StringReader("|\n{{{content}}}\n|\n");
+            }
+        }), "\\\n |\n <\n->\n |\n/\n", "\\\n {{>partial}}\n/\n", context("content", "<\n->"));
+    }
+
+    @Test public void testPartialBlankLines () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                return new StringReader("|\na\n\nb\n|\n");
+            }
+        }), "\\\n\t|\n\ta\n\n\tb\n\t|\n/\n", "\\\n\t{{>partial}}\n/\n", context());
+    }
+
+    @Test public void testNestedPartialBlankLines () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                if (name.equals("partial")) {
+                    return new StringReader("1\n\t{{>nest}}\n1\n");
+                } else {
+                    return new StringReader("2\na\n\nb\n2\n");
+                }
+            }
+        }), "\\\n\t1\n\t\t2\n\t\ta\n\n\t\tb\n\t\t2\n\t1\n/\n", "\\\n\t{{>partial}}\n/\n", context());
+    }
+
+    @Test public void testNestedPartialBlankLinesCRLF () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                if (name.equals("partial")) {
+                    return new StringReader("1\r\n\t{{>nest}}\r\n1\r\n");
+                } else {
+                    return new StringReader("2\r\na\r\n\r\nb\r\n2\r\n");
+                }
+            }
+        }), "\\\r\n\t1\r\n\t\t2\r\n\t\ta\r\n\r\n\t\tb\r\n\t\t2\r\n\t1\r\n/\r\n", "\\\r\n\t{{>partial}}\r\n/\r\n", context());
+    }
+
+    @Test public void testNestedPartialIndent () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                if (name.equals("partial")) {
+                    return new StringReader("1\n {{>nest}}\n1\n");
+                } else {
+                    return new StringReader("2\n{{{content}}}\n2\n");
+                }
+            }
+        }), "|\n 1\n  2\n  <\n->\n  2\n 1\n|\n", "|\n {{>partial}}\n|\n", context("content", "<\n->"));
+    }
+
+    @Test public void testPartialIndentWithVariableAtTheStart () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                    return new StringReader("{{{content}}}\n|\n");
+            }
+        }), "\\\n <\n->\n |\n/\n", "\\\n {{>partial}}\n/\n", context("content", "<\n->"));
+    }
+
+    @Test public void testPartialIndentWithBlock () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                    return new StringReader("|\n{{#show}}\n{{{content}}}{{/show}}\n|\n");
+            }
+        }), "\\\n |\n <\n->\n |\n/\n", "\\\n {{>partial}}\n/\n", context("show", true, "content", "<\n->"));
+    }
+    @Test public void testPartialIndentInBlock () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                    return new StringReader("content");
+            }
+        }), " content", "{{#show}}\n {{>partial}}\n{{/show}}\n", context("show", true));
+    }
+
+    @Test public void testPartialIndentWithBlockAtStart () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                    return new StringReader("{{#show}}\n{{{content}}}{{/show}}\n|\n");
+            }
+        }), "\\\n <\n->\n |\n/\n", "\\\n {{>partial}}\n/\n", context("show", true, "content", "<\n->"));
+    }
+
+    @Test public void testPartialIndentWithInlineBlock () {
+        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
+            public Reader getTemplate (String name) {
+                    return new StringReader("line {{#show}}content{{/show}}\n");
+            }
+        }), "\\\n line content\n/\n", "\\\n {{>partial}}\n/\n", context("show", true));
+    }
+
     @Test public void testPartialPlusNestedContext () {
         test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
             public Reader getTemplate (String name) {
