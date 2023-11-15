@@ -212,17 +212,15 @@ public class Mustache {
         }
 
         /**
-         * Replaces "".equals(value). E.g. only not null values with length 0
+         * Replaces "".equals(value). E.g. only not null values with length 0.
          */
-        private boolean isEmptyCharSequence(Object value) {
+        private boolean isEmptyCharSequence (Object value) {
             if (value == null) {
                 return false;
             }
-
-            if(value instanceof CharSequence) {
+            if (value instanceof CharSequence) {
                 return ((CharSequence) value).length() == 0;
             }
-
             return false;
         }
 
