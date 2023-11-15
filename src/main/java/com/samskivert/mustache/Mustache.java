@@ -396,7 +396,7 @@ public class Mustache {
 
     private Mustache () {} // no instantiateski
 
-    protected static Template.Segment[] indent(Template.Segment[] segs, String indent, boolean inline) {
+    protected static Template.Segment[] indent (Template.Segment[] segs, String indent, boolean inline) {
         for (int ii = 0, ll = segs.length; ii < ll ; ii++) {
             Template.Segment seg = segs[ii];
             Template.Segment pseg = (ii > 0) ? segs[ii - 1] : null;
@@ -422,7 +422,7 @@ public class Mustache {
                 final boolean inlineBlock = !block.firstLeadsBlank() || !prevBlank;
                 block._segs = indent(block._segs, indent, inlineBlock);
             } else if (seg instanceof IncludedTemplateSegment) {
-                final IncludedTemplateSegment segment = (IncludedTemplateSegment) seg;
+                final IncludedTemplateSegment segment = (IncludedTemplateSegment)seg;
                 if (prev != null && prev.trailsBlank()) {
                     segment._indent = prev.getTrailBlank();
                 }
@@ -822,7 +822,7 @@ public class Mustache {
             _trailBlank = trailBlank;
         }
 
-        public String getTrailBlank() {
+        public String getTrailBlank () {
             if (!trailsBlank()) {
                 return "";
             }
