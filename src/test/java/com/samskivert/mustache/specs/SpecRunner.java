@@ -53,7 +53,7 @@ public class SpecRunner extends BlockJUnit4ClassRunner
             "interpolation",
             "inverted",
             "sections",
-            // "partials"
+            "partials"
         };
         Method m = getTestClassMethod("test", Spec.class);
         List<FrameworkMethod> tests = new ArrayList<FrameworkMethod>();

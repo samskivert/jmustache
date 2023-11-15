@@ -84,7 +84,11 @@ public class Mustache {
 
         /** Compiles the supplied template into a repeatedly executable intermediate form. */
         public Template compile (Reader source) {
-            return Mustache.compile(source, this);
+            return compile(source, "");
+        }
+        /** Compiles the supplied template into a repeatedly executable intermediate form. */
+        public Template compile (Reader source, String indent) {
+            return Mustache.compile(source, this, indent);
         }
 
         /** Returns a compiler that either does or does not escape HTML by default. Note: this
@@ -214,11 +218,11 @@ public class Mustache {
           * @throw MustacheException if the template could not be loaded (due to I/O exception) or
           * compiled (due to syntax error, etc.).
           */
-        public Template loadTemplate (String name) throws MustacheException {
+        public Template loadTemplate (String name, String indent) throws MustacheException {
             Reader tin = null;
             try {
                 tin = loader.getTemplate(name);
-                return compile(tin);
+                return compile(tin, indent);
             } catch (Exception e) {
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException)e;
@@ -385,12 +389,54 @@ public class Mustache {
     /**
      * Compiles the supplied template into a repeatedly executable intermediate form.
      */
-    protected static Template compile (Reader source, Compiler compiler) {
+    protected static Template compile (Reader source, Compiler compiler, String indent) {
         Accumulator accum = new Parser(compiler).parse(source);
-        return new Template(trim(accum.finish(), true), compiler);
+        return new Template(trim(indent(accum.finish(), indent, false), true), compiler);
     }
 
     private Mustache () {} // no instantiateski
+
+    protected static Template.Segment[] indent(Template.Segment[] segs, String indent, boolean inline) {
+        for (int ii = 0, ll = segs.length; ii < ll ; ii++) {
+            Template.Segment seg = segs[ii];
+            Template.Segment pseg = (ii > 0) ? segs[ii - 1] : null;
+            Template.Segment nseg = (ii < ll - 1) ? segs[ii + 1] : null;
+            StringSegment prev = (pseg instanceof StringSegment) ? (StringSegment)pseg : null;
+            boolean prevBlank = prev != null && prev.trailsBlank();
+            // add indent after each new line when the next line is not empty
+            if (seg instanceof StringSegment && !indent.isEmpty()) {
+                final StringSegment segment = ((StringSegment) seg);
+                // add indent to every line that is not blank
+                String indentedText = segment._text.replaceAll("\n(?!\r?\n)", "\n" + indent);
+                // if the last line ist just the indent, remove it
+                if (nseg == null && indentedText.endsWith("\n" + indent)) {
+                    indentedText = indentedText.substring(0, indentedText.length() - indent.length());
+                }
+                // if this is the first segement in a block, add indent at the beginning
+                if (pseg == null && !inline) {
+                    indentedText = indent + indentedText;
+                }
+                segs[ii] = new StringSegment(indentedText, false);
+            } else if (seg instanceof BlockSegment) {
+                BlockSegment block = (BlockSegment)seg;
+                final boolean inlineBlock = !block.firstLeadsBlank() || !prevBlank;
+                block._segs = indent(block._segs, indent, inlineBlock);
+            } else if (seg instanceof IncludedTemplateSegment) {
+                final IncludedTemplateSegment segment = (IncludedTemplateSegment) seg;
+                if (prev != null && prev.trailsBlank()) {
+                    segment._indent = prev.getTrailBlank();
+                }
+            }
+        }
+        // add indent to the first line if it starts with a variable
+        if (!indent.isEmpty() && segs.length > 0 && !inline && (segs[0] instanceof VariableSegment)) {
+            Template.Segment[] oldSegs = segs;
+            segs = new Template.Segment[segs.length + 1];
+            segs[0] = new StringSegment(indent, false);
+            System.arraycopy(oldSegs, 0, segs, 1, oldSegs.length);
+        }
+        return segs;
+    }
 
     protected static Template.Segment[] trim (Template.Segment[] segs, boolean top) {
         // now that we have all of our segments, we make a pass through them to trim whitespace
@@ -415,9 +461,10 @@ public class Mustache {
                     block.trimLastBlank();
                     if (nseg != null) segs[ii+1] = next.trimLeadBlank();
                 }
+                trim(block._segs, false);
             }
             // potentially trim around non-printing (comments/delims) segments
-            else if (seg instanceof FauxSegment) {
+            else if (seg instanceof FauxSegment || seg instanceof IncludedTemplateSegment) {
                 if (prevBlank && nextBlank) {
                     if (pseg != null) segs[ii-1] = prev.trimTrailBlank();
                     if (nseg != null) segs[ii+1] = next.trimLeadBlank();
@@ -775,6 +822,13 @@ public class Mustache {
             _trailBlank = trailBlank;
         }
 
+        public String getTrailBlank() {
+            if (!trailsBlank()) {
+                return "";
+            }
+            return _text.substring(_trailBlank);
+        }
+
         public boolean leadsBlank () { return _leadBlank != -1; }
         public boolean trailsBlank () { return _trailBlank != -1; }
 
@@ -821,6 +875,7 @@ public class Mustache {
 
     /** A segment that loads and executes a sub-template. */
     protected static class IncludedTemplateSegment extends Template.Segment {
+        private String _indent = "";
         public IncludedTemplateSegment (Compiler compiler, String name) {
             _comp = compiler;
             _name = name;
@@ -842,7 +897,7 @@ public class Mustache {
             // we compile our template lazily to avoid infinie recursion if a template includes
             // itself (see issue #13)
             if (_template == null) {
-                _template = _comp.loadTemplate(_name);
+                _template = _comp.loadTemplate(_name, _indent);
             }
             return _template;
         }
@@ -913,7 +968,7 @@ public class Mustache {
 
         protected BlockSegment (String name, Template.Segment[] segs, int line) {
             super(name, line);
-            _segs = trim(segs, false);
+            _segs = segs;
         }
         protected void executeSegs (Template tmpl, Template.Context ctx, Writer out) {
             for (Template.Segment seg : _segs) {
@@ -921,7 +976,7 @@ public class Mustache {
             }
         }
 
-        protected final Template.Segment[] _segs;
+        protected Template.Segment[] _segs;
     }
 
     /** A segment that represents a section. */
