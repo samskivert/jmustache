@@ -164,6 +164,45 @@ public class Template {
         _compiler = compiler;
         _fcache = compiler.collector.createFetcherCache();
     }
+    
+    protected Template indent(String indent) {
+        /*
+         * What we want to do here is rebuild this partial template
+         * but indented.
+         * 
+         * If identing does not change anything we return
+         * the original template.
+         */
+        if (indent.equals("")) {
+            return this;
+        }
+        Segment[] copySegs = indentSegs(_segs, indent);
+        if (copySegs == _segs) {
+            return this;
+        }
+        return new Template(copySegs, _compiler);
+    }
+    
+    static Segment[] indentSegs(Segment[] _segs, String indent) {
+        if (indent.equals("")) {
+            return _segs;
+        }
+        int length = _segs.length;
+        Segment[] copySegs = new Segment[length];
+        boolean changed = false;
+        for (int i = 0; i < _segs.length; i++) {
+            Segment seg = _segs[i];
+            Segment copy = seg.indent(indent, i == (length - 1));
+            if (copy != seg) {
+                changed = true;
+            }
+            copySegs[i] = copy;
+        }
+        if (changed) {
+            return copySegs;
+        }
+        return _segs;
+    }
 
     protected void executeSegs (Context ctx, Writer out) throws MustacheException {
         for (Segment seg : _segs) {
@@ -383,6 +422,8 @@ public class Template {
         abstract void decompile (Mustache.Delims delims, StringBuilder into);
 
         abstract void visit (Mustache.Visitor visitor);
+        
+        abstract Segment indent(String indent, boolean last);
 
         protected static void write (Writer out, CharSequence data) {
             try {
