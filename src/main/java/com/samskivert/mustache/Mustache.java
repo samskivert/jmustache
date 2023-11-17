@@ -84,11 +84,7 @@ public class Mustache {
 
         /** Compiles the supplied template into a repeatedly executable intermediate form. */
         public Template compile (Reader source) {
-            return compile(source, "");
-        }
-        /** Compiles the supplied template into a repeatedly executable intermediate form. */
-        public Template compile (Reader source, String indent) {
-            return Mustache.compile(source, this, indent);
+            return Mustache.compile(source, this);
         }
 
         /** Returns a compiler that either does or does not escape HTML by default. Note: this
@@ -231,11 +227,11 @@ public class Mustache {
           * @throw MustacheException if the template could not be loaded (due to I/O exception) or
           * compiled (due to syntax error, etc.).
           */
-        public Template loadTemplate (String name, String indent) throws MustacheException {
+        public Template loadTemplate (String name) throws MustacheException {
             Reader tin = null;
             try {
                 tin = loader.getTemplate(name);
-                return compile(tin, indent);
+                return compile(tin);
             } catch (Exception e) {
                 if (e instanceof RuntimeException) {
                     throw (RuntimeException)e;
@@ -407,58 +403,18 @@ public class Mustache {
     /**
      * Compiles the supplied template into a repeatedly executable intermediate form.
      */
-    protected static Template compile (Reader source, Compiler compiler, String indent) {
+    protected static Template compile (Reader source, Compiler compiler) {
         Accumulator accum = new Parser(compiler).parse(source);
-        return new Template(trim(indent(accum.finish(), indent, false), true), compiler);
+        return new Template(trim(accum.finish(), true), compiler);
     }
 
     private Mustache () {} // no instantiateski
 
-    protected static Template.Segment[] indent (Template.Segment[] segs, String indent, boolean inline) {
-        for (int ii = 0, ll = segs.length; ii < ll ; ii++) {
-            Template.Segment seg = segs[ii];
-            Template.Segment pseg = (ii > 0) ? segs[ii - 1] : null;
-            Template.Segment nseg = (ii < ll - 1) ? segs[ii + 1] : null;
-            StringSegment prev = (pseg instanceof StringSegment) ? (StringSegment)pseg : null;
-            boolean prevBlank = prev != null && prev.trailsBlank();
-            // add indent after each new line when the next line is not empty
-            if (seg instanceof StringSegment && !indent.isEmpty()) {
-                final StringSegment segment = ((StringSegment) seg);
-                // add indent to every line that is not blank
-                String indentedText = segment._text.replaceAll("\n(?!\r?\n)", "\n" + indent);
-                // if the last line ist just the indent, remove it
-                if (nseg == null && indentedText.endsWith("\n" + indent)) {
-                    indentedText = indentedText.substring(0, indentedText.length() - indent.length());
-                }
-                // if this is the first segement in a block, add indent at the beginning
-                if (pseg == null && !inline) {
-                    indentedText = indent + indentedText;
-                }
-                segs[ii] = new StringSegment(indentedText, false);
-            } else if (seg instanceof BlockSegment) {
-                BlockSegment block = (BlockSegment)seg;
-                final boolean inlineBlock = !block.firstLeadsBlank() || !prevBlank;
-                block._segs = indent(block._segs, indent, inlineBlock);
-            } else if (seg instanceof IncludedTemplateSegment) {
-                final IncludedTemplateSegment segment = (IncludedTemplateSegment)seg;
-                if (prev != null && prev.trailsBlank()) {
-                    segment._indent = prev.getTrailBlank();
-                }
-            }
-        }
-        // add indent to the first line if it starts with a variable
-        if (!indent.isEmpty() && segs.length > 0 && !inline && (segs[0] instanceof VariableSegment)) {
-            Template.Segment[] oldSegs = segs;
-            segs = new Template.Segment[segs.length + 1];
-            segs[0] = new StringSegment(indent, false);
-            System.arraycopy(oldSegs, 0, segs, 1, oldSegs.length);
-        }
-        return segs;
-    }
-
     protected static Template.Segment[] trim (Template.Segment[] segs, boolean top) {
+        // Trim modifies segs! It's return is not a copy!
         // now that we have all of our segments, we make a pass through them to trim whitespace
         // from section tags which stand alone on their lines
+        assert segs != null;
         for (int ii = 0, ll = segs.length; ii < ll; ii++) {
             Template.Segment seg = segs[ii];
             Template.Segment pseg = (ii > 0   ) ? segs[ii-1] : null;
@@ -479,10 +435,26 @@ public class Mustache {
                     block.trimLastBlank();
                     if (nseg != null) segs[ii+1] = next.trimLeadBlank();
                 }
-                trim(block._segs, false);
+            }
+            // we have to indent partials if there is space before
+            // they are also standalone...
+            else if (seg instanceof IncludedTemplateSegment) {
+                if (prev != null && prevBlank && nextBlank) {
+                    String indent = prev.indent();
+                    if (! indent.equals("")) {
+                        segs[ii] = seg.indent(indent, nseg == null);
+                    }
+                    /*
+                     * We trim the end because partials
+                     * follow standalone just like blocks
+                     */
+                    if (nseg != null) { 
+                        segs[ii+1] = next.trimLeadBlank();
+                    }
+                }
             }
             // potentially trim around non-printing (comments/delims) segments
-            else if (seg instanceof FauxSegment || seg instanceof IncludedTemplateSegment) {
+            else if (seg instanceof FauxSegment) {
                 if (prevBlank && nextBlank) {
                     if (pseg != null) segs[ii-1] = prev.trimTrailBlank();
                     if (nseg != null) segs[ii+1] = next.trimLeadBlank();
@@ -840,13 +812,6 @@ public class Mustache {
             _trailBlank = trailBlank;
         }
 
-        public String getTrailBlank () {
-            if (!trailsBlank()) {
-                return "";
-            }
-            return _text.substring(_trailBlank);
-        }
-
         public boolean leadsBlank () { return _leadBlank != -1; }
         public boolean trailsBlank () { return _trailBlank != -1; }
 
@@ -858,6 +823,25 @@ public class Mustache {
         public StringSegment trimTrailBlank  () {
             return _trailBlank == -1 ? this : new StringSegment(
                 _text.substring(0, _trailBlank), _leadBlank, -1);
+        }
+        
+        /**
+         * Calculate indent for partial idententation
+         * @return indent space or empty string
+         */
+        String indent() {
+            if (_trailBlank == -1 || _trailBlank >= _text.length()) {
+                return "";
+            }
+           return  _text.substring(_trailBlank);
+        }
+        
+        StringSegment indent(String indent, boolean last) {
+            if (indent.equals("")) {
+                return this;
+            }
+            String reindent = reindent(_text, indent, last);
+            return new StringSegment(reindent , _leadBlank, _trailBlank);
         }
 
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
@@ -872,6 +856,20 @@ public class Mustache {
         @Override public String toString () {
             return "Text(" + _text.replace("\r", "\\r").replace("\n", "\\n") + ")" +
                 _leadBlank + "/" + _trailBlank;
+        }
+        
+        //we indent after every new line for partial indententation
+        private static String reindent(String input, String indent, boolean last) {
+            int length = input.length();
+            StringBuilder sb = new StringBuilder(length);
+            for (int i = 0; i < length; i++) {
+                char c = input.charAt(i);
+                sb.append(c);
+                if (c == '\n' && ! ( last && i == length - 1)) {
+                    sb.append(indent);
+                }
+            }
+            return sb.toString();
         }
 
         private static int blankPos (String text, boolean leading, boolean first) {
@@ -893,10 +891,13 @@ public class Mustache {
 
     /** A segment that loads and executes a sub-template. */
     protected static class IncludedTemplateSegment extends Template.Segment {
-        private String _indent = "";
         public IncludedTemplateSegment (Compiler compiler, String name) {
+            this(compiler, name, "");
+        }
+        private IncludedTemplateSegment (Compiler compiler, String name, String indent) {
             _comp = compiler;
             _name = name;
+            _indent = indent;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             // we must take care to preserve our context rather than creating a new one, which
@@ -915,12 +916,23 @@ public class Mustache {
             // we compile our template lazily to avoid infinie recursion if a template includes
             // itself (see issue #13)
             if (_template == null) {
-                _template = _comp.loadTemplate(_name, _indent);
+                _template = _comp.loadTemplate(_name).indent(_indent);
             }
             return _template;
         }
+        protected IncludedTemplateSegment indent(String indent, boolean last) {
+            // Indent this partial based on the spacing provided.
+            // per the spec however much the partial reference is indendented (leading whitespace)
+            // is how much the partial content should be indented.
+            if (indent.equals("")) {
+                return this;
+            }
+            return new IncludedTemplateSegment(_comp, _name, indent + this._indent );
+        }
+        
         protected final Compiler _comp;
         protected final String _name;
+        private final String _indent;
         private Template _template;
     }
 
@@ -957,6 +969,10 @@ public class Mustache {
         @Override public void visit (Visitor visitor) {
             visitor.visitVariable(_name);
         }
+        @Override
+        VariableSegment indent(String indent, boolean last) {
+            return this;
+        }
         @Override public String toString () {
             return "Var(" + _name + ":" + _line + ")";
         }
@@ -986,15 +1002,17 @@ public class Mustache {
 
         protected BlockSegment (String name, Template.Segment[] segs, int line) {
             super(name, line);
-            _segs = segs;
+            _segs = trim(segs, false);
         }
         protected void executeSegs (Template tmpl, Template.Context ctx, Writer out) {
             for (Template.Segment seg : _segs) {
                 seg.execute(tmpl, ctx, out);
             }
         }
+        
+        protected abstract BlockSegment indent(String indent, boolean last);
 
-        protected Template.Segment[] _segs;
+        protected final Template.Segment[] _segs;
     }
 
     /** A segment that represents a section. */
@@ -1041,6 +1059,17 @@ public class Mustache {
                 }
             }
         }
+        @Override
+        protected SectionSegment indent(String indent, boolean last) {
+            if (indent.equals("")) {
+                return this;
+            }
+            Template.Segment[] segs = Template.indentSegs(_segs, indent);
+            if (segs == _segs) {
+                return this;
+            }
+            return new SectionSegment(_comp, _name, segs, _line);
+        }
         @Override public String toString () {
             return "Section(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
@@ -1086,6 +1115,17 @@ public class Mustache {
                 }
             }
         }
+        @Override
+        protected InvertedSegment indent(String indent, boolean last) {
+            if (indent.equals("")) {
+                return this;
+            }
+            Template.Segment[] segs = Template.indentSegs(_segs, indent);
+            if (segs == _segs) {
+                return this;
+            }
+            return new InvertedSegment(_comp, _name, segs, _line);
+        }
         @Override public String toString () {
             return "Inverted(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
@@ -1096,6 +1136,7 @@ public class Mustache {
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {} // nada
         @Override public void decompile (Delims delims, StringBuilder into) {} // nada
         @Override public void visit (Visitor visit) {}
+        @Override FauxSegment indent(String indent, boolean last) { return this; }
         @Override public String toString () { return "Faux"; }
     }
 
