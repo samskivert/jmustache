@@ -1,0 +1,40 @@
+name: Build with Maven
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    strategy:
+      matrix:
+        java: ['11', '17', '21']
+
+    runs-on: ubuntu-latest
+    env:
+      BUILD_NUMBER: "${{github.run_number}}"
+      MAVEN_CLI_OPTS: "--batch-mode --no-transfer-progress"
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'true'
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Build and Test with Maven
+        run: mvn $MAVEN_CLI_OPTS clean verify 
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v3
+        if: ${{ always() && matrix.java == '11' }} 
+        with:
+          name: test-results
+          path: 'target/surefire-reports/TEST-*.xml'
+

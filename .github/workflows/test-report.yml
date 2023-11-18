@@ -1,0 +1,16 @@
+name: 'Test Report'
+on:
+  workflow_run:
+    workflows: ['Build with Maven']
+    types:
+      - completed
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: dorny/test-reporter@v1
+      with:
+        artifact: test-results
+        name: Maven Surefire Tests
+        path: 'TEST-*.xml'
+        reporter: java-junit
