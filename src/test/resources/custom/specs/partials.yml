@@ -1,0 +1,45 @@
+overview: |
+  Partial tags are used to expand an external template into the current
+  template.
+
+  The tag's content MUST be a non-whitespace character sequence NOT containing
+  the current closing delimiter.
+
+  This tag's content names the partial to inject.  Set Delimiter tags MUST NOT
+  affect the parsing of a partial.  The partial MUST be rendered against the
+  context stack local to the tag.  If the named partial cannot be found, the
+  empty string SHOULD be used instead, as in interpolations.
+
+  Partial tags SHOULD be treated as standalone when appropriate.  If this tag
+  is used standalone, any whitespace preceding the tag should treated as
+  indentation, and prepended to each line of the partial before rendering.
+tests:
+
+  - name: Nested Partial Indent
+    desc: "Nested partials should including the parent partials indent"
+    data: { content: "<\n->" }
+    template: "|\n {{>partial}}\n|\n"
+    partials:
+      partial: "1\n {{>nest}}\n1\n"
+      nest: "2\n{{{content}}}\n2\n"
+    expected: "|\n 1\n  2\n  <\n->\n  2\n 1\n|\n"
+
+  - name: Standalone Indentation
+    desc: Each line of the partial should be indented before rendering.
+    data: { content: "<\n->" }
+    template: |
+      \
+       {{>partial}}
+      /
+    partials:
+      partial: |
+        |
+        {{{content}}}
+        |
+    expected: |
+      \
+       |
+       <
+      ->
+       |
+      /

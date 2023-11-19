@@ -4,16 +4,34 @@
 
 package com.samskivert.mustache;
 
+import static java.util.Map.entry;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
 
+import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
+
+import com.samskivert.mustache.specs.SpecTest;
 
 /**
  * Vestige from when JMustache supported both GWT and JVM.
@@ -210,17 +228,25 @@ public abstract class SharedTests
             fail();
         } catch (UnsupportedOperationException uoe) {} // expected
     }
+    
+    
+    Map<String,String> partials = new LinkedHashMap<>();
 
+    @SafeVarargs
+    protected final Mustache.TemplateLoader partials(Map.Entry<String, String> ... entries) {
+        Map<String,String> templates = new LinkedHashMap<>();
+        for (Entry<String, String> e : entries) {
+            templates.put(e.getKey(), e.getValue());
+        }
+        partials = templates;
+        return name -> new StringReader(templates.get(name));
+    }
+    
     @Test public void testPartial () {
-        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
-            public Reader getTemplate (String name) {
-                if (name.equals("foo")) {
-                    return new StringReader("inside:{{bar}}");
-                } else {
-                    return new StringReader("nonfoo");
-                }
-            }
-        }), "foo inside:foo nonfoo foo", "{{bar}} {{>foo}} {{>baz}} {{bar}}", context("bar", "foo"));
+        test(Mustache.compiler().withLoader(
+                partials(entry("foo", "inside:{{bar}}"), 
+                        entry("baz", "nonfoo")))
+                , "foo inside:foo nonfoo foo", "{{bar}} {{>foo}} {{>baz}} {{bar}}", context("bar", "foo"));
     }
 
     @Test public void testPartialIndent () {
@@ -231,7 +257,7 @@ public abstract class SharedTests
         }), "\\\n |\n <\n->\n |\n/\n", "\\\n {{>partial}}\n/\n", context("content", "<\n->"));
     }
 
-    /* @Test */ public void testPartialBlankLines () {
+    @Ignore @Test public void testPartialBlankLines () {
         test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
             public Reader getTemplate (String name) {
                 return new StringReader("|\na\n\nb\n|\n");
@@ -239,7 +265,7 @@ public abstract class SharedTests
         }), "\\\n\t|\n\ta\n\n\tb\n\t|\n/\n", "\\\n\t{{>partial}}\n/\n", context());
     }
 
-    /* @Test */ public void testNestedPartialBlankLines () {
+    @Ignore @Test public void testNestedPartialBlankLines () {
         test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
             public Reader getTemplate (String name) {
                 if (name.equals("partial")) {
@@ -251,7 +277,7 @@ public abstract class SharedTests
         }), "\\\n\t1\n\t\t2\n\t\ta\n\n\t\tb\n\t\t2\n\t1\n/\n", "\\\n\t{{>partial}}\n/\n", context());
     }
 
-    /* @Test */ public void testNestedPartialBlankLinesCRLF () {
+    @Ignore @Test public void testNestedPartialBlankLinesCRLF () {
         test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
             public Reader getTemplate (String name) {
                 if (name.equals("partial")) {
@@ -263,16 +289,11 @@ public abstract class SharedTests
         }), "\\\r\n\t1\r\n\t\t2\r\n\t\ta\r\n\r\n\t\tb\r\n\t\t2\r\n\t1\r\n/\r\n", "\\\r\n\t{{>partial}}\r\n/\r\n", context());
     }
 
-    /* @Test */ public void testNestedPartialIndent () {
-        test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
-            public Reader getTemplate (String name) {
-                if (name.equals("partial")) {
-                    return new StringReader("1\n {{>nest}}\n1\n");
-                } else {
-                    return new StringReader("2\n{{{content}}}\n2\n");
-                }
-            }
-        }), "|\n 1\n  2\n  <\n->\n  2\n 1\n|\n", "|\n {{>partial}}\n|\n", context("content", "<\n->"));
+    /* @Ignore */ @Test public void testNestedPartialIndent () {
+        Mustache.TemplateLoader loader = partials(entry("partial", "1\n {{>nest}}\n1\n"), entry("nest", "2\n{{{content}}}\n2\n"));
+        test(Mustache.compiler().withLoader(loader), 
+                "|\n 1\n  2\n  <\n->\n  2\n 1\n|\n", 
+                "|\n {{>partial}}\n|\n", context("content", "<\n->"));
     }
 
     @Test public void testPartialIndentWithVariableAtTheStart () {
@@ -826,12 +847,40 @@ public abstract class SharedTests
         test(Mustache.compiler().withDelims("<% %>"), "bar", "<%foo%>", context("foo", "bar"));
     }
 
-    protected void test (Mustache.Compiler compiler, String expected, String template, Object ctx) {
-        check(expected, compiler.compile(template).execute(ctx));
+    protected String name;
+    
+    @Rule public TestRule watcher = new TestWatcher() {
+       protected void starting(Description description) {
+           name = description.getDisplayName();
+       }
+    };
+    
+    protected void test(Mustache.Compiler compiler, String expected, String template, Object ctx) {
+        String actual = compiler.compile(template).execute(ctx);
+        if (! Objects.equals(expected, actual)) {
+            System.out.println("");
+            System.out.println("----------------------------------------");
+            System.out.println("");
+            System.out.println("Failed: " + name);
+            System.out.println("Template : \"" + SpecTest.showWhitespace(template) + "\"");
+            if (! partials.isEmpty()) {
+                System.out.println("Partials : ");
+                for (Entry<String, String> e : partials.entrySet()) {
+                    System.out.println("\t" + e.getKey() + ": \"" + SpecTest.showWhitespace(e.getValue()) + "\"");
+                }
+            }
+            System.out.println("Expected : \"" + SpecTest.showWhitespace(expected) + "\"");
+            System.out.println("Result   : \"" + SpecTest.showWhitespace(actual) + "\"");
+            System.out.println("----------------------------------------");
+            System.out.println("");
+        }
+        check(expected, actual);
     }
 
     protected void check (String expected, String output) {
-        assertEquals(uncrlf(expected), uncrlf(output));
+        //assertEquals(uncrlf(expected), uncrlf(output));
+        assertEquals(SpecTest.showWhitespace(expected), SpecTest.showWhitespace(output));
+
     }
 
     protected void test (String expected, String template, Object ctx) {
