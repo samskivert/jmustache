@@ -22,16 +22,16 @@ import com.samskivert.mustache.Template;
 public class SpecTest {
 
     private static final Yaml yaml = new Yaml();
-    
+
     private final Spec spec;
     private final String name;
-    
-    public SpecTest(Spec spec, String name) {
+
+    public SpecTest (Spec spec, String name) {
         super();
         this.spec = spec;
         this.name = name;
     }
-    
+
     private static Mustache.Compiler compiler;
     private static SpecAwareTemplateLoader loader;
 
@@ -40,9 +40,9 @@ public class SpecTest {
         loader = new SpecAwareTemplateLoader();
         compiler = Mustache.compiler().defaultValue("").withLoader(loader);
     }
-    
+
     @Test
-    public void test() throws Exception {
+    public void test () throws Exception {
         //System.out.println("Testing: " + name);
         loader.setSpec(spec);
         String tmpl = spec.getTemplate();
@@ -74,8 +74,8 @@ public class SpecTest {
             }
         }
     }
-    
-    private static String showWhitespace(String s) {
+
+    private static String showWhitespace (String s) {
        s = s.replace("\r\n", "\u240D");
        s = s.replace('\t', '\u21E5');
        s = s.replace("\n", "\u21B5\n");
@@ -83,20 +83,20 @@ public class SpecTest {
 
        return s;
     }
-    
+
     private static String uncrlf (String text) {
         return (text == null) ? null : text.replace("\r", "\\r").replace("\n", "\\n");
     }
 
     @Parameters(name = "{1}")
-    public static Collection<Object[]> data() {
-        String[] groups = new String[] { //
-                "comments", //
-                "delimiters", //
-                "interpolation", //
-                "inverted", //
-                "sections", //
-                "partials"
+    public static Collection<Object[]> data () {
+        String[] groups = new String[] {
+            "comments",
+            "delimiters",
+            "interpolation",
+            "inverted",
+            "sections",
+            "partials"
         };
         List<Object[]> tuples = new ArrayList<>();
         int i = 0;
@@ -110,7 +110,7 @@ public class SpecTest {
         return tuples;
     }
 
-    private static Iterable<Spec> getTestsForGroup(String name) {
+    private static Iterable<Spec> getTestsForGroup (String name) {
         String ymlPath = "/specs/specs/" + name + ".yml";
         try {
             @SuppressWarnings("unchecked")
