@@ -5,6 +5,7 @@
 package com.samskivert.mustache.specs;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * @author Yoryos Valotasios
@@ -26,7 +27,7 @@ public class Spec
     }
 
     public String getDescription () {
-        return (String) map.get("descr");
+        return (String) map.get("desc");
     }
 
     public String getTemplate () {
@@ -43,5 +44,21 @@ public class Spec
 
     public String getPartial (String name) {
         return partials == null ? null : partials.get(name);
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        Consumer<String> value = s -> sb.append("\"").append(s).append("\"").append("\n");
+        Consumer<String> label = s -> sb.append("").append(s).append(": ");
+        label.accept("name");
+        value.accept(getName());
+        label.accept("desc");
+        value.accept(getDescription());
+        label.accept("template");
+        value.accept(getTemplate());
+        label.accept("expected");
+        value.accept(getExpectedOutput());
+        return sb.toString();
     }
 }

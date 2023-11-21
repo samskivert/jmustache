@@ -7,19 +7,14 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 
 import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 
-@RunWith(Parameterized.class)
-public class SpecTest {
+public abstract class SpecTest {
 
     private static final Yaml yaml = new Yaml();
 
@@ -32,19 +27,11 @@ public class SpecTest {
         this.name = name;
     }
 
-    private static Mustache.Compiler compiler;
-    private static SpecAwareTemplateLoader loader;
-
-    @BeforeClass
-    public static void setUp () {
-        loader = new SpecAwareTemplateLoader();
-        compiler = Mustache.compiler().defaultValue("").withLoader(loader);
-    }
-
     @Test
     public void test () throws Exception {
         //System.out.println("Testing: " + name);
-        loader.setSpec(spec);
+        SpecAwareTemplateLoader loader = new SpecAwareTemplateLoader(spec);
+        Mustache.Compiler compiler = Mustache.compiler().defaultValue("").withLoader(loader);
         String tmpl = spec.getTemplate();
         String desc = String.format("Template: '''%s'''\nData: '%s'\n",
                                     uncrlf(tmpl), uncrlf(spec.getData().toString()));
@@ -75,7 +62,7 @@ public class SpecTest {
         }
     }
 
-    private static String showWhitespace (String s) {
+    public static String showWhitespace (String s) {
        s = s.replace("\r\n", "\u240D");
        s = s.replace('\t', '\u21E5');
        s = s.replace("\n", "\u21B5\n");
@@ -88,20 +75,12 @@ public class SpecTest {
         return (text == null) ? null : text.replace("\r", "\\r").replace("\n", "\\n");
     }
 
-    @Parameters(name = "{1}")
-    public static Collection<Object[]> data () {
-        String[] groups = new String[] {
-            "comments",
-            "delimiters",
-            "interpolation",
-            "inverted",
-            "sections",
-            "partials"
-        };
+    
+    public static Collection<Object[]> data (String specPath, String[] groups) {
         List<Object[]> tuples = new ArrayList<>();
         int i = 0;
         for (String g : groups) {
-            Iterable<Spec> specs = getTestsForGroup(g);
+            Iterable<Spec> specs = getTestsForGroup(specPath, g);
             for (Spec s : specs) {
                 Object[] tuple = new Object[] {s, g + "-" + s.getName() + "-" + i++};
                 tuples.add(tuple);
@@ -110,8 +89,13 @@ public class SpecTest {
         return tuples;
     }
 
-    private static Iterable<Spec> getTestsForGroup (String name) {
-        String ymlPath = "/specs/specs/" + name + ".yml";
+    private static Iterable<Spec> getTestsForGroup (String specPath, String name) {
+        //String ymlPath = "/specs/specs/" + name + ".yml";
+        String ymlPath = specPath + name + ".yml";
+        return getTestsFromYaml(name, ymlPath);
+    }
+
+    private static Iterable<Spec> getTestsFromYaml(String name, String ymlPath) {
         try {
             @SuppressWarnings("unchecked")
             Map<String, Object> map = (Map<String, Object>) yaml.load(SpecTest.class.getResourceAsStream(ymlPath));

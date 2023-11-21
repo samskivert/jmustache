@@ -12,9 +12,10 @@ import com.samskivert.mustache.Mustache;
 public class SpecAwareTemplateLoader implements Mustache.TemplateLoader
 {
     private static final String EMPTY_STRING = "";
-    private Spec spec;
+    private final Spec spec;
 
-    public void setSpec (Spec spec) {
+    public SpecAwareTemplateLoader(Spec spec) {
+        super();
         this.spec = spec;
     }
 
