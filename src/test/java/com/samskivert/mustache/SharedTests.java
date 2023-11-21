@@ -257,15 +257,15 @@ public abstract class SharedTests
         }), "\\\n |\n <\n->\n |\n/\n", "\\\n {{>partial}}\n/\n", context("content", "<\n->"));
     }
 
-    @Ignore @Test public void testPartialBlankLines () {
+    @Test public void testPartialBlankLines () {
         test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
             public Reader getTemplate (String name) {
                 return new StringReader("|\na\n\nb\n|\n");
             }
-        }), "\\\n\t|\n\ta\n\n\tb\n\t|\n/\n", "\\\n\t{{>partial}}\n/\n", context());
+        }), "\\\n\t|\n\ta\n\t\n\tb\n\t|\n/\n", "\\\n\t{{>partial}}\n/\n", context());
     }
 
-    @Ignore @Test public void testNestedPartialBlankLines () {
+    @Test public void testNestedPartialBlankLines () {
         test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
             public Reader getTemplate (String name) {
                 if (name.equals("partial")) {
@@ -274,10 +274,10 @@ public abstract class SharedTests
                     return new StringReader("2\na\n\nb\n2\n");
                 }
             }
-        }), "\\\n\t1\n\t\t2\n\t\ta\n\n\t\tb\n\t\t2\n\t1\n/\n", "\\\n\t{{>partial}}\n/\n", context());
+        }), "\\\n\t1\n\t\t2\n\t\ta\n\t\t\n\t\tb\n\t\t2\n\t1\n/\n", "\\\n\t{{>partial}}\n/\n", context());
     }
 
-    @Ignore @Test public void testNestedPartialBlankLinesCRLF () {
+    @Test public void testNestedPartialBlankLinesCRLF () {
         test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
             public Reader getTemplate (String name) {
                 if (name.equals("partial")) {
@@ -286,10 +286,10 @@ public abstract class SharedTests
                     return new StringReader("2\r\na\r\n\r\nb\r\n2\r\n");
                 }
             }
-        }), "\\\r\n\t1\r\n\t\t2\r\n\t\ta\r\n\r\n\t\tb\r\n\t\t2\r\n\t1\r\n/\r\n", "\\\r\n\t{{>partial}}\r\n/\r\n", context());
+        }), "\\\r\n\t1\r\n\t\t2\r\n\t\ta\r\n\t\t\r\n\t\tb\r\n\t\t2\r\n\t1\r\n/\r\n", "\\\r\n\t{{>partial}}\r\n/\r\n", context());
     }
 
-    /* @Ignore */ @Test public void testNestedPartialIndent () {
+    @Test public void testNestedPartialIndent () {
         Mustache.TemplateLoader loader = partials(entry("partial", "1\n {{>nest}}\n1\n"), entry("nest", "2\n{{{content}}}\n2\n"));
         test(Mustache.compiler().withLoader(loader), 
                 "|\n 1\n  2\n  <\n->\n  2\n 1\n|\n", 
