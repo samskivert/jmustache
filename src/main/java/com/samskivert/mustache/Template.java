@@ -176,32 +176,11 @@ public class Template {
         if (indent.equals("")) {
             return this;
         }
-        Segment[] copySegs = indentSegs(_segs, indent);
+        Segment[] copySegs = Mustache.indentSegs(_segs, indent);
         if (copySegs == _segs) {
             return this;
         }
         return new Template(copySegs, _compiler);
-    }
-    
-    static Segment[] indentSegs(Segment[] _segs, String indent) {
-        if (indent.equals("")) {
-            return _segs;
-        }
-        int length = _segs.length;
-        Segment[] copySegs = new Segment[length];
-        boolean changed = false;
-        for (int i = 0; i < _segs.length; i++) {
-            Segment seg = _segs[i];
-            Segment copy = seg.indent(indent, i == (length - 1));
-            if (copy != seg) {
-                changed = true;
-            }
-            copySegs[i] = copy;
-        }
-        if (changed) {
-            return copySegs;
-        }
-        return _segs;
     }
 
     protected void executeSegs (Context ctx, Writer out) throws MustacheException {
@@ -422,8 +401,28 @@ public class Template {
         abstract void decompile (Mustache.Delims delims, StringBuilder into);
 
         abstract void visit (Mustache.Visitor visitor);
-        
-        abstract Segment indent(String indent, boolean last);
+        /**
+         * Recursively indent by the parameter indent.
+         * @param indent should be space characters that are not \n
+         * @param first append indent to the first line (regardless if it has a \n or not)
+         * @param last append indent on the last \n that has no text after it
+         * @return newly crated segment or the same segment if nothing changed.
+         */
+        abstract Segment indent(String indent, boolean first, boolean last);
+        /**
+         * Whether or not the segment is standalone.
+         * For blocks this is based on the closing tag.
+         * Once Trim is called standalone tags are determined so
+         * that proper (re)indentation will work without reparsing
+         * the template.
+         * 
+         * String and variable tags are never standalone.
+         * 
+         * The definition of standalone is defined by the mustache spec.
+         * 
+         * @return true if the tag is standalone
+         */
+        abstract boolean isStandalone();
 
         protected static void write (Writer out, CharSequence data) {
             try {
