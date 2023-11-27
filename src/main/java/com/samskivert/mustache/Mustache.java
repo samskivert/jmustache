@@ -470,7 +470,15 @@ public class Mustache {
         return segs;
     }
 
-    static Template.Segment[] indentSegs(Template.Segment[] _segs, String indent) {
+    /**
+     * Indents segments by indent.
+     * @param _segs segments to be cloned if indentation is needed
+     * @param indent the space to use for indent.
+     * @param _first whether to append an indent on the first segment
+     * @param _last whether to append an indent on the last segment last empty newline (no character after \n).
+     * @return cloned segments if changed
+     */
+    static Template.Segment[] indentSegs(Template.Segment[] _segs, String indent, boolean _first, boolean _last) {
         // unlike trim this method clones the segments if they have changed
         // so the return value must be handled
         // a simple identity check on the return can be used to determine
@@ -486,38 +494,104 @@ public class Mustache {
             Template.Segment seg = _segs[i];
             Template.Segment pseg = (i > 0) ? _segs[i-1] : null;
             Template.Segment nseg = (i < length - 1) ? _segs[i+1] : null;
-            /*
-             * If we are the first segment then we rely on the indentation
-             * already present before the partial tag.
-             * [  WS ]{{> partial }}
-             * 
-             * That is partial tags do not have the trailing blank
-             * removed.
-             * 
-             * This avoids needlessley creating StringSegment tags.
-             */
-            boolean first = pseg == null ? false : seg.isStandalone() || pseg.isStandalone();
-            boolean last;
-            if (nseg instanceof BlockSegment){
-                BlockSegment bs = (BlockSegment) nseg;
-                last = bs.isStandaloneStart();
+            
+            Template.Segment copy;
+            if (seg instanceof BlockSegment) {
+                BlockSegment bs = (BlockSegment) seg;
+                boolean first;
+                boolean last;
+                if (pseg == null) {
+                    // We are the first segment so we inherit
+                    // outer first
+                    first = _first;
+                }
+                else if (bs.isStandaloneStart()) {
+                    first = true;
+                }
+                else {
+                    first = false;
+                }
+                if (bs.isStandalone()) {
+                    // the closing tag owns the last new line
+                    // in the section so we do not indent
+                    last = false;
+                }
+                else if (nseg == null) {
+                    // We are the last segment so we inherit the
+                    // outer last
+                    last = _last;
+                }
+                else {
+                    last = true;
+                }
+                copy = bs.indent(indent, first, last);
             }
-            else if (nseg == null || nseg.isStandalone()) {
-                last = false;
+            else if (seg instanceof StringSegment) {
+                boolean first;
+                boolean last;
+                if (pseg == null) {
+                    first = _first;
+                }
+                else if (pseg.isStandalone()) {
+                    first = true;
+                }
+                else {
+                    first = false;
+                }
+                if (nseg == null) {
+                    last = _last;
+                }
+                else if (nseg instanceof BlockSegment) {
+                    BlockSegment bs = (BlockSegment) nseg;
+                    last = ! bs.isStandaloneStart();
+                }
+                else if (nseg.isStandalone()) {
+                    last = false;
+                }
+                else {
+                    last = true;
+                }
+                copy = seg.indent(indent, first, last);
+            }
+            else if (seg instanceof IncludedTemplateSegment) {
+                /*
+                 * If we are standalone then we rely on the indentation
+                 * already present before the partial tag.
+                 * [  WS ]{{> partial }}[\n]
+                 * 
+                 * That is partial tags do not have the trailing blank
+                 * removed during the trim process.
+                 * 
+                 * This avoids needlessley creating StringSegment tags.
+                 */
+                if (seg.isStandalone()) {
+                    boolean last;
+                    if (nseg == null) {
+                        last = _last;
+                    }
+                    else if (nseg.isStandalone()) {
+                        last = false;
+                    }
+                    else {
+                        last = true;
+                    }
+                    // Again first = false here because we
+                    //already have the indentation set on a previous segment
+                    copy = seg.indent(indent, false, last);
+                }
+                else {
+                    copy = seg;
+                }
             }
             else {
-                last = true;
+                copy = seg.indent(indent, _first, _last);
             }
-            /*
-             * Recursively indent
-             */
-            Template.Segment copy = seg.indent(indent, first, last);
             if (copy != seg) {
                 changed = true;
             }
             copySegs[i] = copy;
         }
-        if (changed) {
+        if (changed) { 
             return copySegs;
         }
         return _segs;
@@ -1162,10 +1236,12 @@ public class Mustache {
             }
         }
         @Override protected SectionSegment indent (String indent, boolean first, boolean last) {
-            if (indent.equals("")) {
-                return this;
-            }
-            Template.Segment[] segs = indentSegs(_segs, indent);
+            // If the end tag is standalone we do NOT add the indent on the end
+            // (e.g. the newline following the end tag).
+            // This is because the block always owns the newlines within the block but
+            // it only owns the last newline following the end tag if and only if 
+            // the closing tag is standalone.
+            Template.Segment[] segs = indentSegs(_segs, indent, first, last);
             if (segs == _segs) {
                 return this;
             }
@@ -1222,10 +1298,7 @@ public class Mustache {
         }
         @Override
         protected InvertedSegment indent (String indent, boolean first, boolean last) {
-            if (indent.equals("")) {
-                return this;
-            }
-            Template.Segment[] segs = indentSegs(_segs, indent);
+            Template.Segment[] segs = indentSegs(_segs, indent, first, last);
             if (segs == _segs) {
                 return this;
             }

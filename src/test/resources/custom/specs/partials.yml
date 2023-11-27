@@ -24,8 +24,8 @@ tests:
       nest: "2\n{{{content}}}\n2\n"
     expected: "|\n 1\n  2\n  <\n->\n  2\n 1\n|\n"
 
-  - name: Standalone Indentation
-    desc: Each line of the partial should be indented before rendering.
+  - name: Partial Section Indentation End Content
+    desc: Closing end sections that have content on same line should be indented
     data: { content: "<\n->" }
     template: |
       \
@@ -34,12 +34,83 @@ tests:
     partials:
       partial: |
         |
-        {{{content}}}
+        {{#content}}
+        {{{.}}}
+        {{/content}}-
         |
     expected: |
       \
        |
        <
       ->
+       -
        |
       /
+
+  - name: Partial Section Indentation Inside Start Content
+    desc: Content that is not white space on same line as section start tag inside should be indented
+    data: { content: "<\n->" }
+    template: |
+      \
+       {{>partial}}
+      /
+    partials:
+      partial: |
+        |
+        {{#content}}-
+        {{{.}}}
+        {{/content}}
+        |
+    expected: |
+      \
+       |
+       -
+       <
+      ->
+       |
+      /
+
+  - name: Partial Section Indentation Start Content
+    desc: Content that is not white space on same line as section start tags should be indented
+    data: { content: "<\n->" }
+    template: |
+      \
+       {{>partial}}
+      /
+    partials:
+      partial: |
+        |
+        -{{#content}}
+        {{{.}}}
+        {{/content}}
+        |
+    expected: |
+      \
+       |
+       -
+       <
+      ->
+       |
+      /
+
+  - name: Partial Indentation With Empty Sections
+    desc: Empty standlone sections should not have indentation before or after
+    data: { content: "" }
+    template: |
+      \
+       {{>partial}}
+      /
+    partials:
+      partial: |
+        |
+        {{#content}}
+        {{{.}}}
+        {{/content}}
+        |
+    expected: |
+      \
+       |
+       |
+      /
+
+# The extra newline on the end is required
