@@ -176,7 +176,7 @@ public class Template {
         if (indent.equals("")) {
             return this;
         }
-        Segment[] copySegs = Mustache.indentSegs(_segs, indent);
+        Segment[] copySegs = Mustache.indentSegs(_segs, indent, false,false);
         if (copySegs == _segs) {
             return this;
         }

@@ -31,7 +31,7 @@ public abstract class SpecTest {
     public void test () throws Exception {
         //System.out.println("Testing: " + name);
         SpecAwareTemplateLoader loader = new SpecAwareTemplateLoader(spec);
-        Mustache.Compiler compiler = Mustache.compiler().defaultValue("").withLoader(loader);
+        Mustache.Compiler compiler = Mustache.compiler().emptyStringIsFalse(true).defaultValue("").withLoader(loader);
         String tmpl = spec.getTemplate();
         String desc = String.format("Template: '''%s'''\nData: '%s'\n",
                                     uncrlf(tmpl), uncrlf(spec.getData().toString()));
