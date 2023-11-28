@@ -1,3 +1,7 @@
+//
+// JMustache - A Java implementation of the Mustache templating language
+// http://github.com/samskivert/jmustache/blob/master/LICENSE
+
 package com.samskivert.mustache;
 
 import static org.junit.Assert.assertEquals;
@@ -19,13 +23,12 @@ import org.junit.Test;
 import com.samskivert.mustache.Mustache.TemplateLoader;
 
 public class PartialThreadSafeTest {
-    
+
     @Test
     public void testPartialThreadSafe() throws Exception {
         long t = System.currentTimeMillis();
         AtomicInteger loadCount = new AtomicInteger();
         TemplateLoader loader = new TemplateLoader() {
-
             @Override
             public Reader getTemplate(String name) throws Exception {
                 if ("partial".equals(name)) {
@@ -63,7 +66,5 @@ public class PartialThreadSafeTest {
         assertEquals(1, loadCount.get());
         System.out.println(loadCount);
         System.out.println(System.currentTimeMillis() - t);
-
     }
-
 }

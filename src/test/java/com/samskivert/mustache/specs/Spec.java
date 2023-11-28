@@ -45,7 +45,7 @@ public class Spec
     public String getPartial (String name) {
         return partials == null ? null : partials.get(name);
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();

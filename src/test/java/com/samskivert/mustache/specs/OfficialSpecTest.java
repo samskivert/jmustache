@@ -25,5 +25,4 @@ public class OfficialSpecTest extends SpecTest {
         };
         return SpecTest.data("/specs/specs/", groups);
     }
-    
 }

@@ -12,7 +12,7 @@ public class CustomSpecTest extends SpecTest {
     public CustomSpecTest(Spec spec, String name) {
         super(spec, name);
     }
-    
+
     @Parameters(name = "{1}")
     public static Collection<Object[]> data () {
         String[] groups = new String[] {
@@ -20,5 +20,4 @@ public class CustomSpecTest extends SpecTest {
         };
         return SpecTest.data("/custom/specs/", groups);
     }
-
 }

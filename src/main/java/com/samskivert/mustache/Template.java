@@ -164,15 +164,10 @@ public class Template {
         _compiler = compiler;
         _fcache = compiler.collector.createFetcherCache();
     }
-    
+
     protected Template indent(String indent) {
-        /*
-         * What we want to do here is rebuild this partial template
-         * but indented.
-         * 
-         * If identing does not change anything we return
-         * the original template.
-         */
+        // What we want to do here is rebuild this partial template but indented.
+        // If identing does not change anything we return the original template.
         if (indent.equals("")) {
             return this;
         }
@@ -397,32 +392,26 @@ public class Template {
     /** A template is broken into segments. */
     protected static abstract class Segment {
         abstract void execute (Template tmpl, Context ctx, Writer out);
-
         abstract void decompile (Mustache.Delims delims, StringBuilder into);
-
         abstract void visit (Mustache.Visitor visitor);
+
         /**
          * Recursively indent by the parameter indent.
-         * @param indent should be space characters that are not \n
-         * @param first append indent to the first line (regardless if it has a \n or not)
-         * @param last append indent on the last \n that has no text after it
-         * @return newly crated segment or the same segment if nothing changed.
+         * @param indent should be space characters that are not {@code \n}.
+         * @param first append indent to the first line (regardless if it has a {@code \n} or not).
+         * @param last append indent on the last {@code \n} that has no text after it.
+         * @return a newly created segment or the same segment if nothing changed.
          */
-        abstract Segment indent(String indent, boolean first, boolean last);
+        abstract Segment indent (String indent, boolean first, boolean last);
+
         /**
-         * Whether or not the segment is standalone.
-         * For blocks this is based on the closing tag.
-         * Once Trim is called standalone tags are determined so
-         * that proper (re)indentation will work without reparsing
-         * the template.
-         * 
-         * String and variable tags are never standalone.
-         * 
-         * The definition of standalone is defined by the mustache spec.
-         * 
-         * @return true if the tag is standalone
+         * Whether or not the segment is standalone. The definition of standalone is defined by the
+         * mustache spec. String and variable tags are never standalone. For blocks this is based on
+         * the closing tag. Once {@code trim} is called, standalone tags are determined so that
+         * proper (re)indentation will work without reparsing the template.
+         * @return true if the tag is standalone.
          */
-        abstract boolean isStandalone();
+        abstract boolean isStandalone ();
 
         protected static void write (Writer out, CharSequence data) {
             try {

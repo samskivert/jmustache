@@ -413,7 +413,7 @@ public class Mustache {
     private Mustache () {} // no instantiateski
 
     protected static Template.Segment[] trim (Template.Segment[] segs, boolean top) {
-        // Trim modifies segs! It's return is not a copy!
+        // trim() modifies segs! Its return is not a copy!
         // now that we have all of our segments, we make a pass through them to trim whitespace
         // from section tags which stand alone on their lines
         assert segs != null;
@@ -440,23 +440,19 @@ public class Mustache {
                     block._standaloneEnd = true;
                 }
             }
-            // we have to indent partials if there is space before
-            // they are also standalone...
+            // we have to indent partials if there is space before they are also standalone...
             else if (seg instanceof IncludedTemplateSegment) {
                 IncludedTemplateSegment include = (IncludedTemplateSegment) seg;
                 if (prev != null && prevBlank && nextBlank) {
                     String indent = prev.indent();
                     include._standalone = true;
-                    if (! indent.equals("")) {
+                    if (!indent.equals("")) {
                         include = include.indent(indent, pseg == null,nseg == null);
                         segs[ii] = include;
                     }
                     //segs[ii-1] = prev.trimTrailBlank();
-                    /*
-                     * We trim the end because partials
-                     * follow standalone just like blocks
-                     */
-                    if (next != null) { 
+                    /* We trim the end because partials follow standalone just like blocks */
+                    if (next != null) {
                         segs[ii+1] = next.trimLeadBlank();
                     }
                 }
@@ -480,11 +476,10 @@ public class Mustache {
      * @param _last whether to append an indent on the last segment last empty newline (no character after \n).
      * @return cloned segments if changed
      */
-    static Template.Segment[] indentSegs(Template.Segment[] _segs, String indent, boolean _first, boolean _last) {
-        // unlike trim this method clones the segments if they have changed
-        // so the return value must be handled
-        // a simple identity check on the return can be used to determine
-        // if there is change
+    static Template.Segment[] indentSegs (Template.Segment[] _segs, String indent, boolean _first, boolean _last) {
+        // unlike trim this method clones the segments if they have changed so the return value must
+        // be handled; a simple identity check on the return can be used to determine if there is
+        // change
         if (indent.equals("")) {
             return _segs;
         }
@@ -492,11 +487,9 @@ public class Mustache {
         Template.Segment[] copySegs = new Template.Segment[length];
         boolean changed = false;
         for (int i = 0; i < _segs.length; i++) {
-            
             Template.Segment seg = _segs[i];
             Template.Segment pseg = (i > 0) ? _segs[i-1] : null;
             Template.Segment nseg = (i < length - 1) ? _segs[i+1] : null;
-            
             Template.Segment copy;
             if (seg instanceof BlockSegment) {
                 BlockSegment bs = (BlockSegment) seg;
@@ -557,14 +550,12 @@ public class Mustache {
             }
             else if (seg instanceof IncludedTemplateSegment) {
                 /*
-                 * If we are standalone then we rely on the indentation
-                 * already present before the partial tag.
+                 * If we are standalone then we rely on the indentation already present before the
+                 * partial tag.
                  * [  WS ]{{> partial }}[\n]
-                 * 
-                 * That is partial tags do not have the trailing blank
-                 * removed during the trim process.
-                 * 
-                 * This avoids needlessley creating StringSegment tags.
+                 *
+                 * That is partial tags do not have the trailing blank removed during the trim
+                 * process. This avoids needlessley creating StringSegment tags.
                  */
                 if (seg.isStandalone()) {
                     boolean last;
@@ -593,7 +584,7 @@ public class Mustache {
             }
             copySegs[i] = copy;
         }
-        if (changed) { 
+        if (changed) {
             return copySegs;
         }
         return _segs;
@@ -960,19 +951,19 @@ public class Mustache {
             return _trailBlank == -1 ? this : new StringSegment(
                 _text.substring(0, _trailBlank), _leadBlank, -1, _first);
         }
-        
+
         /**
          * Calculate indent for partial idententation
          * @return indent space or empty string
          */
-        String indent() {
+        String indent () {
             if (_trailBlank == -1 || _trailBlank >= _text.length()) {
                 return "";
             }
            return  _text.substring(_trailBlank);
         }
-        
-        StringSegment indent(String indent, boolean first, boolean last) {
+
+        StringSegment indent (String indent, boolean first, boolean last) {
             if (indent.equals("")) {
                 return this;
             }
@@ -980,7 +971,7 @@ public class Mustache {
             return new StringSegment(reindent, _first);
         }
 
-        @Override boolean isStandalone() {
+        @Override boolean isStandalone () {
             return false;
         }
 
@@ -998,17 +989,17 @@ public class Mustache {
                 _leadBlank + "/" + _trailBlank;
         }
 
-        //we indent after every new line for partial indententation
-        private static String reindent(String input, String indent, boolean first, boolean last) {
+        // we indent after every new line for partial indententation
+        private static String reindent (String input, String indent, boolean first, boolean last) {
             int length = input.length();
             StringBuilder sb = new StringBuilder(indent.length() + length);
             if (first) {
                 sb.append(indent);
             }
-            for (int i = 0; i < length; i++) {
-                char c = input.charAt(i);
+            for (int ii = 0; ii < length; ii++) {
+                char c = input.charAt(ii);
                 sb.append(c);
-                if (c == '\n'  &&  ( last || i != length - 1) ) {
+                if (c == '\n' && (last || ii != length - 1)) {
                     sb.append(indent);
                 }
             }
@@ -1074,7 +1065,7 @@ public class Mustache {
             }
             return t;
         }
-        protected IncludedTemplateSegment indent(String indent, boolean first, boolean last) {
+        protected IncludedTemplateSegment indent (String indent, boolean first, boolean last) {
             // Indent this partial based on the spacing provided.
             // per the spec however much the partial reference is indendented (leading whitespace)
             // is how much the partial content should be indented.
@@ -1085,10 +1076,10 @@ public class Mustache {
             is._standalone = _standalone;
             return is;
         }
-        @Override boolean isStandalone() { return _standalone; }
+        @Override boolean isStandalone () { return _standalone; }
 
         @Override
-        public String toString() {
+        public String toString () {
             return "Include(name=" + _name + ", indent=" + _indent + ", standalone=" + _standalone
                     + ")";
         }
@@ -1135,11 +1126,11 @@ public class Mustache {
             visitor.visitVariable(_name);
         }
         @Override
-        VariableSegment indent(String indent, boolean first, boolean last) {
+        VariableSegment indent (String indent, boolean first, boolean last) {
             return this;
         }
         @Override
-        boolean isStandalone() {
+        boolean isStandalone () {
             return false;
         }
         @Override public String toString () {
@@ -1188,13 +1179,13 @@ public class Mustache {
         protected abstract BlockSegment indent (String indent, boolean first, boolean last);
 
         @Override
-        boolean isStandalone() {
+        boolean isStandalone () {
             return _standaloneEnd;
         }
-        boolean isStandaloneStart() {
+        boolean isStandaloneStart () {
             return _standaloneStart;
         }
-        
+
         protected final Template.Segment[] _segs;
         protected boolean _standaloneStart = false;
         protected boolean _standaloneEnd = false;
@@ -1206,7 +1197,7 @@ public class Mustache {
             super(name, segs, line);
             _comp = compiler;
         }
-        protected SectionSegment(SectionSegment original, Template.Segment[] segs) {
+        protected SectionSegment (SectionSegment original, Template.Segment[] segs) {
             super(original, segs);
             _comp = original._comp;
         }
@@ -1252,7 +1243,7 @@ public class Mustache {
             // If the end tag is standalone we do NOT add the indent on the end
             // (e.g. the newline following the end tag).
             // This is because the block always owns the newlines within the block but
-            // it only owns the last newline following the end tag if and only if 
+            // it only owns the last newline following the end tag if and only if
             // the closing tag is standalone.
             Template.Segment[] segs = indentSegs(_segs, indent, first, last);
             if (segs == _segs) {
@@ -1328,7 +1319,7 @@ public class Mustache {
         @Override public void decompile (Delims delims, StringBuilder into) {} // nada
         @Override public void visit (Visitor visit) {}
         @Override FauxSegment indent (String indent, boolean first, boolean last) { return this; }
-        @Override boolean isStandalone() { return true; }
+        @Override boolean isStandalone () { return true; }
         @Override public String toString () { return "Faux"; }
     }
 

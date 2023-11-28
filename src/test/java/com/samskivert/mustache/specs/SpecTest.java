@@ -67,7 +67,6 @@ public abstract class SpecTest {
        s = s.replace('\t', '\u21E5');
        s = s.replace("\n", "\u21B5\n");
        s = s.replace("\u240D", "\u240D\n");
-
        return s;
     }
 
@@ -75,7 +74,6 @@ public abstract class SpecTest {
         return (text == null) ? null : text.replace("\r", "\\r").replace("\n", "\\n");
     }
 
-    
     public static Collection<Object[]> data (String specPath, String[] groups) {
         List<Object[]> tuples = new ArrayList<>();
         int i = 0;
@@ -112,5 +110,4 @@ public abstract class SpecTest {
             throw err;
         }
     }
-
 }

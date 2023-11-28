@@ -228,8 +228,7 @@ public abstract class SharedTests
             fail();
         } catch (UnsupportedOperationException uoe) {} // expected
     }
-    
-    
+
     Map<String,String> partials = new LinkedHashMap<>();
 
     @SafeVarargs
@@ -241,10 +240,10 @@ public abstract class SharedTests
         partials = templates;
         return name -> new StringReader(templates.get(name));
     }
-    
+
     @Test public void testPartial () {
         test(Mustache.compiler().withLoader(
-                partials(entry("foo", "inside:{{bar}}"), 
+                partials(entry("foo", "inside:{{bar}}"),
                         entry("baz", "nonfoo")))
                 , "foo inside:foo nonfoo foo", "{{bar}} {{>foo}} {{>baz}} {{bar}}", context("bar", "foo"));
     }
@@ -291,8 +290,8 @@ public abstract class SharedTests
 
     @Test public void testNestedPartialIndent () {
         Mustache.TemplateLoader loader = partials(entry("partial", "1\n {{>nest}}\n1\n"), entry("nest", "2\n{{{content}}}\n2\n"));
-        test(Mustache.compiler().withLoader(loader), 
-                "|\n 1\n  2\n  <\n->\n  2\n 1\n|\n", 
+        test(Mustache.compiler().withLoader(loader),
+                "|\n 1\n  2\n  <\n->\n  2\n 1\n|\n",
                 "|\n {{>partial}}\n|\n", context("content", "<\n->"));
     }
 
@@ -848,13 +847,13 @@ public abstract class SharedTests
     }
 
     protected String name;
-    
+
     @Rule public TestRule watcher = new TestWatcher() {
        protected void starting(Description description) {
            name = description.getDisplayName();
        }
     };
-    
+
     protected void test(Mustache.Compiler compiler, String expected, String template, Object ctx) {
         String actual = compiler.compile(template).execute(ctx);
         if (! Objects.equals(expected, actual)) {
