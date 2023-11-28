@@ -11,10 +11,14 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import com.samskivert.mustache.Template.Context;
+import com.samskivert.mustache.Template.Segment;
 
 /**
  * Provides <a href="http://mustache.github.com/">Mustache</a> templating services.
@@ -427,8 +431,8 @@ public class Mustache {
             boolean prevBlank = ((pseg == null && top) || (prev != null && prev.trailsBlank()));
             boolean nextBlank = ((nseg == null && top) || (next != null && next.leadsBlank()));
             // potentially trim around the open and close tags of a block segment
-            if (seg instanceof BlockSegment) {
-                BlockSegment block = (BlockSegment)seg;
+            if (seg instanceof AbstractSectionSegment) {
+                AbstractSectionSegment block = (AbstractSectionSegment)seg;
                 if (prevBlank && block.firstLeadsBlank()) {
                     if (pseg != null) segs[ii-1] = prev.trimTrailBlank();
                     block.trimFirstBlank();
@@ -451,10 +455,12 @@ public class Mustache {
                         include = include.indent(indent, pseg == null,nseg == null);
                         segs[ii] = include;
                     }
-                    //segs[ii-1] = prev.trimTrailBlank();
                     /*
                      * We trim the end because partials
-                     * follow standalone just like blocks
+                     * follow standalone just like blocks.
+                     * HOWEVER we do NOT trim the previous StringSegment
+                     * as it provides the partial indentation.
+                     * See indentSegs.
                      */
                     if (next != null) { 
                         segs[ii+1] = next.trimLeadBlank();
@@ -498,8 +504,8 @@ public class Mustache {
             Template.Segment nseg = (i < length - 1) ? _segs[i+1] : null;
             
             Template.Segment copy;
-            if (seg instanceof BlockSegment) {
-                BlockSegment bs = (BlockSegment) seg;
+            if (seg instanceof AbstractSectionSegment) {
+                AbstractSectionSegment bs = (AbstractSectionSegment) seg;
                 boolean first;
                 boolean last;
                 if (pseg == null) {
@@ -543,8 +549,8 @@ public class Mustache {
                 if (nseg == null) {
                     last = _last;
                 }
-                else if (nseg instanceof BlockSegment) {
-                    BlockSegment bs = (BlockSegment) nseg;
+                else if (nseg instanceof AbstractSectionSegment) {
+                    AbstractSectionSegment bs = (AbstractSectionSegment) nseg;
                     last = ! bs.isStandaloneStart();
                 }
                 else if (nseg.isStandalone()) {
@@ -587,6 +593,34 @@ public class Mustache {
             }
             else {
                 copy = seg.indent(indent, _first, _last);
+            }
+            if (copy != seg) {
+                changed = true;
+            }
+            copySegs[i] = copy;
+        }
+        if (changed) { 
+            return copySegs;
+        }
+        return _segs;
+    }
+    
+    static Template.Segment[] replaceBlockSegs(Template.Segment[] _segs, Map<String, BlockSegment> blocks) {
+        if (blocks.isEmpty()) {
+            return _segs;
+        }
+        int length = _segs.length;
+        Template.Segment[] copySegs = new Template.Segment[length];
+        boolean changed = false;
+        for (int i = 0; i < _segs.length; i++) {
+            Template.Segment seg = _segs[i];
+            Template.Segment copy;
+            if (seg instanceof BlockReplaceable) {
+                BlockReplaceable br = (BlockReplaceable) seg;
+                copy = br.replaceBlocks(blocks);
+            }
+            else {
+                copy = seg;
             }
             if (copy != seg) {
                 changed = true;
@@ -863,9 +897,34 @@ public class Mustache {
                 };
 
             case '>':
-                _segs.add(new IncludedTemplateSegment(_comp, tag1));
+                _segs.add(new IncludedTemplateSegment(_comp, tag1, tagLine));
                 return this;
-
+            case '<':
+                requireNoNewlines(tag, tagLine);
+                return new Accumulator(_comp, false) {
+                    @Override public Template.Segment[] finish () {
+                        throw new MustacheParseException(
+                            "Parent missing close tag '" + tag1 + "'", tagLine);
+                    }
+                    @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
+                        requireSameName(tag1, itag, line);
+                        outer._segs.add(new ParentTemplateSegment(_comp, itag, super.finish(), tagLine));
+                        return outer;
+                    }
+                };
+            case '$':
+                requireNoNewlines(tag, tagLine);
+                return new Accumulator(_comp, false) {
+                    @Override public Template.Segment[] finish () {
+                        throw new MustacheParseException(
+                            "Block missing close tag '" + tag1 + "'", tagLine);
+                    }
+                    @Override protected Accumulator addCloseSectionSegment (String itag, int line) {
+                        requireSameName(tag1, itag, line);
+                        outer._segs.add(new BlockSegment(_comp, itag, super.finish(), tagLine));
+                        return outer;
+                    }
+                };
             case '^':
                 requireNoNewlines(tag, tagLine);
                 return new Accumulator(_comp, false) {
@@ -1033,30 +1092,19 @@ public class Mustache {
         protected final boolean _first;
     }
 
-    /** A segment that loads and executes a sub-template. */
-    protected static class IncludedTemplateSegment extends Template.Segment {
-        public IncludedTemplateSegment (Compiler compiler, String name) {
-            this(compiler, name, "");
-        }
-        private IncludedTemplateSegment (Compiler compiler, String name, String indent) {
+    /** An abstract segment that is a template include. */
+    protected static abstract class AbstractPartialSegment extends NamedSegment {
+        protected AbstractPartialSegment (Compiler compiler, String name, int line, String indent) {
+            super(name, line);
             _comp = compiler;
-            _name = name;
             _indent = indent;
         }
-        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
+        @Override public final void execute (Template tmpl, Template.Context ctx, Writer out) {
             // we must take care to preserve our context rather than creating a new one, which
             // would happen if we just called execute() with ctx.data
             getTemplate().executeSegs(ctx, out);
         }
-        @Override public void decompile (Delims delims, StringBuilder into) {
-            delims.addTag('>', _name, into);
-        }
-        @Override public void visit (Visitor visitor) {
-            if (visitor.visitInclude(_name)) {
-                getTemplate().visit(visitor);
-            }
-        }
-        protected Template getTemplate () {
+        protected final Template getTemplate () {
             // we compile our template lazily to avoid infinie recursion if a template includes
             // itself (see issue #13)
             Template t = _template;
@@ -1066,7 +1114,7 @@ public class Mustache {
                 lock.lock();
                 try {
                     if ((t = _template) == null) {
-                        _template = t = _comp.loadTemplate(_name).indent(_indent);
+                        _template = t = _loadTemplate();
                     }
                 } finally {
                     lock.unlock();
@@ -1074,31 +1122,109 @@ public class Mustache {
             }
             return t;
         }
-        protected IncludedTemplateSegment indent(String indent, boolean first, boolean last) {
+        
+        protected Template _loadTemplate() {
+            return _comp.loadTemplate(_name).indent(_indent);
+        }
+        
+        @Override public abstract boolean isStandalone();
+
+        protected final Compiler _comp;
+        protected final String _indent;
+        private final Lock lock = new ReentrantLock();
+        private volatile Template _template;
+    }
+
+    /** A segment that loads and executes a sub-template by spec called a partial. */
+    protected static class IncludedTemplateSegment extends AbstractPartialSegment {
+        public IncludedTemplateSegment (Compiler compiler, String name, int line) {
+            this(compiler, name, line,"");
+        }
+        private IncludedTemplateSegment (Compiler compiler, String name, int line, String indent) {
+            super(compiler, name, line, indent);
+        }
+        @Override public void decompile (Delims delims, StringBuilder into) {
+            delims.addTag('<', _name, into);
+        }
+        @Override public void visit (Visitor visitor) {
+            if (visitor.visitInclude(_name)) {
+                getTemplate().visit(visitor);
+            }
+        }
+        @Override protected IncludedTemplateSegment indent(String indent, boolean first, boolean last) {
             // Indent this partial based on the spacing provided.
             // per the spec however much the partial reference is indendented (leading whitespace)
             // is how much the partial content should be indented.
             if (indent.equals("") || ! _standalone) {
                 return this;
             }
-            IncludedTemplateSegment is = new IncludedTemplateSegment(_comp, _name, indent + this._indent );
+            IncludedTemplateSegment is = new IncludedTemplateSegment(_comp, _name, _line, indent + this._indent );
             is._standalone = _standalone;
             return is;
         }
-        @Override boolean isStandalone() { return _standalone; }
 
-        @Override
-        public String toString() {
+        @Override public String toString() {
             return "Include(name=" + _name + ", indent=" + _indent + ", standalone=" + _standalone
                     + ")";
         }
+        @Override public boolean isStandalone() { return _standalone; }
+        protected boolean _standalone;
+    }
+    
+    /** A segment that loads and executes a parent template by spec called inheritance. */
+    protected static class ParentTemplateSegment extends AbstractPartialSegment implements StandaloneSection {
+        public ParentTemplateSegment (Compiler compiler, String name, Template.Segment[] segs, int line) {
+            this(compiler, name, segs, line, "");
+        }
+        private ParentTemplateSegment (Compiler compiler, String name, Template.Segment[] segs, int line, String indent) {
+            super(compiler, name, line, indent);
+            this._segs = segs;
+        }
+        @Override public void decompile (Delims delims, StringBuilder into) {
+            delims.addTag('<', _name, into);
+        }
+        @Override public void visit (Visitor visitor) {
+            if (visitor.visitInclude(_name)) {
+                getTemplate().visit(visitor);
+            }
+        }
+        @Override protected ParentTemplateSegment indent(String indent, boolean first, boolean last) {
+            // Indent this partial based on the spacing provided.
+            // per the spec however much the partial reference is indendented (leading whitespace)
+            // is how much the partial content should be indented.
+            if (indent.equals("") || ! _standaloneStart) {
+                return this;
+            }
+            ParentTemplateSegment is = new ParentTemplateSegment(_comp, _name, _segs, _line, indent + this._indent );
+            is._standaloneStart = _standaloneStart;
+            is._standaloneEnd = _standaloneEnd;
+            return is;
+        }
+        @Override protected Template _loadTemplate() {
+            // linked hash map is easier to debug as the blocks will be in order
+            // and since this is only used for compiling we do not care about perf.
+            Map<String, BlockSegment> blocks = new LinkedHashMap<>();
+            // While we capture other segments we only care about blocks.
+            for (Template.Segment seg : _segs) {
+                if (seg instanceof BlockSegment) {
+                    BlockSegment bs = (BlockSegment) seg;
+                    blocks.put(bs._name, bs);
+                }
+            }
+            return super._loadTemplate().replaceBlocks(blocks);
+        }
+        @Override public Template.Segment[] _segs() { return _segs; }
+        @Override public boolean isStandalone() { return _standaloneEnd; }
+        @Override public boolean isStandaloneStart() { return _standaloneStart; }
+        @Override public boolean isStandaloneEnd() { return _standaloneEnd; }
+        @Override public String toString() {
+            return "Parent(name=" + _name + ", indent=" + _indent + ", standaloneStart=" + _standaloneStart
+                    + ")";
+        }
+        protected final Template.Segment[] _segs;
+        protected boolean _standaloneStart = false;
+        protected boolean _standaloneEnd = false;
 
-        protected final Compiler _comp;
-        protected final String _name;
-        private final String _indent;
-        private final Lock lock = new ReentrantLock();
-        private volatile Template _template;
-        protected boolean _standalone = false;
     }
 
     /** A helper class for named segments. */
@@ -1149,32 +1275,48 @@ public class Mustache {
         protected final Escaper _escaper;
     }
 
-    /** A helper class for block segments. */
-    protected static abstract class BlockSegment extends NamedSegment {
-        public boolean firstLeadsBlank () {
+    protected interface StandaloneSection {
+        default boolean firstLeadsBlank () {
+            Template.Segment[] _segs = _segs();
             if (_segs.length == 0 || !(_segs[0] instanceof StringSegment)) return false;
             return ((StringSegment)_segs[0]).leadsBlank();
         }
-        public void trimFirstBlank () {
+        default void trimFirstBlank () {
+            Template.Segment[] _segs = _segs();
             _segs[0] = ((StringSegment)_segs[0]).trimLeadBlank();
         }
 
-        public boolean lastTrailsBlank () {
+        default boolean lastTrailsBlank () {
+            Template.Segment[] _segs = _segs();
             int lastIdx = _segs.length-1;
             if (_segs.length == 0 || !(_segs[lastIdx] instanceof StringSegment)) return false;
             return ((StringSegment)_segs[lastIdx]).trailsBlank();
         }
-        public void trimLastBlank () {
+        default void trimLastBlank () {
+            Template.Segment[] _segs = _segs();
             int idx = _segs.length-1;
             _segs[idx] = ((StringSegment)_segs[idx]).trimTrailBlank();
         }
+        boolean isStandaloneEnd();
+        boolean isStandaloneStart();
+        Template.Segment[] _segs();
+    }
+    
+    protected interface BlockReplaceable {
+        public Segment replaceBlocks(Map<String, BlockSegment> blocks);
+    }
+    
+    /** A helper class for section-like segments. */
+    protected static abstract class AbstractSectionSegment extends NamedSegment implements StandaloneSection, BlockReplaceable {
 
-        protected BlockSegment (String name, Template.Segment[] segs, int line) {
+        protected AbstractSectionSegment (Compiler compiler, String name, Template.Segment[] segs, int line) {
             super(name, line);
+            _comp = compiler;
             _segs = trim(segs, false);
         }
-        protected BlockSegment (BlockSegment original, Template.Segment[] segs) {
+        protected AbstractSectionSegment (AbstractSectionSegment original, Template.Segment[] segs) {
             super(original._name, original._line);
+            _comp = original._comp;
             // this call assumes the segments are already trimmed
             _segs = segs;
         }
@@ -1185,30 +1327,27 @@ public class Mustache {
             }
         }
 
-        protected abstract BlockSegment indent (String indent, boolean first, boolean last);
+        protected abstract AbstractSectionSegment indent (String indent, boolean first, boolean last);
 
-        @Override
-        boolean isStandalone() {
-            return _standaloneEnd;
-        }
-        boolean isStandaloneStart() {
-            return _standaloneStart;
-        }
+        @Override public boolean isStandalone() { return _standaloneEnd; }
+        @Override public boolean isStandaloneStart() { return _standaloneStart; }
+        @Override public boolean isStandaloneEnd() { return _standaloneEnd; }
+
+        @Override public Segment[] _segs() { return _segs; }
         
+        protected final Compiler _comp;
         protected final Template.Segment[] _segs;
         protected boolean _standaloneStart = false;
         protected boolean _standaloneEnd = false;
     }
 
     /** A segment that represents a section. */
-    protected static class SectionSegment extends BlockSegment {
+    protected static class SectionSegment extends AbstractSectionSegment {
         public SectionSegment (Compiler compiler, String name, Template.Segment[] segs, int line) {
-            super(name, segs, line);
-            _comp = compiler;
+            super(compiler, name, segs, line);
         }
         protected SectionSegment(SectionSegment original, Template.Segment[] segs) {
             super(original, segs);
-            _comp = original._comp;
         }
         @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
             Object value = tmpl.getSectionValue(ctx, _name, _line); // won't return null
@@ -1249,12 +1388,14 @@ public class Mustache {
             }
         }
         @Override protected SectionSegment indent (String indent, boolean first, boolean last) {
-            // If the end tag is standalone we do NOT add the indent on the end
-            // (e.g. the newline following the end tag).
-            // This is because the block always owns the newlines within the block but
-            // it only owns the last newline following the end tag if and only if 
-            // the closing tag is standalone.
             Template.Segment[] segs = indentSegs(_segs, indent, first, last);
+            if (segs == _segs) {
+                return this;
+            }
+            return new SectionSegment(this, segs);
+        }
+        @Override public SectionSegment replaceBlocks(Map<String, BlockSegment> blocks) {
+            Template.Segment[] segs = replaceBlockSegs(_segs, blocks);
             if (segs == _segs) {
                 return this;
             }
@@ -1263,13 +1404,55 @@ public class Mustache {
         @Override public String toString () {
             return "Section(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
-        protected final Compiler _comp;
+    }
+    
+    /** A parent partial parameter using $ as the sigil. */
+    protected static class BlockSegment extends AbstractSectionSegment {
+        public BlockSegment(Compiler compiler, String name, Segment[] segs, int line) {
+            super(compiler, name, segs, line);
+        }
+        protected BlockSegment(BlockSegment original, Template.Segment[] segs) {
+            super(original, segs);
+        }
+        @Override public void execute (Template tmpl, Template.Context ctx, Writer out) {
+            executeSegs(tmpl, ctx, out);
+        }
+        @Override public void decompile (Delims delims, StringBuilder into) {
+            delims.addTag('$', _name, into);
+            for (Template.Segment seg : _segs) seg.decompile(delims, into);
+            delims.addTag('/', _name, into);
+        }
+        @Override public void visit (Visitor visitor) {
+            if (visitor.visitSection(_name)) {
+                for (Template.Segment seg : _segs) {
+                    seg.visit(visitor);
+                }
+            }
+        }
+        @Override protected BlockSegment indent (String indent, boolean first, boolean last) {
+            // Current indenting block segments is not defined by spec but might eventually
+            Template.Segment[] segs = indentSegs(_segs, indent, first, last);
+            if (segs == _segs) {
+                return this;
+            }
+            return new BlockSegment(this, segs);
+        }
+        @Override public BlockSegment replaceBlocks(Map<String, BlockSegment> blocks) {
+            BlockSegment bs = blocks.get(_name);
+            if (bs == null) {
+                return this;
+            }
+            return new BlockSegment(this, bs._segs);
+        }
+        @Override public String toString () {
+            return "Block(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
+        }
     }
 
     /** A segment that represents an inverted section. */
-    protected static class InvertedSegment extends BlockSegment {
+    protected static class InvertedSegment extends AbstractSectionSegment {
         public InvertedSegment (Compiler compiler, String name, Template.Segment[] segs, int line) {
-            super(name, segs, line);
+            super(compiler, name, segs, line);
             _comp = compiler;
         }
         protected InvertedSegment (InvertedSegment original, Template.Segment[] segs) {
@@ -1312,6 +1495,13 @@ public class Mustache {
         @Override
         protected InvertedSegment indent (String indent, boolean first, boolean last) {
             Template.Segment[] segs = indentSegs(_segs, indent, first, last);
+            if (segs == _segs) {
+                return this;
+            }
+            return new InvertedSegment(this, segs);
+        }
+        @Override public InvertedSegment replaceBlocks(Map<String, BlockSegment> blocks) {
+            Template.Segment[] segs = replaceBlockSegs(_segs, blocks);
             if (segs == _segs) {
                 return this;
             }
