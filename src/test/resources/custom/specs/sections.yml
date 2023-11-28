@@ -1,0 +1,17 @@
+overview: |
+  Section and End Section tags SHOULD be treated as standalone when
+  appropriate.
+tests:
+  - name: Standalone Lines
+    desc: Standalone lines should be removed from the template.
+    data: { boolean: true }
+    template: |
+      | This Is
+      {{#boolean}}{{^missing}}|{{/missing}}{{/boolean}}
+      | A Line
+    expected: |
+      | This Is
+      |
+      | A Line
+
+# eof

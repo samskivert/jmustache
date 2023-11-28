@@ -26,7 +26,6 @@ public class PartialThreadSafeTest {
 
     @Test
     public void testPartialThreadSafe() throws Exception {
-        long t = System.currentTimeMillis();
         AtomicInteger loadCount = new AtomicInteger();
         TemplateLoader loader = new TemplateLoader() {
             @Override
@@ -64,7 +63,5 @@ public class PartialThreadSafeTest {
         }
         assertTrue(q.isEmpty());
         assertEquals(1, loadCount.get());
-        System.out.println(loadCount);
-        System.out.println(System.currentTimeMillis() - t);
     }
 }
