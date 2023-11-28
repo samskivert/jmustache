@@ -431,19 +431,29 @@ public class Mustache {
             boolean prevBlank = ((pseg == null && top) || (prev != null && prev.trailsBlank()));
             boolean nextBlank = ((nseg == null && top) || (next != null && next.leadsBlank()));
             // potentially trim around the open and close tags of a block segment
-            if (seg instanceof AbstractSectionSegment) {
-                AbstractSectionSegment block = (AbstractSectionSegment)seg;
-                if (prevBlank && block.firstLeadsBlank()) {
-                    if (pseg != null) segs[ii-1] = prev.trimTrailBlank();
-                    block.trimFirstBlank();
-                    block._standaloneStart = true;
+            if (seg instanceof StandaloneSection) {
+                StandaloneSection sect = (StandaloneSection)seg;
+                String indent = "";
+                if (prevBlank && sect.firstLeadsBlank()) {
+                    if (prev != null)  {
+                        // capture the indent before we trim
+                        indent = prev.indent();
+                        segs[ii-1] = prev.trimTrailBlank();
+                    }
+                    sect.trimFirstBlank();
+                    sect.standaloneStart(true);
                 }
-                if (nextBlank && block.lastTrailsBlank()) {
-                    block.trimLastBlank();
-                    if (nseg != null) segs[ii+1] = next.trimLeadBlank();
-                    block._standaloneEnd = true;
+                if (nextBlank && sect.lastTrailsBlank()) {
+                    sect.trimLastBlank();
+                    if (next != null) segs[ii+1] = next.trimLeadBlank();
+                    sect.standaloneEnd(true);
+                }
+                if (sect instanceof ParentTemplateSegment && ! indent.equals("")) {
+                    ParentTemplateSegment pt = (ParentTemplateSegment) sect;
+                    segs[ii] = pt.indent(indent, pseg == null, nseg == null);
                 }
             }
+            
             // we have to indent partials if there is space before
             // they are also standalone...
             else if (seg instanceof IncludedTemplateSegment) {
@@ -1211,12 +1221,32 @@ public class Mustache {
                     blocks.put(bs._name, bs);
                 }
             }
+            //return _comp.loadTemplate(_name).replaceBlocks(blocks).indent(_indent);
             return super._loadTemplate().replaceBlocks(blocks);
+        }
+        @Override public boolean lastTrailsBlank () {
+            Template.Segment[] _segs = _segs();
+            int lastIdx = _segs.length-1;
+            //TODO this logic should probably for regular sections as well.
+            if (_segs.length == 0) {
+                return true;
+            }
+            if (!(_segs[lastIdx] instanceof StringSegment)) return false;
+            return ((StringSegment)_segs[lastIdx]).trailsBlank();
+        }
+        @Override public void trimLastBlank () {
+            Template.Segment[] _segs = _segs();
+            int idx = _segs.length-1;
+            //TODO this logic should probably for regular sections as well.
+            if (idx < 0) return;
+            _segs[idx] = ((StringSegment)_segs[idx]).trimTrailBlank();
         }
         @Override public Template.Segment[] _segs() { return _segs; }
         @Override public boolean isStandalone() { return _standaloneEnd; }
         @Override public boolean isStandaloneStart() { return _standaloneStart; }
         @Override public boolean isStandaloneEnd() { return _standaloneEnd; }
+        @Override public void standaloneStart(boolean standaloneStart) { this._standaloneStart = standaloneStart; }
+        @Override public void standaloneEnd(boolean standaloneEnd) { this._standaloneEnd = standaloneEnd; }
         @Override public String toString() {
             return "Parent(name=" + _name + ", indent=" + _indent + ", standaloneStart=" + _standaloneStart
                     + ")";
@@ -1285,10 +1315,11 @@ public class Mustache {
             Template.Segment[] _segs = _segs();
             _segs[0] = ((StringSegment)_segs[0]).trimLeadBlank();
         }
-
         default boolean lastTrailsBlank () {
             Template.Segment[] _segs = _segs();
             int lastIdx = _segs.length-1;
+            //TODO this logic is probably wrong but for some reason passed spec before inheritance
+            // {{#stuff}}{{/stuff}} is standalone!
             if (_segs.length == 0 || !(_segs[lastIdx] instanceof StringSegment)) return false;
             return ((StringSegment)_segs[lastIdx]).trailsBlank();
         }
@@ -1299,6 +1330,9 @@ public class Mustache {
         }
         boolean isStandaloneEnd();
         boolean isStandaloneStart();
+        void standaloneStart(boolean standaloneStart);
+        void standaloneEnd(boolean standaloneEnd);
+        
         Template.Segment[] _segs();
     }
     
@@ -1332,6 +1366,8 @@ public class Mustache {
         @Override public boolean isStandalone() { return _standaloneEnd; }
         @Override public boolean isStandaloneStart() { return _standaloneStart; }
         @Override public boolean isStandaloneEnd() { return _standaloneEnd; }
+        @Override public void standaloneStart(boolean standaloneStart) { this._standaloneStart = standaloneStart; }
+        @Override public void standaloneEnd(boolean standaloneEnd) { this._standaloneEnd = standaloneEnd; }
 
         @Override public Segment[] _segs() { return _segs; }
         
