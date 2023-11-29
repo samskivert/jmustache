@@ -10,6 +10,7 @@ import java.io.StringReader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,7 +18,6 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.samskivert.mustache.Template.Context;
 import com.samskivert.mustache.Template.Segment;
 
 /**
@@ -420,7 +420,6 @@ public class Mustache {
         // Trim modifies segs! It's return is not a copy!
         // now that we have all of our segments, we make a pass through them to trim whitespace
         // from section tags which stand alone on their lines
-        assert segs != null;
         for (int ii = 0, ll = segs.length; ii < ll; ii++) {
             Template.Segment seg = segs[ii];
             Template.Segment pseg = (ii > 0   ) ? segs[ii-1] : null;
@@ -1083,6 +1082,16 @@ public class Mustache {
             }
             return sb.toString();
         }
+        
+        boolean isBlankWithNoNewline() {
+            String text = _text;
+            int len = text.length();
+            for (int i = 0; i < len; i++) {
+                char c = text.charAt(i);
+                if (c == '\n' || ! Character.isWhitespace(c)) return false;
+            }
+            return true;
+        }
 
         private static int blankPos (String text, boolean leading, boolean first) {
             int len = text.length();
@@ -1188,7 +1197,18 @@ public class Mustache {
         }
         private ParentTemplateSegment (Compiler compiler, String name, Template.Segment[] segs, int line, String indent) {
             super(compiler, name, line, indent);
+            this._segs = trim(segs, false);
+            this._blocks = new LinkedHashMap<>();
+        }
+        private ParentTemplateSegment (ParentTemplateSegment original, Template.Segment[] segs, String indent, Map<String, BlockSegment> blocks) {
+            super(original._comp, original._name, original._line, indent + original._indent);
             this._segs = segs;
+            this._standaloneStart = original._standaloneStart;
+            this._standaloneEnd = original._standaloneEnd;
+            Map<String, BlockSegment> newBlocks = new LinkedHashMap<>();
+            newBlocks.putAll(original._blocks);
+            newBlocks.putAll(blocks);
+            this._blocks = newBlocks;
         }
         @Override public void decompile (Delims delims, StringBuilder into) {
             delims.addTag('<', _name, into);
@@ -1205,10 +1225,7 @@ public class Mustache {
             if (indent.equals("") || ! _standaloneStart) {
                 return this;
             }
-            ParentTemplateSegment is = new ParentTemplateSegment(_comp, _name, _segs, _line, indent + this._indent );
-            is._standaloneStart = _standaloneStart;
-            is._standaloneEnd = _standaloneEnd;
-            return is;
+            return new ParentTemplateSegment(this, this._segs, indent, Collections.emptyMap());
         }
         @Override protected Template _loadTemplate() {
             // linked hash map is easier to debug as the blocks will be in order
@@ -1221,25 +1238,28 @@ public class Mustache {
                     blocks.put(bs._name, bs);
                 }
             }
-            //return _comp.loadTemplate(_name).replaceBlocks(blocks).indent(_indent);
+            blocks.putAll(_blocks);
             return super._loadTemplate().replaceBlocks(blocks);
         }
-        @Override public boolean lastTrailsBlank () {
-            Template.Segment[] _segs = _segs();
-            int lastIdx = _segs.length-1;
-            //TODO this logic should probably for regular sections as well.
-            if (_segs.length == 0) {
-                return true;
-            }
-            if (!(_segs[lastIdx] instanceof StringSegment)) return false;
-            return ((StringSegment)_segs[lastIdx]).trailsBlank();
-        }
-        @Override public void trimLastBlank () {
-            Template.Segment[] _segs = _segs();
-            int idx = _segs.length-1;
-            //TODO this logic should probably for regular sections as well.
-            if (idx < 0) return;
-            _segs[idx] = ((StringSegment)_segs[idx]).trimTrailBlank();
+//        @Override public boolean lastTrailsBlank () {
+//            Template.Segment[] _segs = _segs();
+//            int lastIdx = _segs.length-1;
+//            //TODO this logic should probably for regular sections as well.
+//            if (_segs.length == 0) {
+//                return true;
+//            }
+//            if (!(_segs[lastIdx] instanceof StringSegment)) return false;
+//            return ((StringSegment)_segs[lastIdx]).trailsBlank();
+//        }
+//        @Override public void trimLastBlank () {
+//            Template.Segment[] _segs = _segs();
+//            int idx = _segs.length-1;
+//            //TODO this logic should probably for regular sections as well.
+//            if (idx < 0) return;
+//            _segs[idx] = ((StringSegment)_segs[idx]).trimTrailBlank();
+//        }
+        @Override public ParentTemplateSegment replaceBlocks(Map<String, BlockSegment> blocks) {
+            return new ParentTemplateSegment(this, _segs, "", blocks);
         }
         @Override public Template.Segment[] _segs() { return _segs; }
         @Override public boolean isStandalone() { return _standaloneEnd; }
@@ -1254,7 +1274,7 @@ public class Mustache {
         protected final Template.Segment[] _segs;
         protected boolean _standaloneStart = false;
         protected boolean _standaloneEnd = false;
-
+        protected final Map<String, BlockSegment> _blocks;
     }
 
     /** A helper class for named segments. */
@@ -1305,7 +1325,7 @@ public class Mustache {
         protected final Escaper _escaper;
     }
 
-    protected interface StandaloneSection {
+    protected interface StandaloneSection extends BlockReplaceable {
         default boolean firstLeadsBlank () {
             Template.Segment[] _segs = _segs();
             if (_segs.length == 0 || !(_segs[0] instanceof StringSegment)) return false;
@@ -1476,7 +1496,11 @@ public class Mustache {
         @Override public BlockSegment replaceBlocks(Map<String, BlockSegment> blocks) {
             BlockSegment bs = blocks.get(_name);
             if (bs == null) {
-                return this;
+                Template.Segment[] segs = replaceBlockSegs(_segs, blocks);
+                if (segs == _segs) {
+                    return this;
+                }
+                return new BlockSegment(this, segs);
             }
             return new BlockSegment(this, bs._segs);
         }
