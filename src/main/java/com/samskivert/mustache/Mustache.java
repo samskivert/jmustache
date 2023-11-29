@@ -13,6 +13,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Provides <a href="http://mustache.github.com/">Mustache</a> templating services.
@@ -1057,10 +1059,20 @@ public class Mustache {
         protected Template getTemplate () {
             // we compile our template lazily to avoid infinie recursion if a template includes
             // itself (see issue #13)
-            if (_template == null) {
-                _template = _comp.loadTemplate(_name).indent(_indent);
+            Template t = _template;
+            if (t == null) {
+                // We cannot use synchronized or a CAS operation here since loadTemplate might be an IO call
+                // and virtual threads prefer regular locks.
+                lock.lock();
+                try {
+                    if ((t = _template) == null) {
+                        _template = t = _comp.loadTemplate(_name).indent(_indent);
+                    }
+                } finally {
+                    lock.unlock();
+                }
             }
-            return _template;
+            return t;
         }
         protected IncludedTemplateSegment indent(String indent, boolean first, boolean last) {
             // Indent this partial based on the spacing provided.
@@ -1084,7 +1096,8 @@ public class Mustache {
         protected final Compiler _comp;
         protected final String _name;
         private final String _indent;
-        private Template _template;
+        private final Lock lock = new ReentrantLock();
+        private volatile Template _template;
         protected boolean _standalone = false;
     }
 
