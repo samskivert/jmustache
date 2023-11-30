@@ -1090,16 +1090,6 @@ public class Mustache {
             return sb.toString();
         }
 
-        boolean isBlankWithNoNewline() {
-            String text = _text;
-            int len = text.length();
-            for (int i = 0; i < len; i++) {
-                char c = text.charAt(i);
-                if (c == '\n' || ! Character.isWhitespace(c)) return false;
-            }
-            return true;
-        }
-
         private static int blankPos (String text, boolean leading, boolean first) {
             int len = text.length();
             for (int ii = leading ? 0 : len-1, ll = leading ? len : -1, dd = leading ? 1 : -1;
