@@ -228,7 +228,7 @@ public class Mustache {
           * loader. Note that this does no caching: the caller should cache the loaded template if
           * they expect to use it multiple times.
           * @return the compiled template.
-          * @throw MustacheException if the template could not be loaded (due to I/O exception) or
+          * @throws MustacheException if the template could not be loaded (due to I/O exception) or
           * compiled (due to syntax error, etc.).
           */
         public Template loadTemplate (String name) throws MustacheException {
