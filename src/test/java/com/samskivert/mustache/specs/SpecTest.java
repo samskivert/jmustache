@@ -56,6 +56,7 @@ public abstract class SpecTest {
             // specifications, but we throw an exception (and rightfully so IMO; this is not a
             // place where silent failure is helpful), so just ignore those test failures
             if (!e.getMessage().contains("Invalid delimiter")) {
+                e.printStackTrace();
                 Assert.fail(
                 desc + "\nExpected: " + uncrlf(spec.getExpectedOutput()) + "\nError: " + e);
             }

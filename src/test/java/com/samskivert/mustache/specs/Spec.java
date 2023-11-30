@@ -4,7 +4,9 @@
 
 package com.samskivert.mustache.specs;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Consumer;
 
 /**
@@ -19,6 +21,7 @@ public class Spec
         this.map = map;
         @SuppressWarnings("unchecked") Map<String, String> partials =
             (Map<String, String>) map.get("partials");
+        if (partials == null) partials = Collections.emptyMap();
         this.partials = partials;
     }
 
@@ -57,6 +60,15 @@ public class Spec
         value.accept(getDescription());
         label.accept("template");
         value.accept(getTemplate());
+        if (! partials.isEmpty()) {
+            label.accept("partials");
+            sb.append("\n");
+            for( Entry<String, String> e : partials.entrySet()) {
+                sb.append("\t").append(e.getKey()).append(":\n");
+                value.accept(e.getValue());
+            }
+            sb.append("\n");
+        }
         label.accept("expected");
         value.accept(getExpectedOutput());
         return sb.toString();

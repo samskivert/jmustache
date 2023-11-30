@@ -21,7 +21,8 @@ public class OfficialSpecTest extends SpecTest {
             "interpolation",
             "inverted",
             "sections",
-            "partials"
+            "partials",
+            "~inheritance"
         };
         return SpecTest.data("/specs/specs/", groups);
     }

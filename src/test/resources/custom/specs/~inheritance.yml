@@ -1,0 +1,12 @@
+overview: |
+  Custom inheritance tests.
+tests:
+  - name: Non block content should not impact standalone blocks 
+    desc: Content inside a parent call that is not block tags should be ignored 
+    data: { }
+    template: "{{<parent}}ignore{{$ballmer}}\npeaked\n\n:(\n{{/ballmer}}{{/parent}}"
+    partials:
+      parent: "{{$ballmer}}peaking{{/ballmer}}"
+    expected: "peaked\n\n:(\n"
+
+# eof

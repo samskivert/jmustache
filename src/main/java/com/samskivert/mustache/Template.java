@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
+import com.samskivert.mustache.Mustache.BlockSegment;
+
 /**
  * Represents a compiled template. Templates are executed with a <em>context</em> to generate
  * output. The context can be any tree of objects. Variables are resolved against the context.
@@ -165,13 +167,24 @@ public class Template {
         _fcache = compiler.collector.createFetcherCache();
     }
 
-    protected Template indent(String indent) {
+    protected Template indent (String indent) {
         // What we want to do here is rebuild this partial template but indented.
         // If identing does not change anything we return the original template.
         if (indent.equals("")) {
             return this;
         }
         Segment[] copySegs = Mustache.indentSegs(_segs, indent, false,false);
+        if (copySegs == _segs) {
+            return this;
+        }
+        return new Template(copySegs, _compiler);
+    }
+
+    protected Template replaceBlocks (Map<String, BlockSegment> blocks) {
+        if (blocks.isEmpty()) {
+            return this;
+        }
+        Segment[] copySegs = Mustache.replaceBlockSegs(_segs, blocks);
         if (copySegs == _segs) {
             return this;
         }
