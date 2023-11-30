@@ -16,7 +16,9 @@ public class CustomSpecTest extends SpecTest {
     @Parameters(name = "{1}")
     public static Collection<Object[]> data () {
         String[] groups = new String[] {
-            "partials"
+            "sections",
+            "partials",
+            "~inheritance"
         };
         return SpecTest.data("/custom/specs/", groups);
     }

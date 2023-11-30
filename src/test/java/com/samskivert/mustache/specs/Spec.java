@@ -4,6 +4,7 @@
 
 package com.samskivert.mustache.specs;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Consumer;
@@ -20,6 +21,7 @@ public class Spec
         this.map = map;
         @SuppressWarnings("unchecked") Map<String, String> partials =
             (Map<String, String>) map.get("partials");
+        if (partials == null) partials = Collections.emptyMap();
         this.partials = partials;
     }
 

@@ -383,6 +383,23 @@ public class Mustache {
           */
         boolean visitInclude (String name);
 
+       /** Visits a parent partial tag. For backward compatibility by default
+         * <code>false</code> is returned.
+         * @param name the name of the parent partial template specified by the tag.
+         * @return true if the template should be resolved and visited, false to skip it.
+         */
+        default boolean visitParent (String name) {
+            return false;
+        }
+
+       /** Visits a block tag. For backward compatibility by default is skipped.
+         * @param name the name of the block.
+         * @return true if the contents of the block should be visited, false to skip.
+         */
+        default boolean visitBlock (String name) {
+            return false;
+        }
+
         /** Visits a section tag.
           * @param name the name of the section.
           * @return true if the contents of the section should be visited, false to skip.
@@ -452,7 +469,7 @@ public class Mustache {
                     segs[ii] = pt.indent(indent, pseg == null, nseg == null);
                 }
             }
-            
+
             // we have to indent partials if there is space before
             // they are also standalone...
             else if (seg instanceof IncludedTemplateSegment) {
@@ -471,7 +488,7 @@ public class Mustache {
                      * as it provides the partial indentation.
                      * See indentSegs.
                      */
-                    if (next != null) { 
+                    if (next != null) {
                         segs[ii+1] = next.trimLeadBlank();
                     }
                 }
@@ -507,11 +524,11 @@ public class Mustache {
         Template.Segment[] copySegs = new Template.Segment[length];
         boolean changed = false;
         for (int i = 0; i < _segs.length; i++) {
-            
+
             Template.Segment seg = _segs[i];
             Template.Segment pseg = (i > 0) ? _segs[i-1] : null;
             Template.Segment nseg = (i < length - 1) ? _segs[i+1] : null;
-            
+
             Template.Segment copy;
             if (seg instanceof AbstractSectionSegment) {
                 AbstractSectionSegment bs = (AbstractSectionSegment) seg;
@@ -575,10 +592,10 @@ public class Mustache {
                  * If we are standalone then we rely on the indentation
                  * already present before the partial tag.
                  * [  WS ]{{> partial }}[\n]
-                 * 
+                 *
                  * That is partial tags do not have the trailing blank
                  * removed during the trim process.
-                 * 
+                 *
                  * This avoids needlessley creating StringSegment tags.
                  */
                 if (seg.isStandalone()) {
@@ -608,12 +625,12 @@ public class Mustache {
             }
             copySegs[i] = copy;
         }
-        if (changed) { 
+        if (changed) {
             return copySegs;
         }
         return _segs;
     }
-    
+
     static Template.Segment[] replaceBlockSegs(Template.Segment[] _segs, Map<String, BlockSegment> blocks) {
         if (blocks.isEmpty()) {
             return _segs;
@@ -636,7 +653,7 @@ public class Mustache {
             }
             copySegs[i] = copy;
         }
-        if (changed) { 
+        if (changed) {
             return copySegs;
         }
         return _segs;
@@ -1028,7 +1045,7 @@ public class Mustache {
             return _trailBlank == -1 ? this : new StringSegment(
                 _text.substring(0, _trailBlank), _leadBlank, -1, _first);
         }
-        
+
         /**
          * Calculate indent for partial idententation
          * @return indent space or empty string
@@ -1039,7 +1056,7 @@ public class Mustache {
             }
            return  _text.substring(_trailBlank);
         }
-        
+
         StringSegment indent(String indent, boolean first, boolean last) {
             if (indent.equals("")) {
                 return this;
@@ -1082,7 +1099,7 @@ public class Mustache {
             }
             return sb.toString();
         }
-        
+
         boolean isBlankWithNoNewline() {
             String text = _text;
             int len = text.length();
@@ -1141,11 +1158,11 @@ public class Mustache {
             }
             return t;
         }
-        
+
         protected Template _loadTemplate() {
             return _comp.loadTemplate(_name).indent(_indent);
         }
-        
+
         @Override public abstract boolean isStandalone();
 
         protected final Compiler _comp;
@@ -1189,7 +1206,7 @@ public class Mustache {
         @Override public boolean isStandalone() { return _standalone; }
         protected boolean _standalone;
     }
-    
+
     /** A segment that loads and executes a parent template by spec called inheritance. */
     protected static class ParentTemplateSegment extends AbstractPartialSegment implements StandaloneSection {
         public ParentTemplateSegment (Compiler compiler, String name, Template.Segment[] segs, int line) {
@@ -1197,7 +1214,9 @@ public class Mustache {
         }
         private ParentTemplateSegment (Compiler compiler, String name, Template.Segment[] segs, int line, String indent) {
             super(compiler, name, line, indent);
-            this._segs = trim(segs, false);
+            // Notice we consider the contents inside a parent to be at "top" = true.
+            // Furthermore to correctly trim we remove non blocks.
+            this._segs = trim(removeNonBlocks(segs), true);
             this._blocks = new LinkedHashMap<>();
         }
         private ParentTemplateSegment (ParentTemplateSegment original, Template.Segment[] segs, String indent, Map<String, BlockSegment> blocks) {
@@ -1210,17 +1229,29 @@ public class Mustache {
             newBlocks.putAll(blocks);
             this._blocks = newBlocks;
         }
+        private static Template.Segment[] removeNonBlocks(Template.Segment[] segs) {
+            // the content inside a parent call
+            // e.g. {{<parent}}...{{/parent}}
+            // is ignored other than block segments: {{$block}}{{/block}}
+            List<Template.Segment> copy = new ArrayList<>();
+            for (Template.Segment seg : segs) {
+                if (seg instanceof BlockSegment) {
+                    copy.add(seg);
+                }
+            }
+            return copy.toArray(new Template.Segment[] {});
+        }
         @Override public void decompile (Delims delims, StringBuilder into) {
             delims.addTag('<', _name, into);
         }
         @Override public void visit (Visitor visitor) {
-            if (visitor.visitInclude(_name)) {
+            if (visitor.visitParent(_name)) {
                 getTemplate().visit(visitor);
             }
         }
         @Override protected ParentTemplateSegment indent(String indent, boolean first, boolean last) {
             // Indent this partial based on the spacing provided.
-            // per the spec however much the partial reference is indendented (leading whitespace)
+            // per the spec however much the partial reference is indendented (leading whitespace minus \n)
             // is how much the partial content should be indented.
             if (indent.equals("") || ! _standaloneStart) {
                 return this;
@@ -1231,7 +1262,9 @@ public class Mustache {
             // linked hash map is easier to debug as the blocks will be in order
             // and since this is only used for compiling we do not care about perf.
             Map<String, BlockSegment> blocks = new LinkedHashMap<>();
-            // While we capture other segments we only care about blocks.
+            // While we might capture other segments we only care about blocks.
+            // The reason we are doing this now instead of at constructor time is
+            // that indentation and trim might have changed the segments (not sure on this).
             for (Template.Segment seg : _segs) {
                 if (seg instanceof BlockSegment) {
                     BlockSegment bs = (BlockSegment) seg;
@@ -1241,23 +1274,27 @@ public class Mustache {
             blocks.putAll(_blocks);
             return super._loadTemplate().replaceBlocks(blocks);
         }
-//        @Override public boolean lastTrailsBlank () {
-//            Template.Segment[] _segs = _segs();
-//            int lastIdx = _segs.length-1;
-//            //TODO this logic should probably for regular sections as well.
-//            if (_segs.length == 0) {
-//                return true;
-//            }
-//            if (!(_segs[lastIdx] instanceof StringSegment)) return false;
-//            return ((StringSegment)_segs[lastIdx]).trailsBlank();
-//        }
-//        @Override public void trimLastBlank () {
-//            Template.Segment[] _segs = _segs();
-//            int idx = _segs.length-1;
-//            //TODO this logic should probably for regular sections as well.
-//            if (idx < 0) return;
-//            _segs[idx] = ((StringSegment)_segs[idx]).trimTrailBlank();
-//        }
+        // Parents have an unusual condition
+        // where if they are empty the end tag still
+        // owns the following newline.
+        // Thus lastTrails and trimLast need custom behavior.
+        @Override public boolean lastTrailsBlank () {
+            Template.Segment[] _segs = _segs();
+            int lastIdx = _segs.length-1;
+
+            if (lastIdx < 0) {
+                return true;
+            }
+            if (!(_segs[lastIdx] instanceof StringSegment)) return false;
+            return ((StringSegment)_segs[lastIdx]).trailsBlank();
+        }
+        @Override public void trimLastBlank () {
+            Template.Segment[] _segs = _segs();
+            int idx = _segs.length-1;
+            if (idx < 0) return;
+            _segs[idx] = ((StringSegment)_segs[idx]).trimTrailBlank();
+        }
+
         @Override public ParentTemplateSegment replaceBlocks(Map<String, BlockSegment> blocks) {
             return new ParentTemplateSegment(this, _segs, "", blocks);
         }
@@ -1338,8 +1375,6 @@ public class Mustache {
         default boolean lastTrailsBlank () {
             Template.Segment[] _segs = _segs();
             int lastIdx = _segs.length-1;
-            //TODO this logic is probably wrong but for some reason passed spec before inheritance
-            // {{#stuff}}{{/stuff}} is standalone!
             if (_segs.length == 0 || !(_segs[lastIdx] instanceof StringSegment)) return false;
             return ((StringSegment)_segs[lastIdx]).trailsBlank();
         }
@@ -1352,16 +1387,16 @@ public class Mustache {
         boolean isStandaloneStart();
         void standaloneStart(boolean standaloneStart);
         void standaloneEnd(boolean standaloneEnd);
-        
+
         Template.Segment[] _segs();
     }
-    
+
     protected interface BlockReplaceable {
         public Segment replaceBlocks(Map<String, BlockSegment> blocks);
     }
-    
+
     /** A helper class for section-like segments. */
-    protected static abstract class AbstractSectionSegment extends NamedSegment implements StandaloneSection, BlockReplaceable {
+    protected static abstract class AbstractSectionSegment extends NamedSegment implements StandaloneSection {
 
         protected AbstractSectionSegment (Compiler compiler, String name, Template.Segment[] segs, int line) {
             super(name, line);
@@ -1390,7 +1425,7 @@ public class Mustache {
         @Override public void standaloneEnd(boolean standaloneEnd) { this._standaloneEnd = standaloneEnd; }
 
         @Override public Segment[] _segs() { return _segs; }
-        
+
         protected final Compiler _comp;
         protected final Template.Segment[] _segs;
         protected boolean _standaloneStart = false;
@@ -1461,7 +1496,7 @@ public class Mustache {
             return "Section(" + _name + ":" + _line + "): " + Arrays.toString(_segs);
         }
     }
-    
+
     /** A parent partial parameter using $ as the sigil. */
     protected static class BlockSegment extends AbstractSectionSegment {
         public BlockSegment(Compiler compiler, String name, Segment[] segs, int line) {
@@ -1479,7 +1514,7 @@ public class Mustache {
             delims.addTag('/', _name, into);
         }
         @Override public void visit (Visitor visitor) {
-            if (visitor.visitSection(_name)) {
+            if (visitor.visitBlock(_name)) {
                 for (Template.Segment seg : _segs) {
                     seg.visit(visitor);
                 }
