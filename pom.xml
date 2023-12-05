@@ -174,7 +174,7 @@
       <plugin>
         <groupId>org.eluder.coveralls</groupId>
         <artifactId>coveralls-maven-plugin</artifactId>
-        <version>2.1.0</version>
+        <version>4.3.0</version>
       </plugin>
 
       <!-- makes shipping to sonatype easier -->
