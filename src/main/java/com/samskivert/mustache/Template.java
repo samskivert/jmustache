@@ -433,6 +433,14 @@ public class Template {
                 throw new MustacheException(ioe);
             }
         }
+
+        protected static void escape (Appendable out, CharSequence data, Mustache.Escaper escape) {
+            try {
+                escape.escape(out, data);
+            } catch (IOException ioe) {
+                throw new MustacheException(ioe);
+            }
+        }
     }
 
     /** Used to cache variable fetchers for a given context class, name combination. */

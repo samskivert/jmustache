@@ -317,6 +317,17 @@ public class Mustache {
         default CharSequence escape (CharSequence raw) {
             return escape(raw.toString());
         }
+
+        /**
+          * Escapes the raw characters with escape sequeneces if needed and appends to the appendable.
+          * The default implementation calls {@link #escape(CharSequence)}.
+          * @param a the stream like to append to.
+          * @param raw input string.
+          * @throws IOException if an error happens while writing to the appendable.
+          */
+        default void escape (Appendable a, CharSequence raw) throws IOException {
+            a.append(escape(raw));
+        }
     }
 
     /** Handles loading partial templates. */
@@ -1317,7 +1328,7 @@ public class Mustache {
                     "No key, method or field with name '" + _name + "' on line " + _line;
                 throw new MustacheException.Context(msg, _name, _line);
             }
-            write(out, _escaper.escape(_formatter.format(value)));
+            escape(out, _formatter.format(value), _escaper);
         }
         @Override public void decompile (Delims delims, StringBuilder into) {
             delims.addTag(' ', _name, into);
