@@ -42,11 +42,11 @@
   </scm>
 
   <prerequisites>
-    <maven>3.9.2</maven>
+    <maven>3.9.6</maven>
   </prerequisites>
 
   <properties>
-    <source.level>1.9</source.level>
+    <source.level>11</source.level>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
@@ -54,7 +54,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
+      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -74,6 +74,7 @@
         <configuration>
           <source>${source.level}</source>
           <target>${source.level}</target>
+          <release>${source.level}</release>
           <fork>true</fork>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
@@ -93,7 +94,7 @@
               <includes>
                 <include>module-info.java</include>
               </includes>
-              <release>9</release>
+              <release>11</release>
             </configuration>
           </execution>
           <execution>
@@ -123,6 +124,27 @@
             </_removeheaders>
           </instructions>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.4.1</version>
+        <executions>
+          <execution>
+            <id>enforce-maven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>3.9.6</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
@@ -174,7 +196,7 @@
       <plugin>
         <groupId>org.eluder.coveralls</groupId>
         <artifactId>coveralls-maven-plugin</artifactId>
-        <version>2.1.0</version>
+        <version>4.3.0</version>
       </plugin>
 
       <!-- makes shipping to sonatype easier -->
