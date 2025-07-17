@@ -42,11 +42,11 @@
   </scm>
 
   <prerequisites>
-    <maven>3.9.2</maven>
+    <maven>3.9.6</maven>
   </prerequisites>
 
   <properties>
-    <source.level>1.9</source.level>
+    <source.level>11</source.level>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- This will be replaced by the release plugin -->
     <project.build.outputTimestamp>2023-01-01T00:00:00Z</project.build.outputTimestamp>
@@ -76,6 +76,7 @@
         <configuration>
           <source>${source.level}</source>
           <target>${source.level}</target>
+          <release>${source.level}</release>
           <fork>true</fork>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
@@ -95,7 +96,7 @@
               <includes>
                 <include>module-info.java</include>
               </includes>
-              <release>9</release>
+              <release>11</release>
             </configuration>
           </execution>
           <execution>
@@ -125,6 +126,27 @@
             </_removeheaders>
           </instructions>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.4.1</version>
+        <executions>
+          <execution>
+            <id>enforce-maven</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>3.9.6</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
