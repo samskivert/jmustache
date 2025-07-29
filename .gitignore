@@ -3,3 +3,12 @@
 .settings
 target
 .metadata
+
+# jenv version set for a local user
+.java-version
+
+# Mac OS X indexing meta data
+.DS_Store
+
+# IntelliJ developer local config
+.idea/
