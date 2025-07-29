@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        java: ['11', '17', '21']
+        java: ['17', '21']
 
     runs-on: ubuntu-latest
     env:
@@ -33,7 +33,7 @@ jobs:
         run: mvn $MAVEN_CLI_OPTS clean verify
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
-        if: ${{ always() && matrix.java == '11' }}
+        if: ${{ always() && matrix.java == '17' }}
         with:
           name: test-results
           path: 'target/surefire-reports/TEST-*.xml'
