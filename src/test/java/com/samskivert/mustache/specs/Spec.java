@@ -7,7 +7,6 @@ package com.samskivert.mustache.specs;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Consumer;
 
 /**
  * @author Yoryos Valotasios
@@ -21,8 +20,7 @@ public class Spec
         this.map = map;
         @SuppressWarnings("unchecked") Map<String, String> partials =
             (Map<String, String>) map.get("partials");
-        if (partials == null) partials = Collections.emptyMap();
-        this.partials = partials;
+        this.partials = partials == null ? Collections.emptyMap() : partials;
     }
 
     public String getName () {
@@ -52,25 +50,32 @@ public class Spec
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        Consumer<String> value = s -> sb.append("\"").append(s).append("\"").append("\n");
-        Consumer<String> label = s -> sb.append("").append(s).append(": ");
-        label.accept("name");
-        value.accept(getName());
-        label.accept("desc");
-        value.accept(getDescription());
-        label.accept("template");
-        value.accept(getTemplate());
+        appendField(sb, "name", getName());
+        appendField(sb, "desc", getDescription());
+        appendField(sb, "template", getTemplate());
         if (! partials.isEmpty()) {
-            label.accept("partials");
+            appendLabel(sb, "partials");
             sb.append("\n");
             for( Entry<String, String> e : partials.entrySet()) {
                 sb.append("\t").append(e.getKey()).append(":\n");
-                value.accept(e.getValue());
+                appendQuotedValue(sb, e.getValue());
             }
             sb.append("\n");
         }
-        label.accept("expected");
-        value.accept(getExpectedOutput());
+        appendField(sb, "expected", getExpectedOutput());
         return sb.toString();
+    }
+
+    private void appendField (StringBuilder sb, String label, String value) {
+        appendLabel(sb, label);
+        appendQuotedValue(sb, value);
+    }
+
+    private void appendLabel (StringBuilder sb, String label) {
+        sb.append(label).append(": ");
+    }
+
+    private void appendQuotedValue (StringBuilder sb, String value) {
+        sb.append("\"").append(value).append("\"").append("\n");
     }
 }

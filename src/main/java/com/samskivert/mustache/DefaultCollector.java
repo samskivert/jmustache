@@ -32,39 +32,51 @@ public class DefaultCollector extends BasicCollector
         Mustache.VariableFetcher fetcher = super.createFetcher(ctx, name);
         if (fetcher != null) return fetcher;
 
+        if (ctx == null || name == null || name.isEmpty()) return null;
+
         // first check for a getter which provides the value
         Class<?> cclass = ctx.getClass();
         final Method m = getMethod(cclass, name);
         if (m != null) {
-            return new Mustache.VariableFetcher() {
-                public Object get (Object ctx, String name) throws Exception {
-                    return m.invoke(ctx);
-                }
-            };
+            return createFetcher(m);
         }
 
         // next check for a getter which provides the value
         final Field f = getField(cclass, name);
         if (f != null) {
-            return new Mustache.VariableFetcher() {
-                public Object get (Object ctx, String name) throws Exception {
-                    return f.get(ctx);
-                }
-            };
+            return createFetcher(f);
         }
 
         // finally check for a default interface method which provides the value (this is left to
         // last because it's much more expensive and hopefully something already matched above)
         final Method im = getIfaceMethod(cclass, name);
         if (im != null) {
-            return new Mustache.VariableFetcher() {
-                public Object get (Object ctx, String name) throws Exception {
-                    return im.invoke(ctx);
-                }
-            };
+            return createFetcher(im);
         }
 
         return null;
+    }
+
+    private Mustache.VariableFetcher createFetcher (final Method method) {
+        if (method == null) return null;
+        return (ctx, name) -> {
+            try {
+                return method.invoke(ctx);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to invoke method: " + method.getName(), e);
+            }
+        };
+    }
+
+    private Mustache.VariableFetcher createFetcher (final Field field) {
+        if (field == null) return null;
+        return (ctx, name) -> {
+            try {
+                return field.get(ctx);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to access field: " + field.getName(), e);
+            }
+        };
     }
 
     @Override
@@ -139,10 +151,25 @@ public class DefaultCollector extends BasicCollector
     }
 
     private Method makeAccessible (Method m) {
-        if (m.isAccessible()) return m;
-        else if (!_allowAccessCoercion) return null;
-        m.setAccessible(true);
-        return m;
+        if (m == null) return null;
+        if (!_allowAccessCoercion) return null;
+        try {
+            m.setAccessible(true);
+            return m;
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private Field makeAccessible (Field f) {
+        if (f == null) return null;
+        if (!_allowAccessCoercion) return null;
+        try {
+            f.setAccessible(true);
+            return f;
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     protected Field getField (Class<?> clazz, String name) {
@@ -157,10 +184,7 @@ public class DefaultCollector extends BasicCollector
         Field f;
         try {
             f = clazz.getDeclaredField(name);
-            if (!f.isAccessible()) {
-                f.setAccessible(true);
-            }
-            return f;
+            return makeAccessible(f);
         } catch (Exception e) {
             // fall through
         }

@@ -219,7 +219,7 @@ public class Mustache {
                 return false;
             }
             if (value instanceof CharSequence) {
-                return ((CharSequence) value).length() == 0;
+                return ((CharSequence)value).length() == 0;
             }
             return false;
         }
@@ -229,25 +229,15 @@ public class Mustache {
           * they expect to use it multiple times.
           * @return the compiled template.
           * @throws MustacheException if the template could not be loaded (due to I/O exception) or
-          * compiled (due to syntax error, etc.).
+          * compiled (due to syntax error, etc).
           */
         public Template loadTemplate (String name) throws MustacheException {
-            Reader tin = null;
-            try {
-                tin = loader.getTemplate(name);
+            try (Reader tin = loader.getTemplate(name)) {
                 return compile(tin);
+            } catch (RuntimeException e) {
+                throw e;
             } catch (Exception e) {
-                if (e instanceof RuntimeException) {
-                    throw (RuntimeException)e;
-                } else {
-                    throw new MustacheException("Unable to load template: " + name, e);
-                }
-            } finally {
-                if (tin != null) try {
-                    tin.close();
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
-                }
+                throw new MustacheException("Unable to load template: " + name, e);
             }
         }
 
@@ -825,7 +815,7 @@ public class Mustache {
         }
     }
 
-    protected static class Delims {
+    public static final class Delims {
         public char start1 = '{', end1 = '}';
         public char start2 = '{', end2 = '}';
 

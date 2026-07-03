@@ -16,6 +16,7 @@ import java.util.NoSuchElementException;
 public abstract class BasicCollector implements Mustache.Collector
 {
     public Iterator<?> toIterator (final Object value) {
+        if (value == null) return null;
         if (value instanceof Iterable<?>) {
             return ((Iterable<?>)value).iterator();
         }
@@ -35,6 +36,7 @@ public abstract class BasicCollector implements Mustache.Collector
     }
 
     public Mustache.VariableFetcher createFetcher (Object ctx, String name) {
+        if (ctx == null || name == null || name.isEmpty()) return null;
         if (ctx instanceof Mustache.CustomContext) return CUSTOM_FETCHER;
         if (ctx instanceof Map<?,?>) return MAP_FETCHER;
 
