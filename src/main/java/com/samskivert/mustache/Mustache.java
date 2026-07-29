@@ -1445,7 +1445,7 @@ public class Mustache {
                 }
             } else if (value instanceof Lambda) {
                 try {
-                    ((Lambda)value).execute(tmpl.createFragment(_segs, ctx), out);
+                    ((Lambda)value).execute(tmpl.createFragment(_segs, ctx, _line), out);
                 } catch (IOException ioe) {
                     throw new MustacheException(ioe);
                 }
@@ -1556,7 +1556,7 @@ public class Mustache {
                 }
             } else if (value instanceof InvertibleLambda) {
                 try {
-                    ((InvertibleLambda)value).executeInverse(tmpl.createFragment(_segs, ctx), out);
+                    ((InvertibleLambda)value).executeInverse(tmpl.createFragment(_segs, ctx, _line), out);
                 } catch (IOException ioe) {
                     throw new MustacheException(ioe);
                 }
