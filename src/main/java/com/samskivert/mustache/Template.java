@@ -80,12 +80,20 @@ public class Template {
           * to inspect it (be that a {@code Map} or a POJO or something else). */
         public abstract Object context ();
 
-        /** Like {@link #context()} btu returns the {@code n}th parent context object. {@code 0}
+        /** Like {@link #context()} but returns the {@code n}th parent context object. {@code 0}
           * returns the same value as {@link #context()}, {@code 1} returns the parent context,
           * {@code 2} returns the grandparent and so forth. Note that if you request a parent that
           * does not exist an exception will be thrown. You should only use this method when you
           * know your lambda is run consistently in a context with a particular lineage. */
         public abstract Object context (int n);
+        
+        /**
+         * Searches up the context stack for a matching name and returns the value associated. 
+         * Names maybe dotted (also known as compound). Thisis equivalent to referencing a variable 
+         * in a template like <code>{{name}}</code>. If no value is found or the value found is
+         * <code>null</code> then <code>null</code> is returned.
+         */
+       public abstract /* @Nullable */ Object valueOrNull (String name);
 
         /** Decompiles the template inside this lamdba and returns <em>an approximation</em> of
           * the original template from which it was parsed. This is not the exact character for
@@ -197,7 +205,12 @@ public class Template {
         }
     }
 
+    @Deprecated
     protected Fragment createFragment (final Segment[] segs, final Context currentCtx) {
+        return createFragment(segs, currentCtx, 0);
+    }
+    
+    protected Fragment createFragment (final Segment[] segs, final Context currentCtx, int line) {
         return new Fragment() {
             @Override public void execute (Writer out) {
                 execute(currentCtx, out);
@@ -213,6 +226,10 @@ public class Template {
             }
             @Override public Object context (int n) {
                 return context(currentCtx, n);
+            }
+            @Override
+            public /* @Nullable */ Object valueOrNull(String name) {
+                return Template.this.getValue(currentCtx, name, line, true);
             }
             @Override public StringBuilder decompile (StringBuilder into) {
                 for (Segment seg : segs) seg.decompile(_compiler.delims, into);
