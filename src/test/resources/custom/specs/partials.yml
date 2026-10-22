@@ -113,4 +113,37 @@ tests:
        |
       /
 
+  - name: Partial Nested Section Indentation
+    desc: Nested standalone sections should not add indentation
+    data: { content: value }
+    template: "|\n {{>partial}}\n|\n"
+    partials:
+      partial: "|\n{{#content}}\n{{#content}}\n{{.}}\n{{/content}}\n{{/content}}\n|\n"
+    expected: "|\n |\n value\n |\n|\n"
+
+  - name: Partial Empty Nested Section Indentation
+    desc: Empty nested standalone sections should not add indentation
+    data: { content: value }
+    template: "|\n {{>partial}}\n|\n"
+    partials:
+      partial: "|\n{{#content}}\n{{#missing}}\n{{.}}\n{{/missing}}\n{{/content}}\n|\n"
+    expected: "|\n |\n |\n|\n"
+
+  - name: Partial Nested Inverted Section Indentation
+    desc: Nested standalone inverted sections should not add indentation
+    data: { content: value }
+    template: "|\n {{>partial}}\n|\n"
+    partials:
+      partial: "|\n{{^missing}}\n{{^missing}}\n{{content}}\n{{/missing}}\n{{/missing}}\n|\n"
+    expected: "|\n |\n value\n |\n|\n"
+
+  - name: Nested Partial Nested Section Indentation
+    desc: Reindenting a partial should preserve standalone nested sections
+    data: { content: value }
+    template: "|\n {{>partial}}\n|\n"
+    partials:
+      partial: "|\n  {{>nested}}\n|\n"
+      nested: "|\n{{#content}}\n{{#content}}\n{{.}}\n{{/content}}\n{{/content}}\n|\n"
+    expected: "|\n |\n   |\n   value\n   |\n |\n|\n"
+
 # The extra newline on the end is required
