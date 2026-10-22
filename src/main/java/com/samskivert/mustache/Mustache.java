@@ -1088,7 +1088,7 @@ public class Mustache {
         private static String reindent (String input, String indent, boolean first, boolean last) {
             int length = input.length();
             StringBuilder sb = new StringBuilder(indent.length() + length);
-            if (first) {
+            if (first && (length > 0 || last)) {
                 sb.append(indent);
             }
             for (int ii = 0; ii < length; ii++) {
