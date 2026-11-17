@@ -38,6 +38,10 @@ public abstract class BasicCollector implements Mustache.Collector
         if (ctx instanceof Mustache.CustomContext) return CUSTOM_FETCHER;
         if (ctx instanceof Map<?,?>) return MAP_FETCHER;
 
+        // an empty name (from {{{}}}, {{&}} or a compound key like {{.foo}} or {{a..b}}) cannot
+        // name anything in a non-map context
+        if (name.length() == 0) return null;
+
         // if the name looks like a number, potentially use one of our 'indexing' fetchers
         char c = name.charAt(0);
         if (c >= '0' && c <= '9') {

@@ -32,6 +32,9 @@ public class DefaultCollector extends BasicCollector
         Mustache.VariableFetcher fetcher = super.createFetcher(ctx, name);
         if (fetcher != null) return fetcher;
 
+        // no method or field has an empty name
+        if (name.length() == 0) return null;
+
         // first check for a getter which provides the value
         Class<?> cclass = ctx.getClass();
         final Method m = getMethod(cclass, name);
