@@ -482,8 +482,8 @@ public class Mustache {
             // we have to indent partials if there is space before and they are also standalone.
             else if (seg instanceof IncludedTemplateSegment) {
                 IncludedTemplateSegment include = (IncludedTemplateSegment) seg;
-                if (prev != null && prevBlank && nextBlank) {
-                    String indent = prev.indent();
+                if (prevBlank && nextBlank) {
+                    String indent = (prev != null) ? prev.indent() : "";
                     include._standalone = true;
                     if (!indent.equals("")) {
                         include = include.indent(indent, pseg == null,nseg == null);
