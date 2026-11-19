@@ -295,6 +295,15 @@ public abstract class SharedTests
                 "|\n {{>partial}}\n|\n", context("content", "<\n->"));
     }
 
+    @Test public void testStandalonePartialOnFirstLine () {
+        Mustache.Compiler comp = Mustache.compiler().withLoader(partials(entry("s", "S")));
+        test(comp, "S>", "{{>s}}\n>", context());
+        test(comp, "S>", "{{>s}}\r\n>", context());
+        test(comp, "SS", "{{>s}}\n{{>s}}\n", context());
+        test(comp, "  S>", "  {{>s}}\n>", context());
+        test(comp, "\nS>", "\n{{>s}}\n>", context());
+    }
+
     @Test public void testPartialIndentWithVariableAtTheStart () {
         test(Mustache.compiler().withLoader(new Mustache.TemplateLoader() {
             public Reader getTemplate (String name) {
