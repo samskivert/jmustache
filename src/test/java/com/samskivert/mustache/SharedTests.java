@@ -714,6 +714,39 @@ public abstract class SharedTests
         }
     }
 
+    @Test public void testEmptyTags () {
+        for (String tmpl : new String[] { "{{}}", "a\n{{ }}", "{{=}}" }) {
+            try {
+                Mustache.compiler().compile(tmpl);
+                fail("Expected MustacheException for " + tmpl);
+            } catch (MustacheException e) {} // expected (not StringIndexOutOfBoundsException)
+        }
+        try {
+            Mustache.compiler().compile("a\n{{ }}");
+            fail("Expected MustacheParseException");
+        } catch (MustacheParseException e) {
+            check("Invalid tag: empty tag @ line 2", e.getMessage());
+        }
+    }
+
+    @Test public void testEmptyNameComponents () {
+        Object ctx = context("foo", new Object() {
+            String bar = "baz";
+        }, "str", "text");
+        String[] tmpls = {
+            "{{..}}", "{{#foo}}{{.bar}}{{/foo}}", "{{#foo}}{{bar..length}}{{/foo}}",
+            "{{#foo}}{{{}}}{{/foo}}", "{{#str}}{{&}}{{/str}}"
+        };
+        for (String tmpl : tmpls) {
+            try {
+                Mustache.compiler().compile(tmpl).execute(ctx);
+                fail("Expected MustacheException for " + tmpl);
+            } catch (MustacheException e) {} // expected (not an IndexOutOfBoundsException)
+            // and with a default value they are simply missing
+            test(Mustache.compiler().defaultValue("?"), "?", tmpl, ctx);
+        }
+    }
+
     @Test public void testNullValueGetsNullDefault () {
         test(Mustache.compiler().nullValue("foo"),
              "foobar", "{{nullvar}}{{nonnullvar}}", context("nonnullvar", "bar", "nullvar", null));

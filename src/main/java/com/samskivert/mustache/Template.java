@@ -280,6 +280,8 @@ public class Template {
      */
     protected Object getCompoundValue (Context ctx, String name, int line, boolean missingIsNull) {
         String[] comps = name.split("\\.");
+        // a key made only of dots (like "..") has no components at all
+        if (comps.length == 0) return checkForMissing(name, line, missingIsNull, NO_FETCHER_FOUND);
         // we want to allow the first component of a compound key to be located in a parent
         // context, but once we're selecting sub-components, they must only be resolved in the
         // object that represents that component

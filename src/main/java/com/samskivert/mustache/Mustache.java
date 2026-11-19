@@ -783,14 +783,17 @@ public class Mustache {
 
             case MATCHING_END:
                 if (c == delims.end2) {
-                    if (text.charAt(0) == '=') {
-                        delims.updateDelims(text.substring(1, text.length()-1));
+                    if (text.length() > 0 && text.charAt(0) == '=') {
+                        // a lone '=' ({{=}}) has no delimiters at all; let updateDelims reject it
+                        String dtext = (text.length() > 1) ? text.substring(1, text.length()-1) : "";
+                        delims.updateDelims(dtext);
                         text.setLength(0);
                         accum.addFauxSegment(); // for newline trimming
                     } else {
                         // if the delimiters are {{ and }}, and the tag starts with {{{ then
                         // require that it end with }}} and disable escaping
-                        if (delims.isStaches() && text.charAt(0) == delims.start1) {
+                        if (delims.isStaches() && text.length() > 0 &&
+                            text.charAt(0) == delims.start1) {
                             // we've only parsed }} at this point, so we have to slurp in another
                             // character from the input stream and check it
                             int end3 = nextChar();
@@ -905,6 +908,10 @@ public class Mustache {
         public Accumulator addTagSegment (final StringBuilder accum, final int tagLine) {
             final Accumulator outer = this;
             String tag = accum.toString().trim();
+            if (tag.length() == 0) {
+                // {{}} or {{ }}: there is no tag type or name to work with
+                throw new MustacheParseException("Invalid tag: empty tag", tagLine);
+            }
             final String tag1 = tag.substring(1).trim();
             accum.setLength(0);
 
