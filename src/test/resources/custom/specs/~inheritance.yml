@@ -9,4 +9,32 @@ tests:
       parent: "{{$ballmer}}peaking{{/ballmer}}"
     expected: "peaked\n\n:(\n"
 
+  - name: Child overrides a block nested in a parent's block override
+    desc: A block defined inside the content a parent passes to its own parent can be overridden by the child
+    data: { }
+    template: "{{<parent}}{{$nested}}three{{/nested}}{{/parent}}"
+    partials:
+      parent: "{{<grandparent}}{{$block}}one {{$nested}}two{{/nested}}{{/block}}{{/grandparent}}"
+      grandparent: "{{$block}}default{{/block}}"
+    expected: "one three"
+
+  - name: Parent's nested block default is kept when the child does not override it
+    desc: Without a child override the parent's nested block content is used
+    data: { }
+    template: "{{<parent}}{{/parent}}"
+    partials:
+      parent: "{{<grandparent}}{{$block}}one {{$nested}}two{{/nested}}{{/block}}{{/grandparent}}"
+      grandparent: "{{$block}}default{{/block}}"
+    expected: "one two"
+
+  - name: Child override of a nested block reaches every level
+    desc: A block nested two parent levels deep is still overridden by the child
+    data: { }
+    template: "{{<a}}{{$x}}child{{/x}}{{/a}}"
+    partials:
+      a: "{{<b}}{{$outer}}[{{$x}}a{{/x}}]{{/outer}}{{/b}}"
+      b: "{{<c}}{{$top}}<{{$outer}}b{{/outer}}>{{/top}}{{/c}}"
+      c: "{{$top}}c{{/top}}"
+    expected: "<[child]>"
+
 # eof

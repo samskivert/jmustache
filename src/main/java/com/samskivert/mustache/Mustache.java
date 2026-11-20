@@ -1292,7 +1292,9 @@ public class Mustache {
         }
 
         @Override public ParentTemplateSegment replaceBlocks(Map<String, BlockSegment> blocks) {
-            return new ParentTemplateSegment(this, _segs, "", blocks);
+            // the blocks we pass to our parent may themselves contain blocks that are
+            // overridden further down the chain, e.g. {{$nested}} inside our {{$block}}
+            return new ParentTemplateSegment(this, replaceBlockSegs(_segs, blocks), "", blocks);
         }
         @Override public Template.Segment[] _segs() { return _segs; }
         @Override public boolean isStandalone() { return _standaloneEnd; }
