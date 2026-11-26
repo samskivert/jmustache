@@ -490,6 +490,7 @@ public abstract class SharedTests
         public boolean visitInclude (String name) { keys.add(name); return true; }
         public boolean visitSection (String name) { keys.add(name); return true; }
         public boolean visitInvertedSection (String name) { keys.add(name); return true; }
+        public void returnFromSection (String name) {}
     }
 
     @Test public void testVisit() {
