@@ -837,7 +837,7 @@ public class Mustache {
         }
 
         public Delims updateDelims (String dtext) {
-            String[] delims = dtext.split(" ");
+            String[] delims = dtext.trim().split("\\s+");
             if (delims.length != 2) throw new MustacheException(errmsg(dtext));
 
             switch (delims[0].length()) {

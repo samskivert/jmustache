@@ -383,6 +383,11 @@ public abstract class SharedTests
              context("one", "foo", "two", "bar", "three", "baz"));
     }
 
+    @Test public void testDelimiterChangeWithPadding () {
+        test("foo bar baz", "{{one}} {{= <% %> =}}<%two%><%={{   }}=%> {{three}}",
+             context("one", "foo", "two", "bar", "three", "baz"));
+    }
+
     @Test public void testUnescapeHTML () {
         check("<b>", Mustache.compiler().escapeHTML(true).compile("{{&a}}").
               execute(context("a", "<b>")));
